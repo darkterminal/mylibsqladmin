@@ -40,12 +40,19 @@ export function SelectDatabase() {
                                 </div>
                             </ModalCreateDatabase>
                         </DropdownMenuItem>
-                        <Separator className='my-1' />
-                        {databases.map((database) => (
-                            <DropdownMenuItem key={database.name} onSelect={() => window.location.href = `/database/${database.name}`}>
-                                <span>{database.name}</span>
-                            </DropdownMenuItem>
-                        ))}
+
+                        {databases.length > 0 && (
+                            <>
+                                <Separator className='my-1' />
+                                {databases.map((database) => (
+                                    <DropdownMenuItem
+                                        key={database.name}
+                                    >
+                                        <span>{database.name}</span>
+                                    </DropdownMenuItem>
+                                ))}
+                            </>
+                        )}
                     </DropdownMenuContent>
                 </DropdownMenu>
             </SidebarMenuItem>
