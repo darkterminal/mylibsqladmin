@@ -6,6 +6,7 @@ use App\Services\SqldService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Tighten\Ziggy\Ziggy;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -38,7 +39,10 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
-        $databases = SqldService::getDatabases() ?? [];
+
+        $databases = collect(SqldService::getDatabases() ?? [])
+            ->values()
+            ->all();
 
         return [
             ...parent::share($request),
@@ -46,6 +50,11 @@ class HandleInertiaRequests extends Middleware
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => $request->user(),
+            ],
+            'ziggy' => fn() => [
+                ...(new Ziggy())->toArray(),
+                'location' => $request->url(),
+                'query' => $request->query(),
             ],
             'databases' => $databases,
         ];

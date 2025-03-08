@@ -4,13 +4,12 @@ WORKDIR /app
 
 COPY . .
 
-USER www-data
+RUN find data/libsql/data.sqld/dbs/ -mindepth 1 -maxdepth 1 -type d ! -name 'default' -exec rm -rf {} +
 
-ENV BRIDGE_HTTP_PASSWORD=libsql
+USER www-data
 
 EXPOSE 4500
 
-HEALTHCHECK --interval=30s --timeout=3s \
-    CMD wget --quiet --tries=1 --spider http://localhost:4500/health || exit 1
+HEALTHCHECK --interval=30s --timeout=3s CMD curl -f http://localhost:4500/health || exit 1
 
 CMD ["php", "-S", "0.0.0.0:4500", "index.php"]

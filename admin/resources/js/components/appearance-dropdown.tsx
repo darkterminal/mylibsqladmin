@@ -4,8 +4,31 @@ import { useAppearance } from '@/hooks/use-appearance';
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { HTMLAttributes } from 'react';
 
+// Custom event type for TypeScript support
+declare global {
+    interface Window {
+        addEventListener(
+            type: 'appearance-changed',
+            listener: (event: CustomEvent<{ appearance: 'light' | 'dark' | 'system' }>) => void,
+            options?: boolean | AddEventListenerOptions
+        ): void;
+    }
+}
+
 export default function AppearanceToggleDropdown({ className = '', ...props }: HTMLAttributes<HTMLDivElement>) {
     const { appearance, updateAppearance } = useAppearance();
+
+    const handleAppearanceChange = (newAppearance: 'light' | 'dark' | 'system') => {
+        // Update local state and persistence
+        updateAppearance(newAppearance);
+
+        // Dispatch custom event
+        window.dispatchEvent(
+            new CustomEvent('appearance-changed', {
+                detail: { appearance: newAppearance }
+            })
+        );
+    };
 
     const getCurrentIcon = () => {
         switch (appearance) {
@@ -28,19 +51,19 @@ export default function AppearanceToggleDropdown({ className = '', ...props }: H
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => updateAppearance('light')}>
+                    <DropdownMenuItem onClick={() => handleAppearanceChange('light')}>
                         <span className="flex items-center gap-2">
                             <Sun className="h-5 w-5" />
                             Light
                         </span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => updateAppearance('dark')}>
+                    <DropdownMenuItem onClick={() => handleAppearanceChange('dark')}>
                         <span className="flex items-center gap-2">
                             <Moon className="h-5 w-5" />
                             Dark
                         </span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => updateAppearance('system')}>
+                    <DropdownMenuItem onClick={() => handleAppearanceChange('system')}>
                         <span className="flex items-center gap-2">
                             <Monitor className="h-5 w-5" />
                             System

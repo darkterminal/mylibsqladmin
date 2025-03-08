@@ -1,0 +1,91 @@
+# Version Control
+.git
+.gitignore
+.gitattributes
+
+# Environment Files
+.env
+.env.*
+!.env.local
+!.env.production
+
+# Dependency Directories
+/node_modules
+/vendor
+
+# Build Assets
+/public/build
+/public/hot
+/public/storage
+/public/css
+/public/js
+/mix-manifest.json
+/public/assets
+/public/manifest.json
+
+# Storage & Logs
+/storage/logs/*.log
+/storage/app/public/*
+!.storage/app/public/.gitkeep
+
+# Testing
+.phpunit.*
+/tests
+/coverage
+
+# IDE & Editor
+.idea
+.vscode
+*.sublime-*
+
+# OS Metadata
+.DS_Store
+Thumbs.db
+
+# Docker Files
+Dockerfile
+docker-compose.yml
+docker-compose.*.yml
+.dockerignore
+
+# Development Specific
+docker-compose.override.yml
+docker-dev.yml
+
+# Frontend Development
+/resources/js/node_modules
+/resources/css/node_modules
+npm-debug.log*
+
+# Debugging Tools
+/telescope
+/debugbar
+
+# Cache Files
+.cache
+.npm
+.yarn
+
+# FrankenPHP Specific
+/frankenphp.config.*
+!frankenphp.config.prod
+
+# Local Development Files
+_ide_helper.php
+.phpstorm.meta.php
+
+# Optional: Documentation
+/docs
+/readme.md
+CHANGELOG.md
+
+# Optional: CI Configurations
+.github
+.gitlab-ci.yml
+.travis.yml
+
+/database/database.sqlite
+/database/database.db
+/storage/app/public/*
+!.storage/app/public/.gitkeep
+/horizon-assets

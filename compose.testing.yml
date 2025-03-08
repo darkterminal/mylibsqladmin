@@ -1,0 +1,66 @@
+services:
+  web:
+    container_name: mylibsqladmin-web
+    image: mylibsqladmin-web:production
+    ports:
+      - "8000:8000"
+    env_file: "./.env"
+    depends_on:
+      db:
+        condition: service_started
+    networks:
+      - app-network
+
+  bridge:
+    container_name: mylibsqladmin-bridge
+    image: mylibsqladmin-bridge:latest
+    ports:
+      - "4500:4500"
+    env_file: "./.env"
+    volumes:
+      - ./bridge:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4500/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      db:
+        condition: service_started
+    networks:
+      - app-network
+
+  db:
+    container_name: mylibsqladmin-db
+    image: ghcr.io/tursodatabase/libsql-server:latest
+    platform: linux/amd64
+    entrypoint: ["/bin/sqld"]
+    command:
+      [
+        "--http-listen-addr",
+        "0.0.0.0:8080",
+        "--grpc-listen-addr",
+        "0.0.0.0:5001",
+        "--admin-listen-addr",
+        "0.0.0.0:8081",
+        "--enable-namespaces",
+        "--no-welcome",
+      ]
+    user: "1000:1000"
+    volumes:
+      - ./bridge/data/libsql:/var/lib/sqld
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "8080:8080"
+      - "5001:5001"
+      - "8081:8081"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

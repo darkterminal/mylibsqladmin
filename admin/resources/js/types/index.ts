@@ -40,5 +40,7 @@ export interface User {
 }
 
 export interface LibSQLDatabases {
-    name: string
+    user_id: number;
+    database_name: string;
+    is_schema: boolean | string;
 }

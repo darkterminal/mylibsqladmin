@@ -9,6 +9,10 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+    Route::group(['prefix' => 'databases'], function () {
+        Route::post('create', [App\Http\Controllers\DashboardController::class, 'createDatabase'])->name('database.create');
+        Route::get('delete/{database}', [App\Http\Controllers\DashboardController::class, 'deleteDatabase'])->name('database.delete');
+    });
 });
 
 require __DIR__ . '/settings.php';

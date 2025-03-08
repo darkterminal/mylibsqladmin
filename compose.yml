@@ -1,10 +1,12 @@
 services:
   web:
+    container_name: mylibsqladmin-web
     build:
       context: ./admin
       dockerfile: Dockerfile
       args:
-        - APP_ENV=development
+        APP_ENV: development
+        ENV_FILE: .env.local # Use the development env file
     ports:
       - "8000:8000" # Laravel
       - "9003:9003" # Xdebug
@@ -12,14 +14,38 @@ services:
     volumes:
       - ./admin:/var/www/html
       - ./admin/storage:/var/www/html/storage
-    env_file: "./.env"
+    env_file: ".env" # Root env file (can hold overrides for dev)
     depends_on:
       db:
         condition: service_started
     networks:
       - app-network
+    restart: always
+    profiles: ["development"]
+
+  web_prod:
+    container_name: mylibsqladmin-web
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+      args:
+        APP_ENV: production
+        ENV_FILE: ./admin/.env.production # Use the production env file
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./admin/database:/var/www/html/database
+    env_file: "./admin/.env.production"
+    depends_on:
+      db:
+        condition: service_started
+    networks:
+      - app-network
+    restart: always
+    profiles: ["production"]
 
   bridge:
+    container_name: mylibsqladmin-bridge
     build:
       context: ./bridge
       dockerfile: Dockerfile
@@ -36,24 +62,24 @@ services:
     depends_on:
       db:
         condition: service_started
+    restart: always
     networks:
       - app-network
 
   db:
+    container_name: mylibsqladmin-db
     image: ghcr.io/tursodatabase/libsql-server:latest
     platform: linux/amd64
     entrypoint: ["/bin/sqld"]
     command:
-      [
-        "--http-listen-addr",
-        "0.0.0.0:8080",
-        "--grpc-listen-addr",
-        "0.0.0.0:5001",
-        "--admin-listen-addr",
-        "0.0.0.0:8081",
-        "--enable-namespaces",
-        "--no-welcome",
-      ]
+      - "--http-listen-addr"
+      - "0.0.0.0:8080"
+      - "--grpc-listen-addr"
+      - "0.0.0.0:5001"
+      - "--admin-listen-addr"
+      - "0.0.0.0:8081"
+      - "--enable-namespaces"
+      - "--no-welcome"
     user: "1000:1000"
     volumes:
       - ./bridge/data/libsql:/var/lib/sqld
@@ -66,6 +92,7 @@ services:
       - "8080:8080"
       - "5001:5001"
       - "8081:8081"
+    restart: always
     networks:
       - app-network
 

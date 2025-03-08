@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-react';
+import { BookOpen, Fingerprint, Folder, LayoutGrid, UsersRound } from 'lucide-react';
 import AppLogo from './app-logo';
 import { SelectDatabase } from './select-database';
 
@@ -23,6 +23,16 @@ const mainNavItems: NavItem[] = [
         url: '/dashboard',
         icon: LayoutGrid,
     },
+    {
+        title: 'Groups',
+        url: '/groups',
+        icon: UsersRound,
+    },
+    {
+        title: 'Tokens',
+        url: '/tokens',
+        icon: Fingerprint,
+    }
 ];
 
 const footerNavItems: NavItem[] = [
