@@ -1,7 +1,9 @@
-import { getQuery } from '@/lib/utils';
+import { getQuery, groupDatabases } from '@/lib/utils';
 import { type LibSQLDatabases } from '@/types';
 import { router, usePage } from '@inertiajs/react';
-import { ChevronRight, Database, FileText, Plus } from 'lucide-react';
+import { ChevronRight, Database, Eye, FileText, Plus } from 'lucide-react';
+import { toast } from 'sonner';
+import { AppTooltip } from './app-tooltip';
 import { CreateDatabaseProps, ModalCreateDatabaseV2 } from './modals/modal-create-database-v2';
 import {
     DropdownMenu,
@@ -10,25 +12,13 @@ import {
     DropdownMenuTrigger
 } from './ui/dropdown-menu';
 import { Separator } from './ui/separator';
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from './ui/sidebar';
-
-const groupDatabases = (databases: LibSQLDatabases[]) => {
-    const parents = databases.filter(db => db.is_schema === '1');
-    const childrenMap = databases.reduce((map, db) => {
-        if (db.is_schema !== '1') {
-            const parentName = db.is_schema;
-            map.set(parentName.toString(), [...(map.get(parentName.toString()) || []), db]);
-        }
-        return map;
-    }, new Map<string, LibSQLDatabases[]>());
-
-    return { parents, childrenMap };
-};
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from './ui/sidebar';
 
 export function SelectDatabase() {
     const { props } = usePage();
+    const { isMobile } = useSidebar();
     const databases = props.databases as LibSQLDatabases[];
-    const { parents, childrenMap } = groupDatabases(databases);
+    const { standalone, parents, childrenMap } = groupDatabases(databases);
     const selectedDatabase = getQuery('database', 'Select Database');
 
     const handleDatabaseSubmit = async (formData: CreateDatabaseProps) => {
@@ -37,7 +27,19 @@ export function SelectDatabase() {
             isSchema: formData.useExisting ? formData.database : formData.isSchema,
         };
 
-        router.post(route('database.create'), submittedData);
+        router.post(route('database.create'), submittedData, {
+            onSuccess: () => {
+                toast.success('Database created successfully', {
+                    position: 'top-center',
+                    action: {
+                        label: <><Eye className="mr-1 w-4 h-4" /> View Database</>,
+                        onClick: () => {
+                            router.get('/dashboard?database=' + submittedData.database);
+                        },
+                    }
+                });
+            }
+        });
     }
 
     return (
@@ -52,14 +54,14 @@ export function SelectDatabase() {
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
-                        className="w-[--radix-popper-anchor-width]"
-                        alignOffset={-150}
-                        align='end'
-                        sideOffset={-30}
+                        className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                        align="start"
+                        side={isMobile ? "bottom" : "right"}
+                        sideOffset={4}
                     >
                         <DropdownMenuItem asChild>
                             <ModalCreateDatabaseV2 existingDatabases={parents} onSubmit={handleDatabaseSubmit}>
-                                <div className="flex items-center p-1 text-sm cursor-pointer">
+                                <div className="flex items-center p-1 text-sm">
                                     <Plus className="mr-1 w-4 h-4" />
                                     <span>New Database</span>
                                 </div>
@@ -68,6 +70,17 @@ export function SelectDatabase() {
                         {databases.length > 0 && (
                             <>
                                 <Separator className='my-1' />
+                                {standalone.map((db) => (
+                                    <DropdownMenuItem
+                                        key={db.database_name}
+                                        onSelect={() => router.get('/dashboard', { database: db.database_name })}
+                                        className="flex justify-between items-center p-1 text-sm cursor-pointer"
+                                    >
+                                        <span className="flex items-center">
+                                            {db.database_name}
+                                        </span>
+                                    </DropdownMenuItem>
+                                ))}
                                 {parents.map((parent) => (
                                     <div key={parent.database_name}>
                                         {/* Parent database item */}
@@ -78,7 +91,9 @@ export function SelectDatabase() {
                                             <span className="flex items-center">
                                                 {parent.database_name}
                                             </span>
-                                            <FileText className="ml-1 w-4 h-4" />
+                                            <AppTooltip text='Schema Database'>
+                                                <FileText className="ml-1 w-4 h-4" />
+                                            </AppTooltip>
                                         </DropdownMenuItem>
 
                                         {/* Child databases */}

@@ -40,7 +40,6 @@ export function ModalCreateDatabaseV2({ children, existingDatabases = [], onSubm
     })
     const [processing, setProcessing] = useState(false)
 
-    // Filter to only show shared schema databases in the dropdown
     const sharedDatabases = existingDatabases.filter((db) => db.is_schema)
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -81,14 +80,13 @@ export function ModalCreateDatabaseV2({ children, existingDatabases = [], onSubm
         setFormData({
             ...formData,
             useExisting: value === "existing",
-            // Clear database selection when switching modes
             database: value === "existing" ? "" : formData.database,
         })
     }
 
     return (
         <Dialog open={isOpen} onOpenChange={setOpen}>
-            <DialogTrigger asChild onClick={() => setOpen(true)}>
+            <DialogTrigger className="cursor-pointer hover:bg-primary hover:text-primary-foreground rounded-md" asChild onClick={() => setOpen(true)}>
                 {children}
             </DialogTrigger>
             <DialogContent>

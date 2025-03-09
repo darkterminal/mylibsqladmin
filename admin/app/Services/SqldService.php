@@ -33,7 +33,7 @@ class SqldService
             }
         }
 
-        return UserDatabase::where('user_id', $userId)->get()->toArray();
+        return UserDatabase::where('user_id', $userId)->orderBy('created_at', 'desc')->get()->toArray();
 
     }
 
@@ -70,7 +70,7 @@ class SqldService
         ])
             ->delete("http://db:8081/v1/namespaces/$database");
 
-        if ($request->failed()) {
+        if ($request->getStatusCode() !== 200) {
             return false;
         }
 
