@@ -120,13 +120,17 @@ export default function Dashboard() {
                                     <>
                                         <Separator className='my-2' />
                                         {standalone.map((database: LibSQLDatabases) => (
-                                            <li
-                                                key={database.database_name}
-                                                className='flex justify-between items-center gap-2 p-2 mb-1 cursor-pointer rounded-sm dark:hover:bg-neutral-700 dark:hover:text-neutral-100 hover:bg-neutral-300'
-                                                onClick={() => router.get('/dashboard', { database: database.database_name })}
-                                            >
-                                                <span className={`text-sm ${database.database_name == databaseName ? 'font-semibold' : ''}`}>{database.database_name}</span>
-                                            </li>
+                                            <AppContextMenu key={database.database_name} items={getContextMenuItems(database)}>
+                                                <li
+                                                    key={database.database_name}
+                                                    className={
+                                                        `flex justify-between items-center gap-2 p-2 mb-1 cursor-pointer rounded-sm ${database.database_name === databaseName ? 'dark:bg-neutral-700 dark:hover:bg-neutral-800 dark:text-neutral-100 bg-neutral-200 hover:bg-neutral-300' : 'dark:hover:bg-neutral-700 dark:hover:text-neutral-100 hover:bg-neutral-300'}`
+                                                    }
+                                                    onClick={() => router.get('/dashboard', { database: database.database_name })}
+                                                >
+                                                    <span className={`text-sm ${database.database_name == databaseName ? 'font-semibold' : ''}`}>{database.database_name}</span>
+                                                </li>
+                                            </AppContextMenu>
                                         ))}
                                         {parents.map((parent) => (
                                             <>
