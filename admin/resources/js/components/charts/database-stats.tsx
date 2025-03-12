@@ -1,66 +1,16 @@
-"use client"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { type QueryMetrics } from "@/types";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
+export function DatabaseStats({ databases }: { databases: QueryMetrics[] }) {
 
-// Define the database type
-interface Database {
-    id: string
-    name: string
-    rows_read_count: number
-    rows_written_count: number
-    storage_bytes_used: number
-    query_count: number
-    elapsed_ms: number
-    top_queries: any[]
-    slowest_queries: any[]
-}
-
-interface DatabaseStatsProps {
-    database: Database
-}
-
-export function DatabaseStats({ database }: DatabaseStatsProps) {
-    // Transform the data for the area chart
-    // In a real app, this would be time-series data
-    // For this example, we'll create mock time points
-    const chartData = [
-        {
-            name: "T-4",
-            rows_read: Math.round(database.rows_read_count * 0.4),
-            rows_written: Math.round(database.rows_written_count * 0.3),
-            queries: Math.round(database.query_count * 0.4),
-            storage: Math.round(database.storage_bytes_used * 0.4),
-        },
-        {
-            name: "T-3",
-            rows_read: Math.round(database.rows_read_count * 0.6),
-            rows_written: Math.round(database.rows_written_count * 0.5),
-            queries: Math.round(database.query_count * 0.6),
-            storage: Math.round(database.storage_bytes_used * 0.6),
-        },
-        {
-            name: "T-2",
-            rows_read: Math.round(database.rows_read_count * 0.7),
-            rows_written: Math.round(database.rows_written_count * 0.7),
-            queries: Math.round(database.query_count * 0.7),
-            storage: Math.round(database.storage_bytes_used * 0.7),
-        },
-        {
-            name: "T-1",
-            rows_read: Math.round(database.rows_read_count * 0.9),
-            rows_written: Math.round(database.rows_written_count * 0.8),
-            queries: Math.round(database.query_count * 0.9),
-            storage: Math.round(database.storage_bytes_used * 0.9),
-        },
-        {
-            name: "Current",
-            rows_read: database.rows_read_count,
-            rows_written: database.rows_written_count,
-            queries: database.query_count,
-            storage: database.storage_bytes_used,
-        },
-    ]
+    const chartData = databases.reverse().map(database => ({
+        name: `T-${database.id}`,
+        rows_read: database.rows_read_count,
+        rows_written: database.rows_written_count,
+        queries: database.query_count,
+        storage: database.storage_bytes_used,
+    }));
 
     return (
         <ChartContainer

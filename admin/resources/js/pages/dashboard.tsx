@@ -5,7 +5,12 @@ import { LibsqlStudio } from '@/components/libsql-studio';
 import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
 import { getQuery, groupDatabases } from '@/lib/utils';
-import { type BreadcrumbItem, type LibSQLDatabases } from '@/types';
+import {
+    type BreadcrumbItem,
+    type LibSQLDatabases,
+    type MostUsedDatabaseProps,
+    type QueryMetrics
+} from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import { DatabaseIcon, FileText, Trash } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -18,7 +23,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Dashboard() {
+export default function Dashboard({ databaseMetrics, mostUsedDatabases }: { databaseMetrics: QueryMetrics[], mostUsedDatabases: MostUsedDatabaseProps[] }) {
 
     const { props } = usePage();
     const userDatabases = props.databases as LibSQLDatabases[];
@@ -179,7 +184,7 @@ export default function Dashboard() {
                 </div>
             ) : (
                 <div className="flex h-full flex-1 flex-col gap-4 rounded-xl px-4 py-2">
-                    <StatisticsDashboard />
+                    <StatisticsDashboard databasesData={databaseMetrics} mostUsedDatabases={mostUsedDatabases} />
                 </div>
             )}
         </AppLayout>

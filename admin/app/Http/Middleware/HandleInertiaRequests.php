@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\QueryMetric;
+use App\Models\UserDatabase;
 use App\Services\SqldService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
@@ -56,7 +58,7 @@ class HandleInertiaRequests extends Middleware
                 'location' => $request->url(),
                 'query' => $request->query(),
             ],
-            'databases' => $databases,
+            'databases' => $databases
         ];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class UserDatabase extends Model
 {
@@ -15,5 +16,66 @@ class UserDatabase extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function queryMetrics()
+    {
+        return $this->hasMany(QueryMetric::class, 'database_id');
+    }
+
+    public static function mostUsedDatabases()
+    {
+        $mostUsedDatabases = self::withCount('queryMetrics')
+            ->select('database_name', 'id')
+            ->withSum('queryMetrics', 'query_count')
+            ->orderByDesc('query_metrics_sum_query_count')
+            ->limit(10)
+            ->get();
+
+        $databases = [];
+
+        foreach ($mostUsedDatabases as $db) {
+            array_push($databases, [
+                'query_metrics_id' => $db->queryMetrics()->first()?->id,
+                'database_id' => $db->id,
+                'database_name' => $db->database_name,
+                'query_metrics_sum_query_count' => $db->query_metrics_sum_query_count,
+                'query_metrics_count' => $db->query_count
+            ]);
+        }
+        return $databases;
+    }
+
+    public static function mostAffectedQueries()
+    {
+        $combinedAnalysis = DB::table(function ($query) {
+            $query->select('main_id', 'query', 'rows_read', 'rows_written')
+                ->from('top_queries')
+                ->unionAll(
+                    DB::table('slowest_queries')
+                        ->select('main_id', 'query', 'rows_read', 'rows_written')
+                );
+        }, 'q')
+            ->join('slowest_queries as sq', 'q.main_id', '=', 'sq.main_id')
+            ->select('q.query')
+            ->selectRaw('COUNT(*) as execution_count,
+                AVG(sq.elapsed_ms) as avg_duration,
+                SUM(q.rows_read) as total_rows_read,
+                SUM(q.rows_written) as total_rows_written')
+            ->groupBy('q.query')
+            ->orderByDesc('execution_count')
+            ->orderByDesc('avg_duration')
+            ->limit(10)
+            ->get();
+
+        $mostAffectedQueries = [];
+        foreach ($combinedAnalysis as $result) {
+            array_push($mostAffectedQueries, [
+                'query' => $result->query,
+                'execution_count' => $result->execution_count,
+                'avg_duration' => $result->avg_duration,
+            ]);
+        }
+        return $mostAffectedQueries;
     }
 }
