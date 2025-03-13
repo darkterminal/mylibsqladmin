@@ -31,7 +31,8 @@ export function formatBytes(bytes: number, decimals = 2) {
 }
 
 export function groupDatabases(databases: LibSQLDatabases[]) {
-    const parents = databases.filter(db => Boolean(db.is_schema) === true);
+    const standalone = databases.filter(db => Boolean(db.is_schema) === false);
+    const parents = databases.filter(db => Boolean(Number(db.is_schema)) === true);
     const childrenMap = databases.reduce((map, db) => {
         if (Boolean(db.is_schema) !== true || Boolean(db.is_schema) !== false) {
             const parentName = db.is_schema;
@@ -39,7 +40,6 @@ export function groupDatabases(databases: LibSQLDatabases[]) {
         }
         return map;
     }, new Map<string, LibSQLDatabases[]>());
-    const standalone = databases.filter(db => Boolean(db.is_schema) === false);
 
     return { standalone, parents, childrenMap };
 }
