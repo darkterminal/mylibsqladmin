@@ -7,13 +7,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatBytes } from "@/lib/utils"
 import { MostUsedDatabaseProps, QueryMetrics } from "@/types"
 import { Calculator, Database, ReceiptText } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
-export default function StatisticsDashboard({ databasesData: databaseMetricts, mostUsedDatabases }: { databasesData: QueryMetrics[], mostUsedDatabases: MostUsedDatabaseProps[] }) {
+export default function StatisticsDashboard({
+    databasesData: databaseMetricts,
+    mostUsedDatabases
+}: {
+    databasesData: QueryMetrics[],
+    mostUsedDatabases: MostUsedDatabaseProps[]
+}) {
 
-    const [selectedDatabase, setSelectedDatabase] = useState(mostUsedDatabases.length > 0 ? mostUsedDatabases[0].database_id.toString() : "")
+    const [selectedDatabase, setSelectedDatabase] = useState(mostUsedDatabases.length > 0 ? mostUsedDatabases[0].database_name : "")
+    const [databaseStats, setDatabaseStats] = useState<QueryMetrics[] | undefined>()
 
-    const currentDb = databaseMetricts.find((db) => db.name === mostUsedDatabases[0].database_name) || databaseMetricts[0]
+    const currentDb = databaseMetricts.find((db) => db.name === selectedDatabase) || undefined
+
+    useEffect(() => {
+        if (!selectedDatabase) return
+        setDatabaseStats(databaseMetricts.filter((db) => db.name === selectedDatabase))
+    }, [databaseMetricts, selectedDatabase])
 
     return (
         <div className="container mx-auto py-8">
@@ -26,7 +38,7 @@ export default function StatisticsDashboard({ databasesData: databaseMetricts, m
                         </SelectTrigger>
                         <SelectContent>
                             {mostUsedDatabases.map((db) => (
-                                <SelectItem key={db.database_id} value={db.database_id.toString()}>
+                                <SelectItem key={db.database_id} value={db.database_name}>
                                     {db.database_name}
                                 </SelectItem>
                             ))}
@@ -76,10 +88,10 @@ export default function StatisticsDashboard({ databasesData: databaseMetricts, m
                 <Card>
                     <CardHeader>
                         <CardTitle>Database Performance Metrics</CardTitle>
-                        <CardDescription>Visualization of key database metrics</CardDescription>
+                        <CardDescription>Visualization of key database metrics <span className="px-2 py-1 rounded-sm text-xs bg-green-500 text-white dark:bg-green-600">Update every 30 minutes</span></CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <DatabaseStats databases={databaseMetricts} />
+                        <DatabaseStats databases={databaseStats} />
                     </CardContent>
                 </Card>
 

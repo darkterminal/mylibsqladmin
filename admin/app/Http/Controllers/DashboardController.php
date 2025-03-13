@@ -7,6 +7,7 @@ use App\Models\TopQuery;
 use App\Models\UserDatabase;
 use App\Services\SqldService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -14,7 +15,7 @@ class DashboardController extends Controller
     public function index()
     {
         $databases = SqldService::getDatabases();
-        $metricts = QueryMetric::chartData();
+        $metricts = QueryMetric::scopeLast24Hours();
         $mostUsedDatabases = UserDatabase::mostUsedDatabases();
         $databaseMetrics = $metricts->collect()->map(function ($metric) {
             $database = UserDatabase::find($metric->database_id);
@@ -30,23 +31,29 @@ class DashboardController extends Controller
                 'replication_index' => $metric->replication_index,
                 'embedded_replica_frames_replicated' => $metric->embedded_replica_frames_replicated,
                 'queries' => empty($metric->queries) ? [] : json_decode($metric->queries, true),
-                'top_queries' => $metric->topQueries()->get()->map(function ($query) {
-                    return [
-                        'rows_written' => $query->rows_written,
-                        'rows_read' => $query->rows_read,
-                        'query' => $query->query
-                    ];
-                }),
-                'slowest_queries' => $metric->slowestQueries()->get()->map(function ($query) {
-                    return [
-                        'rows_written' => $query->rows_written,
-                        'rows_read' => $query->rows_read,
-                        'query' => $query->query,
-                        'elapsed_ms' => $query->elapsed_ms
-                    ];
-                }),
+                'top_queries' => $metric->topQueries()->get()->map(fn($query) => ([
+                    'rows_written' => $query->rows_written,
+                    'rows_read' => $query->rows_read,
+                    'query' => $query->query
+                ])),
+                'slowest_queries' => $metric->slowestQueries()->get()->map(fn($query) => ([
+                    'rows_written' => $query->rows_written,
+                    'rows_read' => $query->rows_read,
+                    'query' => $query->query,
+                    'elapsed_ms' => $query->elapsed_ms
+                ])),
+                'created_at' => Carbon::parse($metric->created_at)->toDateTimeString()
             ];
-        })->toArray();
+        })
+            ->sortByDesc('created_at')
+            ->unique(fn($item) => implode('|', [
+                $item['rows_read_count'],
+                $item['rows_written_count'],
+                $item['query_count'],
+                $item['storage_bytes_used']
+            ]))
+            ->values()
+            ->toArray();
 
         return Inertia::render('dashboard', [
             'databases' => $databases,

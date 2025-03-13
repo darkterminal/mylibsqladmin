@@ -1,8 +1,10 @@
 import { getQuery, groupDatabases } from '@/lib/utils';
 import { type LibSQLDatabases } from '@/types';
 import { router, usePage } from '@inertiajs/react';
-import { ChevronRight, Database, Eye, FileText, Plus } from 'lucide-react';
+import { ChevronRight, Database, DatabaseIcon, Eye, FileText, Plus, Trash } from 'lucide-react';
+import { useCallback } from 'react';
 import { toast } from 'sonner';
+import { AppContextMenu, ContextMenuItemProps } from './app-context-menu';
 import { AppTooltip } from './app-tooltip';
 import { CreateDatabaseProps, ModalCreateDatabaseV2 } from './modals/modal-create-database-v2';
 import {
@@ -42,6 +44,44 @@ export function SelectDatabase() {
         });
     }
 
+    const getContextMenuItems = useCallback((database: LibSQLDatabases): ContextMenuItemProps[] => {
+        let menuItems: ContextMenuItemProps[] = [];
+
+        if (Boolean(Number(database.is_schema)) === true) {
+            menuItems = [
+                {
+                    title: 'Create Child Shcema Database',
+                    icon: DatabaseIcon,
+                    onClick: () => {
+                        alert(`Create Child Shcema Database for ${database.database_name}`);
+                    }
+                }
+            ];
+        }
+
+        return menuItems.concat([
+            {
+                title: 'Delete',
+                icon: Trash,
+                onClick: () => {
+                    toast.error(`Delete ${database.database_name}`, {
+                        position: 'top-center',
+                        action: {
+                            label: 'Delete',
+                            onClick: () => {
+                                router.delete(`/databases/delete/${database.database_name}`, {
+                                    onFinish: () => {
+                                        router.get('/dashboard');
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+            }
+        ]);
+    }, []);
+
     return (
         <SidebarMenu>
             <SidebarMenuItem>
@@ -71,43 +111,52 @@ export function SelectDatabase() {
                             <>
                                 <Separator className='my-1' />
                                 {standalone.map((db) => (
-                                    <DropdownMenuItem
-                                        key={db.database_name}
-                                        onSelect={() => router.get('/dashboard', { database: db.database_name })}
-                                        className="flex justify-between items-center p-1 text-sm cursor-pointer"
-                                    >
-                                        <span className="flex items-center">
-                                            {db.database_name}
-                                        </span>
-                                    </DropdownMenuItem>
+                                    <AppContextMenu key={db.database_name} items={getContextMenuItems(db)}>
+                                        <DropdownMenuItem
+                                            key={db.database_name}
+                                            onSelect={() => router.get('/dashboard', { database: db.database_name })}
+                                            className={`flex justify-between items-center p-1 text-sm ${selectedDatabase === db.database_name ? 'bg-muted cursor-not-allowed' : 'cursor-pointer'}`}
+                                            disabled={selectedDatabase === db.database_name}
+                                        >
+                                            <span className="flex items-center">
+                                                {db.database_name}
+                                            </span>
+                                        </DropdownMenuItem>
+                                    </AppContextMenu>
                                 ))}
                                 {parents.map((parent) => (
                                     <div key={parent.database_name}>
                                         {/* Parent database item */}
-                                        <DropdownMenuItem
-                                            onSelect={() => router.get('/dashboard', { database: parent.database_name })}
-                                            className="flex justify-between items-center p-1 text-sm cursor-pointer"
-                                        >
-                                            <span className="flex items-center">
-                                                {parent.database_name}
-                                            </span>
-                                            <AppTooltip text='Schema Database'>
-                                                <FileText className="ml-1 w-4 h-4" />
-                                            </AppTooltip>
-                                        </DropdownMenuItem>
+                                        <AppContextMenu items={getContextMenuItems(parent)}>
+                                            <DropdownMenuItem
+                                                onSelect={() => router.get('/dashboard', { database: parent.database_name })}
+                                                className={`flex justify-between items-center p-1 text-sm ${selectedDatabase === parent.database_name ? 'bg-muted cursor-not-allowed' : 'cursor-pointer'}`}
+                                                disabled={selectedDatabase === parent.database_name}
+                                            >
+                                                <span className="flex items-center">
+                                                    {parent.database_name}
+                                                </span>
+                                                <AppTooltip text='Schema Database'>
+                                                    <FileText className="ml-1 w-4 h-4" />
+                                                </AppTooltip>
+                                            </DropdownMenuItem>
+                                        </AppContextMenu>
 
                                         {/* Child databases */}
                                         {childrenMap.get(parent.database_name)?.map((child) => (
-                                            <DropdownMenuItem
-                                                key={child.database_name}
-                                                onSelect={() => router.get('/dashboard', { database: child.database_name })}
-                                                className="p-1 text-sm cursor-pointer"
-                                            >
-                                                <div className="flex items-center">
-                                                    <span className="text-muted-foreground/50 mr-1">└──</span>
-                                                    {child.database_name}
-                                                </div>
-                                            </DropdownMenuItem>
+                                            <AppContextMenu key={child.database_name} items={getContextMenuItems(child)}>
+                                                <DropdownMenuItem
+                                                    key={child.database_name}
+                                                    onSelect={() => router.get('/dashboard', { database: child.database_name })}
+                                                    className="p-1 text-sm cursor-pointer"
+                                                    disabled={selectedDatabase === child.database_name}
+                                                >
+                                                    <div className="flex items-center">
+                                                        <span className="text-muted-foreground/50 mr-1">└──</span>
+                                                        {child.database_name}
+                                                    </div>
+                                                </DropdownMenuItem>
+                                            </AppContextMenu>
                                         ))}
                                     </div>
                                 ))}

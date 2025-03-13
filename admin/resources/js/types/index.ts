@@ -88,6 +88,7 @@ export interface QueryMetrics {
     queries: QueriesInMatrictsProps | undefined | null;
     top_queries: TopQueryProps[];
     slowest_queries: SlowestQueryProps[];
+    created_at: string;
 }
 
 export interface MostUsedDatabaseProps {

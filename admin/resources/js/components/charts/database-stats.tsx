@@ -1,16 +1,28 @@
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import {
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent
+} from "@/components/ui/chart";
 import { type QueryMetrics } from "@/types";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
-export function DatabaseStats({ databases }: { databases: QueryMetrics[] }) {
+export function DatabaseStats({ databases }: { databases: QueryMetrics[] | undefined }) {
 
-    const chartData = databases.reverse().map(database => ({
+    const chartData = databases ? databases.map(database => ({
         name: `T-${database.id}`,
         rows_read: database.rows_read_count,
         rows_written: database.rows_written_count,
         queries: database.query_count,
         storage: database.storage_bytes_used,
-    }));
+    })) : [
+        {
+            name: "T-0",
+            rows_read: 0,
+            rows_written: 0,
+            queries: 0,
+            storage: 0,
+        }
+    ];
 
     return (
         <ChartContainer
@@ -36,7 +48,7 @@ export function DatabaseStats({ databases }: { databases: QueryMetrics[] }) {
         >
             <AreaChart
                 accessibilityLayer
-                data={chartData}
+                data={chartData.reverse()}
                 margin={{
                     top: 10,
                     right: 30,

@@ -38,7 +38,7 @@ export default function Dashboard({ databaseMetrics, mostUsedDatabases }: { data
     const getContextMenuItems = useCallback((database: LibSQLDatabases): ContextMenuItemProps[] => {
         let menuItems: ContextMenuItemProps[] = [];
 
-        if (database.is_schema !== '0') {
+        if (Boolean(Number(database.is_schema)) === true) {
             menuItems = [
                 {
                     title: 'Create Child Shcema Database',
