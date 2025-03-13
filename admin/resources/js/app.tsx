@@ -8,9 +8,22 @@ import { initializeTheme } from './hooks/use-appearance';
 
 declare global {
     const route: typeof routeFn;
+
+    interface Window {
+        addEventListener(
+            type: 'appearance-changed',
+            listener: (event: CustomEvent<{ appearance: 'light' | 'dark' | 'system' }>) => void,
+            options?: boolean | AddEventListenerOptions
+        ): void;
+        addEventListener(
+            type: 'stats-changed',
+            listener: (event: CustomEvent<{ type: 'query' | 'transaction', statement: string, databaseName: string }>) => void,
+            options?: boolean | AddEventListenerOptions
+        ): void;
+    }
 }
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'MylibSQLAdmin';
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,

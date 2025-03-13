@@ -9,7 +9,7 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 export function DatabaseStats({ databases }: { databases: QueryMetrics[] | undefined }) {
 
     const chartData = databases ? databases.map(database => ({
-        name: `T-${database.id}`,
+        name: `${database.created_at}`,
         rows_read: database.rows_read_count,
         rows_written: database.rows_written_count,
         queries: database.query_count,
@@ -57,8 +57,15 @@ export function DatabaseStats({ databases }: { databases: QueryMetrics[] | undef
                 }}
             >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" />
-                <YAxis />
+                <XAxis
+                    dataKey="name"
+                    tickLine={false}
+                    axisLine={false}
+                />
+                <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Area
                     type="monotone"

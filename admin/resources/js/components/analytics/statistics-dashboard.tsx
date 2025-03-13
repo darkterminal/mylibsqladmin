@@ -4,10 +4,10 @@ import { DatabaseStats } from "@/components/charts/database-stats"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { formatBytes } from "@/lib/utils"
+import { databaseGroupType, formatBytes } from "@/lib/utils"
 import { MostUsedDatabaseProps, QueryMetrics } from "@/types"
-import { Calculator, Database, ReceiptText } from "lucide-react"
-import { useEffect, useState } from "react"
+import { Calculator, Cylinder, Database, GitBranch, ReceiptText } from "lucide-react"
+import React, { useEffect, useState } from "react"
 
 export default function StatisticsDashboard({
     databasesData: databaseMetricts,
@@ -19,6 +19,7 @@ export default function StatisticsDashboard({
 
     const [selectedDatabase, setSelectedDatabase] = useState(mostUsedDatabases.length > 0 ? mostUsedDatabases[0].database_name : "")
     const [databaseStats, setDatabaseStats] = useState<QueryMetrics[] | undefined>()
+    const { standaloneDatabases, parentDatabases, childDatabases } = databaseGroupType(mostUsedDatabases)
 
     const currentDb = databaseMetricts.find((db) => db.name === selectedDatabase) || undefined
 
@@ -37,10 +38,22 @@ export default function StatisticsDashboard({
                             <SelectValue placeholder="Select database" />
                         </SelectTrigger>
                         <SelectContent>
-                            {mostUsedDatabases.map((db) => (
+                            {standaloneDatabases.sort((a, b) => a.database_id - b.database_id).map((db) => (
                                 <SelectItem key={db.database_id} value={db.database_name}>
-                                    {db.database_name}
+                                    <Cylinder className="h-3 w-3" /> {db.database_name}
                                 </SelectItem>
+                            ))}
+                            {parentDatabases.map((db) => (
+                                <React.Fragment key={db.database_id}>
+                                    <SelectItem key={db.database_id} value={db.database_name}>
+                                        <Database className="h-3 w-3" /> {db.database_name}
+                                    </SelectItem>
+                                    {childDatabases.get(db.database_name)?.map((db) => (
+                                        <SelectItem key={db.database_id} value={db.database_name}>
+                                            <GitBranch className="h-3 w-3" /> {db.database_name}
+                                        </SelectItem>
+                                    ))}
+                                </React.Fragment>
                             ))}
                         </SelectContent>
                     </Select>

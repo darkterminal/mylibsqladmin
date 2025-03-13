@@ -69,7 +69,7 @@ class SqldService
             }
         }
 
-        return UserDatabase::where('user_id', $userId)->orderBy('created_at', 'desc')->get()->toArray();
+        return UserDatabase::where('user_id', $userId)->get()->toArray();
 
     }
 

@@ -1,19 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAppearance } from '@/hooks/use-appearance';
+import { triggerEvent } from '@/hooks/use-custom-event';
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { HTMLAttributes } from 'react';
-
-// Custom event type for TypeScript support
-declare global {
-    interface Window {
-        addEventListener(
-            type: 'appearance-changed',
-            listener: (event: CustomEvent<{ appearance: 'light' | 'dark' | 'system' }>) => void,
-            options?: boolean | AddEventListenerOptions
-        ): void;
-    }
-}
 
 export default function AppearanceToggleDropdown({ className = '', ...props }: HTMLAttributes<HTMLDivElement>) {
     const { appearance, updateAppearance } = useAppearance();
@@ -23,11 +13,7 @@ export default function AppearanceToggleDropdown({ className = '', ...props }: H
         updateAppearance(newAppearance);
 
         // Dispatch custom event
-        window.dispatchEvent(
-            new CustomEvent('appearance-changed', {
-                detail: { appearance: newAppearance }
-            })
-        );
+        triggerEvent('appearance-changed', { appearance: newAppearance });
     };
 
     const getCurrentIcon = () => {

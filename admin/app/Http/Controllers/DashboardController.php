@@ -42,7 +42,7 @@ class DashboardController extends Controller
                     'query' => $query->query,
                     'elapsed_ms' => $query->elapsed_ms
                 ])),
-                'created_at' => Carbon::parse($metric->created_at)->toDateTimeString()
+                'created_at' => Carbon::parse($metric->created_at)->format('H:i:s')
             ];
         })
             ->sortByDesc('created_at')

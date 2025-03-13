@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class UserDatabase extends Model
@@ -26,9 +27,8 @@ class UserDatabase extends Model
     public static function mostUsedDatabases()
     {
         $mostUsedDatabases = self::withCount('queryMetrics')
-            ->select('database_name', 'id')
+            ->select('database_name', 'id', 'is_schema', 'created_at')
             ->withSum('queryMetrics', 'query_count')
-            ->orderByDesc('query_metrics_sum_query_count')
             ->limit(10)
             ->get();
 
@@ -39,8 +39,10 @@ class UserDatabase extends Model
                 'query_metrics_id' => $db->queryMetrics()->first()?->id,
                 'database_id' => $db->id,
                 'database_name' => $db->database_name,
+                'is_schema' => $db->is_schema,
                 'query_metrics_sum_query_count' => $db->query_metrics_sum_query_count,
-                'query_metrics_count' => $db->query_count
+                'query_metrics_count' => $db->query_count,
+                'created_at' => Carbon::parse($db->created_at)->format('Y-m-d H:i:S')
             ]);
         }
         return $databases;

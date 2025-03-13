@@ -3,6 +3,7 @@ import { AppContextMenu, ContextMenuItemProps } from '@/components/app-context-m
 import { AppTooltip } from '@/components/app-tooltip';
 import { LibsqlStudio } from '@/components/libsql-studio';
 import { Separator } from '@/components/ui/separator';
+import { useCustomEvent } from '@/hooks/use-custom-event';
 import AppLayout from '@/layouts/app-layout';
 import { getQuery, groupDatabases } from '@/lib/utils';
 import {
@@ -109,6 +110,17 @@ export default function Dashboard({ databaseMetrics, mostUsedDatabases }: { data
             setClientUrl(`http://${parent}.localhost:8080`);
         }
     }, [parent]);
+
+    useCustomEvent<{ type: 'query' | 'transaction', statement: string, databaseName: string }>('stats-changed', async ({ type, statement, databaseName }) => {
+        const statsEndpoint = route('trigger.stats-changed', { databaseName });
+
+        await fetch(statsEndpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+    });
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>

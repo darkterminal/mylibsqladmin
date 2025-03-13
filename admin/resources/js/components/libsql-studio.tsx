@@ -1,3 +1,4 @@
+import { triggerEvent } from "@/hooks/use-custom-event";
 import { createClient, ResultSet } from "@libsql/client/web";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -121,7 +122,10 @@ export function LibsqlStudio({ databaseName, clientUrl, authToken }: LibSQLStudi
                             );
                         });
                 }
+
+                triggerEvent('stats-changed', { type: e.data.type, statement: e.data.statement, databaseName: databaseName });
             };
+
 
             window.addEventListener("message", handler);
             return () => window.removeEventListener("message", handler);

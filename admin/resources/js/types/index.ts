@@ -95,6 +95,8 @@ export interface MostUsedDatabaseProps {
     query_metrics_id: number;
     database_id: number;
     database_name: string;
+    is_schema: string;
     query_metrics_sum_query_count: number;
     query_metrics_count: number | null;
+    created_at: string;
 }
