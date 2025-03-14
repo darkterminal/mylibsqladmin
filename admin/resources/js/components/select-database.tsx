@@ -1,3 +1,4 @@
+import { triggerEvent } from '@/hooks/use-custom-event';
 import { getQuery, groupDatabases } from '@/lib/utils';
 import { type LibSQLDatabases } from '@/types';
 import { router, usePage } from '@inertiajs/react';
@@ -45,21 +46,14 @@ export function SelectDatabase() {
     }
 
     const getContextMenuItems = useCallback((database: LibSQLDatabases): ContextMenuItemProps[] => {
-        let menuItems: ContextMenuItemProps[] = [];
-
-        if (Boolean(Number(database.is_schema)) === true) {
-            menuItems = [
-                {
-                    title: 'Create Child Shcema Database',
-                    icon: DatabaseIcon,
-                    onClick: () => {
-                        alert(`Create Child Shcema Database for ${database.database_name}`);
-                    }
+        return [
+            ...(Number(database.is_schema) ? [{
+                title: 'Create Child Schema Database',
+                icon: DatabaseIcon,
+                onClick: () => {
+                    triggerEvent('open-modal-changed', { isModalOpen: true, parentDatabase: database.database_name })
                 }
-            ];
-        }
-
-        return menuItems.concat([
+            }] : []),
             {
                 title: 'Delete',
                 icon: Trash,
@@ -79,7 +73,7 @@ export function SelectDatabase() {
                     });
                 }
             }
-        ]);
+        ];
     }, []);
 
     return (

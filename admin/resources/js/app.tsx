@@ -20,6 +20,11 @@ declare global {
             listener: (event: CustomEvent<{ type: 'query' | 'transaction', statement: string, databaseName: string }>) => void,
             options?: boolean | AddEventListenerOptions
         ): void;
+        addEventListener(
+            type: 'open-modal-changed',
+            listener: (event: CustomEvent<{ isModalOpen: boolean, parentDatabase: string }>) => void,
+            options?: boolean | AddEventListenerOptions
+        ): void;
     }
 }
 

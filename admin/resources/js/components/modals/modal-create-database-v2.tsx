@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useCustomEvent } from "@/hooks/use-custom-event"
 import { type LibSQLDatabases } from "@/types"
 import { useState } from "react"
 
@@ -25,22 +26,32 @@ export type CreateDatabaseProps = {
 }
 
 interface ModalCreateDatabaseProps {
-    children: React.ReactNode
+    children?: React.ReactNode
     existingDatabases: LibSQLDatabases[]
+    useExistingDatabase?: boolean
     onSubmit: (data: CreateDatabaseProps) => Promise<void>
 }
 
-export function ModalCreateDatabaseV2({ children, existingDatabases = [], onSubmit }: ModalCreateDatabaseProps) {
+export function ModalCreateDatabaseV2({ children, existingDatabases = [], useExistingDatabase = false, onSubmit }: ModalCreateDatabaseProps) {
     const [isOpen, setOpen] = useState(false)
     const [formData, setFormData] = useState<CreateDatabaseProps>({
         database: "",
         childDatabase: "",
         isSchema: false,
-        useExisting: false,
+        useExisting: useExistingDatabase,
     })
     const [processing, setProcessing] = useState(false)
 
     const sharedDatabases = existingDatabases.filter((db) => db.is_schema)
+
+    useCustomEvent<{ isModalOpen: boolean, parentDatabase: string }>('open-modal-changed', async ({ isModalOpen, parentDatabase }) => {
+        setOpen(isModalOpen)
+        setFormData({
+            ...formData,
+            useExisting: true,
+            database: parentDatabase
+        })
+    });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -85,7 +96,7 @@ export function ModalCreateDatabaseV2({ children, existingDatabases = [], onSubm
     }
 
     return (
-        <Dialog open={isOpen} onOpenChange={setOpen}>
+        <Dialog open={isOpen} onOpenChange={setOpen} >
             <DialogTrigger className="cursor-pointer hover:bg-primary hover:text-primary-foreground rounded-md" asChild onClick={() => setOpen(true)}>
                 {children}
             </DialogTrigger>

@@ -101,7 +101,7 @@ export default function StatisticsDashboard({
                 <Card>
                     <CardHeader>
                         <CardTitle>Database Performance Metrics</CardTitle>
-                        <CardDescription>Visualization of key database metrics <span className="px-2 py-1 rounded-sm text-xs bg-green-500 text-white dark:bg-green-600">Update every 30 minutes</span></CardDescription>
+                        <CardDescription>Visualization of key database metrics</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <DatabaseStats databases={databaseStats} />
