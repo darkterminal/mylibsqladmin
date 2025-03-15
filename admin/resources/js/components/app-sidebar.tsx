@@ -25,12 +25,12 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Groups',
-        url: '/groups',
+        url: '/dashboard/groups',
         icon: UsersRound,
     },
     {
         title: 'Tokens',
-        url: '/tokens',
+        url: '/dashboard/tokens',
         icon: Fingerprint,
     }
 ];

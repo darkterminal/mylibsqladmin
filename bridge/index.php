@@ -36,11 +36,9 @@ if (php_sapi_name() === 'cli-server') {
         }
 
         $directories = array_values(array_diff($directories, ['..', '.']));
-        $databases = array_map(function ($dir) {
-            return [
-                'name' => $dir
-            ];
-        }, $directories);
+        $databases = array_map(fn($dir) => [
+            'name' => $dir
+        ], $directories);
 
         echo json_encode($databases);
         exit;

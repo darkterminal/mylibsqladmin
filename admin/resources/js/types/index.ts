@@ -100,3 +100,16 @@ export interface MostUsedDatabaseProps {
     query_metrics_count: number | null;
     created_at: string;
 }
+
+export interface DatabaseStatsChangeProps {
+    type: 'query' | 'transaction',
+    statement: string,
+    databaseName: string
+}
+
+export type AppearanceStateChangeProps = { appearance: 'light' | 'dark' | 'system' }
+
+export interface OpenModalStateChangeProps {
+    isModalOpen: boolean,
+    parentDatabase: string
+}

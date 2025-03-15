@@ -1,4 +1,5 @@
 import { triggerEvent } from "@/hooks/use-custom-event";
+import { type AppearanceStateChangeProps } from "@/types";
 import { createClient, ResultSet } from "@libsql/client/web";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -23,7 +24,7 @@ export function LibsqlStudio({ databaseName, clientUrl, authToken }: LibSQLStudi
     const effectiveTheme = appearance === 'system' ? (isSystemDark ? 'dark' : 'light') : appearance;
 
     useEffect(() => {
-        const handleAppearanceChange = (event: CustomEvent<{ appearance: 'light' | 'dark' | 'system' }>) => {
+        const handleAppearanceChange = (event: CustomEvent<AppearanceStateChangeProps>) => {
             const newAppearance = event.detail.appearance;
             console.log('Appearance changed:', newAppearance);
 

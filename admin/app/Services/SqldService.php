@@ -10,7 +10,6 @@ class SqldService
 {
     private static function isRunningInDocker(): bool
     {
-        // Check for standard Docker indicators
         return file_exists('/.dockerenv') ||
             (is_readable('/proc/self/cgroup') &&
                 strpos(file_get_contents('/proc/self/cgroup'), 'docker') !== false);

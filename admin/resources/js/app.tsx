@@ -5,6 +5,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { route as routeFn } from 'ziggy-js';
 import { initializeTheme } from './hooks/use-appearance';
+import { OpenModalStateChangeProps, type AppearanceStateChangeProps, type DatabaseStatsChangeProps } from './types';
 
 declare global {
     const route: typeof routeFn;
@@ -12,17 +13,17 @@ declare global {
     interface Window {
         addEventListener(
             type: 'appearance-changed',
-            listener: (event: CustomEvent<{ appearance: 'light' | 'dark' | 'system' }>) => void,
+            listener: (event: CustomEvent<AppearanceStateChangeProps>) => void,
             options?: boolean | AddEventListenerOptions
         ): void;
         addEventListener(
             type: 'stats-changed',
-            listener: (event: CustomEvent<{ type: 'query' | 'transaction', statement: string, databaseName: string }>) => void,
+            listener: (event: CustomEvent<DatabaseStatsChangeProps>) => void,
             options?: boolean | AddEventListenerOptions
         ): void;
         addEventListener(
             type: 'open-modal-changed',
-            listener: (event: CustomEvent<{ isModalOpen: boolean, parentDatabase: string }>) => void,
+            listener: (event: CustomEvent<OpenModalStateChangeProps>) => void,
             options?: boolean | AddEventListenerOptions
         ): void;
     }

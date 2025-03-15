@@ -6,6 +6,7 @@ import AppLayout from '@/layouts/app-layout';
 import { getQuery } from '@/lib/utils';
 import {
     type BreadcrumbItem,
+    type DatabaseStatsChangeProps,
     type LibSQLDatabases,
     type MostUsedDatabaseProps,
     type QueryMetrics
@@ -26,7 +27,7 @@ export default function Dashboard({ databaseMetrics, mostUsedDatabases }: { data
     const userDatabases = props.databases as LibSQLDatabases[];
 
     const [clientUrl, setClientUrl] = useState<string | null>("http://localhost:8080");
-    const [authToken, setAuthToken] = useState<string | undefined>("");
+    const [authToken, _] = useState<string | undefined>("");
 
     const parent = getQuery('database');
     const [databaseName, setDatabaseName] = useState<string | null>(parent);
@@ -68,7 +69,7 @@ export default function Dashboard({ databaseMetrics, mostUsedDatabases }: { data
         }
     }, [parent]);
 
-    useCustomEvent<{ type: 'query' | 'transaction', statement: string, databaseName: string }>('stats-changed', async ({ type, statement, databaseName }) => {
+    useCustomEvent<DatabaseStatsChangeProps>('stats-changed', async ({ databaseName }) => {
         const statsEndpoint = route('trigger.stats-changed', { databaseName });
 
         await fetch(statsEndpoint, {

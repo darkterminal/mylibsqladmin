@@ -62,6 +62,11 @@ class DashboardController extends Controller
         ]);
     }
 
+    public function indexToken(Request $request)
+    {
+        return Inertia::render('dashboard-token');
+    }
+
     public function createDatabase(Request $request)
     {
         SqldService::createDatabase($request->database, $request->isSchema);

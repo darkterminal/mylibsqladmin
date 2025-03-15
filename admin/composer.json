@@ -14,6 +14,8 @@
         "laravel/framework": "^12.0",
         "laravel/octane": "^2.8",
         "laravel/tinker": "^2.10.1",
+        "lcobucci/jwt": "^5.5",
+        "paragonie/sodium_compat": "^2.1",
         "tightenco/ziggy": "^2.4",
         "tursodatabase/turso-driver-laravel": "^1.2"
     },

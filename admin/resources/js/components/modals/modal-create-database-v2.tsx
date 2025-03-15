@@ -15,7 +15,10 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useCustomEvent } from "@/hooks/use-custom-event"
-import { type LibSQLDatabases } from "@/types"
+import {
+    type LibSQLDatabases,
+    type OpenModalStateChangeProps
+} from "@/types"
 import { useState } from "react"
 
 export type CreateDatabaseProps = {
@@ -44,7 +47,7 @@ export function ModalCreateDatabaseV2({ children, existingDatabases = [], useExi
 
     const sharedDatabases = existingDatabases.filter((db) => db.is_schema)
 
-    useCustomEvent<{ isModalOpen: boolean, parentDatabase: string }>('open-modal-changed', async ({ isModalOpen, parentDatabase }) => {
+    useCustomEvent<OpenModalStateChangeProps>('open-modal-changed', async ({ isModalOpen, parentDatabase }) => {
         setOpen(isModalOpen)
         setFormData({
             ...formData,

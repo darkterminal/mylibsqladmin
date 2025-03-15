@@ -22,7 +22,7 @@ class StatsFetcherService
     {
         $databases = SqldService::getDatabases();
         foreach ($databases as $database) {
-            $response = Http::get("http://localhost:8081/v1/namespaces/{$database['database_name']}/stats");
+            $response = Http::get("http://db:8081/v1/namespaces/{$database['database_name']}/stats");
             $stats = $response->json();
 
             $queryMetric = QueryMetric::insertGetId([
