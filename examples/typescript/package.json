@@ -1,0 +1,14 @@
+{
+  "name": "typescript",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.14.0"
+  }
+}
