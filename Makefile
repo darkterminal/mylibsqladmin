@@ -22,5 +22,15 @@ compose-prod/up:
 compose-dev/down:
 	COMPOSE_BAKE=true docker compose --profile development down
 
-composer-prod/down:
+compose-prod/down:
 	COMPOSE_BAKE=true docker compose --profile production down
+
+compose-dev/restart:
+	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
+	COMPOSE_BAKE=true docker compose --profile development down
+	COMPOSE_BAKE=true docker compose --profile development up
+
+composer-prod/restart:
+	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
+	COMPOSE_BAKE=true docker compose --profile production down
+	COMPOSE_BAKE=true docker compose --profile production up

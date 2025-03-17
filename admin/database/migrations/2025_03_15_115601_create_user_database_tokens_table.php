@@ -17,7 +17,9 @@ return new class extends Migration {
             $table->unsignedBigInteger('database_id');
             $table->foreign('database_id')->references('id')->on('user_databases')->onDelete('cascade');
             $table->string('name');
-            $table->string('token')->unique();
+            $table->string('full_access_token')->unique();
+            $table->string('read_only_token')->unique();
+            $table->integer('expiration_day');
             $table->timestamps();
         });
     }

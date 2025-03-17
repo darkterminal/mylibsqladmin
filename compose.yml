@@ -68,7 +68,7 @@ services:
 
   proxy:
     container_name: mylibsqladmin-proxy
-    image: nginx:latest
+    image: openresty/openresty:alpine
     ports:
       - "8080:8080"
       - "5001:5001"
@@ -77,6 +77,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
     networks:
       - app-network
+    restart: always
     depends_on:
       db:
         condition: service_started

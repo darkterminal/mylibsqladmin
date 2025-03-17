@@ -15,6 +15,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('create', [App\Http\Controllers\DashboardController::class, 'createDatabase'])->name('database.create');
         Route::delete('delete/{database}', [App\Http\Controllers\DashboardController::class, 'deleteDatabase'])->name('database.delete');
     });
+
+    Route::group(['prefix' => 'tokens'], function () {
+        Route::post('create', [App\Http\Controllers\DashboardController::class, 'createToken'])->name('token.create');
+    });
 });
 
 require __DIR__ . '/settings.php';

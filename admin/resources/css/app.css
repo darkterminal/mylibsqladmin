@@ -69,6 +69,21 @@
     ::file-selector-button {
         border-color: var(--color-gray-200, currentColor);
     }
+
+    /* width */
+    ::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    /* Track */
+    ::-webkit-scrollbar-track {
+        background: var(--primary);
+    }
+
+    /* Handle */
+    ::-webkit-scrollbar-thumb {
+        background: var(--primary-foreground);
+    }
 }
 
 :root {

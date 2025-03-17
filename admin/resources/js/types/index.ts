@@ -113,3 +113,13 @@ export interface OpenModalStateChangeProps {
     isModalOpen: boolean,
     parentDatabase: string
 }
+
+export interface UserDatabaseTokenProps {
+    user_id: number;
+    database_id: number;
+    name: string;
+    full_access_token: string;
+    read_only_token: string;
+    expiration_day: number;
+    database: LibSQLDatabases
+}

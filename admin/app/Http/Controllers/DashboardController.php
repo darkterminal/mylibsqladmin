@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\QueryMetric;
 use App\Models\TopQuery;
 use App\Models\UserDatabase;
+use App\Models\UserDatabaseToken;
+use App\Services\DatabaseTokenGenerator;
 use App\Services\SqldService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -62,9 +64,28 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function indexToken(Request $request)
+    public function indexToken()
     {
-        return Inertia::render('dashboard-token');
+        $mostUsedDatabases = UserDatabase::mostUsedDatabases();
+        $databases = collect($mostUsedDatabases)->map(function ($database) {
+            $databaseToken = UserDatabaseToken::where('database_id', $database['database_id']);
+            $alreadyHasToken = $databaseToken->exists() ? 'tokenized' : 'not-tokenized';
+            return [
+                ...$database,
+                'database_name' => $database['database_name'] . ' - (' . $alreadyHasToken . ')',
+                'is_tokenized' => $databaseToken->exists()
+            ];
+        });
+        $userDatabaseTokens = UserDatabaseToken::with(['database'])->where('user_id', auth()->user()->id)->get();
+
+        return Inertia::render('dashboard-token', [
+            'mostUsedDatabases' => $databases,
+            'isAllTokenized' => collect($databases)->every(fn($database) => $database['is_tokenized']),
+            'userDatabaseTokens' => collect($userDatabaseTokens)->map(fn($token) => [
+                ...$token->toArray(),
+                'expiration_day' => Carbon::parse(Carbon::now())->addDays($token->expiration_day)->format('Y-m-d')
+            ])
+        ]);
     }
 
     public function createDatabase(Request $request)
@@ -79,5 +100,50 @@ class DashboardController extends Controller
         SqldService::deleteDatabase($database);
         $databases = SqldService::getDatabases();
         return redirect()->route('dashboard')->with('databases', $databases);
+    }
+
+    public function createToken(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string',
+            'databaseId' => 'required|integer',
+            'expiration' => 'required|integer',
+        ]);
+
+        $tokenGenerator = (new DatabaseTokenGenerator())->generateToken(
+            $validated['databaseId'],
+            auth()->id(),
+            $validated['expiration']
+        );
+
+        if (!$tokenGenerator) {
+            return redirect()->route('dashboard.tokens')
+                ->with('error', 'Failed to generate tokens');
+        }
+
+        $formData = [
+            'user_id' => auth()->id(),
+            'database_id' => $validated['databaseId'],
+            'name' => $validated['name'],
+            'full_access_token' => $tokenGenerator['full_access_token'],
+            'read_only_token' => $tokenGenerator['read_only_token'],
+            'expiration_day' => $validated['expiration'],
+        ];
+
+        try {
+            $save = UserDatabaseToken::updateOrCreate(
+                [
+                    'database_id' => $validated['databaseId'],
+                    'user_id' => auth()->id(),
+                ],
+                $formData
+            );
+
+            return redirect()->route('dashboard.tokens')
+                ->with('success', 'Token created/updated successfully');
+        } catch (\Exception $e) {
+            return redirect()->route('dashboard.tokens')
+                ->with('error', 'Failed to save token: ' . $e->getMessage());
+        }
     }
 }

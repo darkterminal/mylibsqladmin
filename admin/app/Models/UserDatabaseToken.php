@@ -12,6 +12,18 @@ class UserDatabaseToken extends Model
         'user_id',
         'database_id',
         'name',
-        'token',
+        'full_access_token',
+        'read_only_token',
+        'expiration_day',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function database()
+    {
+        return $this->belongsTo(UserDatabase::class);
+    }
 }

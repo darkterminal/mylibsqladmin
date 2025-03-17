@@ -7,7 +7,7 @@ import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { AppContextMenu, ContextMenuItemProps } from './app-context-menu';
 import { AppTooltip } from './app-tooltip';
-import { CreateDatabaseProps, ModalCreateDatabaseV2 } from './modals/modal-create-database-v2';
+import { CreateDatabaseProps, ModalCreateDatabase } from './modals/modal-create-database';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -94,12 +94,12 @@ export function SelectDatabase() {
                         sideOffset={4}
                     >
                         <DropdownMenuItem asChild>
-                            <ModalCreateDatabaseV2 existingDatabases={parents} onSubmit={handleDatabaseSubmit}>
+                            <ModalCreateDatabase existingDatabases={parents} onSubmit={handleDatabaseSubmit}>
                                 <div className="flex items-center p-1 text-sm">
                                     <Plus className="mr-1 w-4 h-4" />
                                     <span>New Database</span>
                                 </div>
-                            </ModalCreateDatabaseV2>
+                            </ModalCreateDatabase>
                         </DropdownMenuItem>
                         {databases.length > 0 && (
                             <>

@@ -52,4 +52,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserDatabase::class);
     }
+
+    public function databaseTokens(): HasMany
+    {
+        return $this->hasMany(UserDatabaseToken::class);
+    }
 }

@@ -25,3 +25,7 @@ yarn-error.log
 /bridge/data
 *.sqlite
 *.db
+*.http
+node_modules/
+*.db
+*.db*

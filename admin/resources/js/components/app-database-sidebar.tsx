@@ -7,7 +7,7 @@ import React, { useCallback } from "react";
 import { toast } from "sonner";
 import { AppContextMenu, type ContextMenuItemProps } from "./app-context-menu";
 import { AppTooltip } from "./app-tooltip";
-import { CreateDatabaseProps, ModalCreateDatabaseV2 } from "./modals/modal-create-database-v2";
+import { CreateDatabaseProps, ModalCreateDatabase } from "./modals/modal-create-database";
 import { Separator } from "./ui/separator";
 
 export function AppDatabaseSidebar({ databaseName, userDatabases }: { databaseName: string | null, userDatabases: LibSQLDatabases[] }) {
@@ -129,7 +129,7 @@ export function AppDatabaseSidebar({ databaseName, userDatabases }: { databaseNa
                     </>
                 )}
             </ul>
-            <ModalCreateDatabaseV2
+            <ModalCreateDatabase
                 existingDatabases={parents}
                 useExistingDatabase={true}
                 onSubmit={handleDatabaseSubmit}
