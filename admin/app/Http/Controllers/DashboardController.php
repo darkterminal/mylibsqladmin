@@ -81,10 +81,14 @@ class DashboardController extends Controller
         return Inertia::render('dashboard-token', [
             'mostUsedDatabases' => $databases,
             'isAllTokenized' => collect($databases)->every(fn($database) => $database['is_tokenized']),
-            'userDatabaseTokens' => collect($userDatabaseTokens)->map(fn($token) => [
-                ...$token->toArray(),
-                'expiration_day' => Carbon::parse(Carbon::now())->addDays($token->expiration_day)->format('Y-m-d')
-            ])
+            'userDatabaseTokens' => collect($userDatabaseTokens)->map(function ($token) {
+                $expirationDate = Carbon::now()->addDays($token->expiration_day)->format('Y-m-d');
+
+                return [
+                    ...$token->toArray(),
+                    'expiration_day' => Carbon::now()->isAfter(Carbon::parse($expirationDate)) ? "Expired" : $expirationDate
+                ];
+            })
         ]);
     }
 
@@ -145,5 +149,12 @@ class DashboardController extends Controller
             return redirect()->route('dashboard.tokens')
                 ->with('error', 'Failed to save token: ' . $e->getMessage());
         }
+    }
+
+    public function deleteToken(int $tokenId)
+    {
+        UserDatabaseToken::where('id', $tokenId)->delete();
+        return redirect()->route('dashboard.tokens')
+            ->with('success', 'Token deleted successfully');
     }
 }

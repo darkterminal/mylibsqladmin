@@ -14,8 +14,10 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { type UserDatabaseTokenProps } from "@/types";
+import { router } from "@inertiajs/react";
 import { CheckIcon, CopyIcon, Ellipsis, Trash } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "../ui/button";
 
 export default function TableTokenManagement({
@@ -94,9 +96,27 @@ export default function TableTokenManagement({
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                             className="hover:cursor-pointer bg-red-500 hover:!bg-red-600 text-white hover:!text-white"
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                console.log(token);
+                                            onClick={() => {
+                                                toast("Are you sure you want to delete this token?", {
+                                                    description: "This action cannot be undone.",
+                                                    duration: 7000,
+                                                    position: "top-center",
+                                                    action: (
+                                                        <Button
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                router.delete(`/tokens/delete/${token.id}`, {
+                                                                    onFinish: () => {
+                                                                        router.get('/dashboard/tokens');
+                                                                    }
+                                                                });
+                                                            }}
+                                                        >
+                                                            Delete
+                                                        </Button>
+                                                    ),
+                                                });
                                             }}
                                         >
                                             <Trash className="mr-2 h-4 w-4 text-white" /> Delete

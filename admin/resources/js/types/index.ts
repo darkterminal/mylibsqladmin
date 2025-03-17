@@ -115,6 +115,7 @@ export interface OpenModalStateChangeProps {
 }
 
 export interface UserDatabaseTokenProps {
+    id: number;
     user_id: number;
     database_id: number;
     name: string;

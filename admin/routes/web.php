@@ -18,6 +18,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::group(['prefix' => 'tokens'], function () {
         Route::post('create', [App\Http\Controllers\DashboardController::class, 'createToken'])->name('token.create');
+        Route::delete('delete/{tokenId}', [App\Http\Controllers\DashboardController::class, 'deleteToken'])->name('token.delete');
     });
 });
 
