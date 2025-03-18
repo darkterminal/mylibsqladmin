@@ -57,4 +57,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserDatabaseToken::class);
     }
+
+    public function groupDatabases()
+    {
+        return $this->hasMany(GroupDatabase::class);
+    }
 }

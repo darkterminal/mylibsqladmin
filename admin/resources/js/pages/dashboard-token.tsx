@@ -1,6 +1,6 @@
 import { AppTooltip } from "@/components/app-tooltip";
 import { ModalCreateToken } from "@/components/modals/modal-create-token";
-import TableTokenManagement from "@/components/tables/token-mangement";
+import TableTokenManagement from "@/components/tables/token-management";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import AppLayout from "@/layouts/app-layout";

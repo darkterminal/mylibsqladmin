@@ -24,6 +24,16 @@ class UserDatabase extends Model
         return $this->hasMany(QueryMetric::class, 'database_id');
     }
 
+    public function tokens()
+    {
+        return $this->hasMany(UserDatabaseToken::class, 'database_id');
+    }
+
+    public function groups()
+    {
+        return $this->belongsToMany(GroupDatabase::class, 'group_database_members', 'database_id', 'group_id');
+    }
+
     public static function mostUsedDatabases()
     {
         $mostUsedDatabases = self::withCount('queryMetrics')

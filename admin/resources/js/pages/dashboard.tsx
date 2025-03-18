@@ -1,6 +1,7 @@
 import StatisticsDashboard from '@/components/analytics/statistics-dashboard';
 import { AppDatabaseSidebar } from '@/components/app-database-sidebar';
 import { LibsqlStudio } from '@/components/libsql-studio';
+import DashboardStatisticSkeleton from '@/components/skeletons/DashboardStatisticSkeleton';
 import { useCustomEvent } from '@/hooks/use-custom-event';
 import AppLayout from '@/layouts/app-layout';
 import { getQuery } from '@/lib/utils';
@@ -11,7 +12,7 @@ import {
     type MostUsedDatabaseProps,
     type QueryMetrics
 } from '@/types';
-import { Head, usePage } from '@inertiajs/react';
+import { Deferred, Head, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from "react";
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -90,7 +91,9 @@ export default function Dashboard({ databaseMetrics, mostUsedDatabases }: { data
                 </div>
             ) : (
                 <div className="flex h-full flex-1 flex-col gap-4 rounded-xl px-4 py-2">
-                    <StatisticsDashboard databasesData={databaseMetrics} mostUsedDatabases={mostUsedDatabases} />
+                    <Deferred data={['databaseMetrics', 'mostUsedDatabases']} fallback={<DashboardStatisticSkeleton />}>
+                        <StatisticsDashboard databasesData={databaseMetrics} mostUsedDatabases={mostUsedDatabases} />
+                    </Deferred>
                 </div>
             )}
         </AppLayout>

@@ -26,6 +26,21 @@ declare global {
             listener: (event: CustomEvent<OpenModalStateChangeProps>) => void,
             options?: boolean | AddEventListenerOptions
         ): void;
+        addEventListener(
+            type: 'database-group-is-deleted',
+            listener: (event: CustomEvent<{ id: number }>) => void,
+            options?: boolean | AddEventListenerOptions
+        ): void;
+        addEventListener(
+            type: 'token-is-deleted',
+            listener: (event: CustomEvent<{ id: number }>) => void,
+            options?: boolean | AddEventListenerOptions
+        ): void;
+        addEventListener(
+            type: 'token-is-created',
+            listener: (event: CustomEvent<{ id: number }>) => void,
+            options?: boolean | AddEventListenerOptions
+        ): void;
     }
 }
 

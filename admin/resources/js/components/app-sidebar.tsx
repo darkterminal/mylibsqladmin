@@ -24,14 +24,14 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
-        title: 'Groups',
-        url: '/dashboard/groups',
-        icon: UsersRound,
-    },
-    {
         title: 'Tokens',
         url: '/dashboard/tokens',
         icon: Fingerprint,
+    },
+    {
+        title: 'Groups',
+        url: '/dashboard/groups',
+        icon: UsersRound,
     }
 ];
 

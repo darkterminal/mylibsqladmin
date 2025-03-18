@@ -1,4 +1,4 @@
-import { MostUsedDatabaseProps, type LibSQLDatabases } from "@/types";
+import { MostUsedDatabaseMinimalProps, MostUsedDatabaseProps, type LibSQLDatabases } from "@/types";
 import { usePage } from "@inertiajs/react";
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -58,7 +58,7 @@ export function databaseType(schema: string) {
     }
 }
 
-export function databaseGroupType(dbs: MostUsedDatabaseProps[]) {
+export function databaseGroupType(dbs: MostUsedDatabaseProps[] | MostUsedDatabaseMinimalProps[]) {
     const standaloneDatabases = dbs.filter(db => databaseType(db.is_schema) === 'standalone');
     const parentDatabases = dbs.filter(db => databaseType(db.is_schema) === 'schema');
     const childDatabases = dbs.reduce((map, db) => {
@@ -67,7 +67,7 @@ export function databaseGroupType(dbs: MostUsedDatabaseProps[]) {
             map.set(parentDb.toString(), [...(map.get(parentDb.toString()) || []), db])
         }
         return map;
-    }, new Map<string, MostUsedDatabaseProps[]>());
+    }, new Map<string, MostUsedDatabaseProps[] | MostUsedDatabaseMinimalProps[]>());
 
     return { standaloneDatabases, parentDatabases, childDatabases }
 }

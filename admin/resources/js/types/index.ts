@@ -101,6 +101,12 @@ export interface MostUsedDatabaseProps {
     created_at: string;
 }
 
+export interface MostUsedDatabaseMinimalProps {
+    database_id: number;
+    database_name: string;
+    is_schema: string;
+}
+
 export interface DatabaseStatsChangeProps {
     type: 'query' | 'transaction',
     statement: string,
@@ -123,4 +129,22 @@ export interface UserDatabaseTokenProps {
     read_only_token: string;
     expiration_day: number;
     database: LibSQLDatabases
+}
+
+export interface DatabaseInGroupProps {
+    id: number;
+    database_name: string;
+    is_schema: string
+}
+
+export interface GroupDatabaseProps {
+    id: number;
+    name: string;
+    members_count: number;
+    created_at: string;
+    user: {
+        name: string;
+    };
+    members: DatabaseInGroupProps[];
+    database_tokens: UserDatabaseTokenProps[]
 }
