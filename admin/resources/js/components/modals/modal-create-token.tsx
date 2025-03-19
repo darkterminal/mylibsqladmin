@@ -106,24 +106,44 @@ export function ModalCreateToken({
                             <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Select database" />
                             </SelectTrigger>
-                            <SelectContent>
-                                {standaloneDatabases.sort((a, b) => a.database_id - b.database_id).map((db) => (
-                                    <SelectItem key={db.database_id} value={String(db.database_id)}>
-                                        <Cylinder className="h-3 w-3" /> {db.database_name}
+                            <SelectContent className="max-h-96 overflow-y-auto">
+                                {standaloneDatabases.map((db) => (
+                                    <SelectItem
+                                        key={db.database_id}
+                                        value={String(db.database_id)}
+                                        className="flex items-center"
+                                    >
+                                        <Cylinder className="h-3 w-3 mr-2" />
+                                        {db.database_name}
                                     </SelectItem>
                                 ))}
-                                {parentDatabases.map((db) => (
-                                    <div key={db.database_id}>
-                                        <SelectItem key={db.database_id} value={String(db.database_id)}>
-                                            <Database className="h-3 w-3" /> {db.database_name}
-                                        </SelectItem>
-                                        {childDatabases.get(db.database_name)?.map((db) => (
-                                            <SelectItem key={db.database_id} value={String(db.database_id)}>
-                                                <GitBranch className="h-3 w-3" /> {db.database_name}
+
+                                {parentDatabases.map((parentDb) => {
+                                    return (
+                                        <div key={parentDb.database_id} className="border-t mt-2 pt-2">
+                                            <SelectItem
+                                                value={String(parentDb.database_id)}
+                                                className="font-medium text-primary/80 hover:bg-accent/50"
+                                            >
+                                                <Database className="h-3 w-3 mr-2" />
+                                                {parentDb.database_name} (Schema)
                                             </SelectItem>
-                                        ))}
-                                    </div>
-                                ))}
+
+                                            <div className="ml-4 border-l-2 border-muted pl-2">
+                                                {childDatabases.get(parentDb.database_name.split(' - ')[0])?.map(childDb => (
+                                                    <SelectItem
+                                                        key={childDb.database_id}
+                                                        value={String(childDb.database_id)}
+                                                        className="text-muted-foreground"
+                                                    >
+                                                        <GitBranch className="h-3 w-3 mr-2" />
+                                                        {childDb.database_name}
+                                                    </SelectItem>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )
+                                })}
                             </SelectContent>
                         </Select>
                     </div>
