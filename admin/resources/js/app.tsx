@@ -46,6 +46,11 @@ declare global {
             listener: (event: CustomEvent<{ id: number }>) => void,
             options?: boolean | AddEventListenerOptions
         ): void;
+        addEventListener(
+            type: 'token-created-from-group',
+            listener: (event: CustomEvent<{ groupId: number, databaseId: number, newToken: UserDatabaseTokenProps }>) => void,
+            options?: boolean | AddEventListenerOptions
+        ): void;
     }
 }
 

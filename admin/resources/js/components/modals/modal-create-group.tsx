@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { DatabaseInGroupProps } from "@/types"
-import { useForm } from "@inertiajs/react"
+import { useForm, usePage } from "@inertiajs/react"
 import { DialogDescription } from "@radix-ui/react-dialog"
 import type React from "react"
 import { useState } from "react"
@@ -20,6 +20,7 @@ export default function ModalCreateGroup({
         name: "",
         databases: [] as string[],
     })
+    const { props } = usePage<{ databaseGroups: DatabaseInGroupProps[] }>()
 
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.replace(/[^a-zA-Z0-9-_]/g, "")

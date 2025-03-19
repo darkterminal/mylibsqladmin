@@ -1,10 +1,10 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { triggerEvent, useCustomEvent } from "@/hooks/use-custom-event"
-import { DatabaseInGroupProps, GroupDatabaseProps, UserDatabaseTokenProps } from "@/types"
+import { triggerEvent } from "@/hooks/use-custom-event"
+import { DatabaseInGroupProps, GroupDatabaseProps } from "@/types"
 import { router } from "@inertiajs/react"
 import { DatabaseIcon, KeyIcon, PlusCircleIcon, Server } from "lucide-react"
-import { useCallback } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { AppTooltip } from "./app-tooltip"
 import ButtonCopyFullAccessToken from "./button-actions/action-copy-full-access-token"
@@ -17,25 +17,30 @@ import { ModalCreateToken } from "./modals/modal-create-token"
 import { Button } from "./ui/button"
 
 export default function GroupDetail({
-    group,
+    group: initialGroup,
     availableDatabases
 }: {
-    group: GroupDatabaseProps
+    group: GroupDatabaseProps | null
     availableDatabases: DatabaseInGroupProps[]
 }) {
+    // State hooks first
+    const [isLoading, setIsLoading] = useState(true);
+    const [group, setGroup] = useState<GroupDatabaseProps | null>(null);
 
-    if (!group) return null
+    // Effects next
+    useEffect(() => {
+        if (initialGroup) {
+            setGroup(initialGroup);
+            setIsLoading(false);
+        }
+    }, [initialGroup]);
 
-    const getDatabaseToken = (databaseId: number) => group.database_tokens.find(token => token.database_id === databaseId)
-
+    // Callbacks next
     const deleteGroup = useCallback(() => {
+        if (!group) return;
+
         toast('Are you sure you want to delete this group?', {
             description: "This action cannot be undone.",
-            duration: 7000,
-            position: "top-center",
-            style: {
-                cursor: "pointer",
-            },
             action: (
                 <Button
                     variant="destructive"
@@ -44,46 +49,58 @@ export default function GroupDetail({
                         router.delete(route('group.delete', { groupId: group.id }), {
                             preserveScroll: true,
                             onSuccess: () => {
-                                triggerEvent('database-group-is-deleted', { id: group.id })
+                                triggerEvent('database-group-is-deleted', { id: group.id });
+                                toast.dismiss();
                             }
-                        })
+                        });
                     }}
                 >
                     Delete
                 </Button>
             )
-        })
-    }, [])
+        });
+    }, [group?.id]);
 
     const handleOnSuccess = useCallback(() => {
+        if (!group) return;
+
         toast.success('Group token created successfully');
         router.reload();
         triggerEvent('group-token-is-created', { id: group.id });
-    }, [])
+    }, [group?.id]);
 
-    useCustomEvent('token-is-created', ({ id, newToken }: { id: number, newToken: UserDatabaseTokenProps }) => {
-        toast.success('Token created successfully');
-        console.log('databaseId', id);
-        console.log('newToken', newToken);
-    })
+    // Derived values
+    const getDatabaseToken = useCallback((databaseId: number) => {
+        return group?.database_tokens?.find(t => t.database_id === databaseId) ?? null;
+    }, [group?.database_tokens]);
 
+    // Conditional renders last
+    if (isLoading || !group) {
+        return <div className="p-4 text-center text-muted-foreground">Loading group details...</div>;
+    }
+
+    if (!group.members?.length) {
+        return <div className="p-4 text-center text-muted-foreground">No databases in this group</div>;
+    }
+
+    // Main render
     return (
         <Card>
             <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <ButtonDeleteGroup handleDelete={deleteGroup} />
-                        <CardTitle className="text-xl flex items-center"><Server className="h-5 w-5 text-muted-foreground mr-2" /> <span>{group.name}</span></CardTitle>
+                        <CardTitle className="text-xl flex items-center">
+                            <Server className="h-5 w-5 text-muted-foreground mr-2" />
+                            <span>{group.name}</span>
+                        </CardTitle>
                         <CardDescription>
                             {group.members_count} {group.members_count === 1 ? "database" : "databases"} in this group
                         </CardDescription>
                     </div>
                     <div className="flex gap-2">
                         <AppTooltip text="Create Group Token">
-                            <ModalCreateGroupToken
-                                groupId={group.id}
-                                onSuccess={handleOnSuccess}
-                            >
+                            <ModalCreateGroupToken groupId={group.id} onSuccess={handleOnSuccess}>
                                 <Button variant="default">
                                     <KeyIcon className="h-4 w-4" />
                                 </Button>
@@ -104,7 +121,10 @@ export default function GroupDetail({
                     <h3 className="text-sm font-medium">Databases in this group:</h3>
                     <div className="grid gap-2">
                         {group.members.map((database) => {
-                            const token = getDatabaseToken(database.id)!;
+                            if (!database.id || !database.database_name) return null;
+
+                            const token = getDatabaseToken(database.id);
+
                             return (
                                 <div key={database.id} className="flex items-center gap-2 rounded-md border p-3">
                                     <DatabaseIcon className="h-4 w-4 text-primary" />

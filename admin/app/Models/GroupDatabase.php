@@ -24,7 +24,7 @@ class GroupDatabase extends Model
         return $this->belongsToMany(UserDatabase::class, 'group_database_members', 'group_id', 'database_id');
     }
 
-    public function group_tokens()
+    public function tokens()
     {
         return $this->hasMany(GroupDatabaseToken::class, 'group_id');
     }

@@ -6,17 +6,26 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { triggerEvent } from "@/hooks/use-custom-event";
 import { databaseGroupType } from "@/lib/utils";
-import { UserDatabaseTokenProps, type MostUsedDatabaseMinimalProps, type MostUsedDatabaseProps } from "@/types";
-import { useForm, usePage } from "@inertiajs/react";
+import {
+    type MostUsedDatabaseMinimalProps,
+    type MostUsedDatabaseProps,
+    type UserDatabaseTokenProps
+} from "@/types";
+import { router, useForm, usePage } from "@inertiajs/react";
 import { Cylinder, Database, GitBranch } from "lucide-react";
 import React, { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from "../ui/select";
 
 type CreateTokenProps = {
     name: string;
@@ -58,7 +67,14 @@ export function ModalCreateToken({
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
+
+        if (!data.databaseId || isNaN(data.databaseId)) {
+            toast.error('Invalid database selection');
+            return;
+        }
+
         post(route('token.create'), {
+            preserveScroll: true,
             onSuccess: () => {
                 setOpen(false);
                 reset('name', 'expiration');
@@ -82,7 +98,11 @@ export function ModalCreateToken({
                     })
                 }
 
-                triggerEvent('token-is-created', { id: data.databaseId, newToken: flash.newToken });
+                router.visit(route('dashboard.groups'), {
+                    only: ['databaseGroups', 'databaseNotInGroup'],
+                    replace: true,
+                    preserveScroll: true
+                });
             },
             onFinish: () => {
                 onCreateSuccess?.();

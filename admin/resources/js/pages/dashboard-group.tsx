@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button";
 import { useCustomEvent } from "@/hooks/use-custom-event";
 import AppLayout from "@/layouts/app-layout";
 import {
-    DatabaseInGroupProps,
     UserDatabaseTokenProps,
     type BreadcrumbItem,
+    type DatabaseInGroupProps,
     type GroupDatabaseProps
 } from "@/types";
 import { Head } from "@inertiajs/react";
 import { Users2Icon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -34,20 +34,36 @@ export default function DashboardGroup({
     const [groups, setGroups] = useState<GroupDatabaseProps[]>(databaseGroups);
     const [selectedGroup, setSelectedGroup] = useState<GroupDatabaseProps | null>(null);
 
+    useEffect(() => {
+        setGroups(databaseGroups);
+        if (!databaseGroups.find(g => g.id === selectedGroup?.id)) {
+            setSelectedGroup(null);
+        }
+    }, [databaseGroups, selectedGroup?.id]);
+
     const handleGroupClick = (group: (typeof databaseGroups)[0]) => {
         setSelectedGroup(group)
     }
 
-    useCustomEvent('token-created', (detail: { databaseId: number, token: UserDatabaseTokenProps }) => {
-        setGroups(prev => prev.map(group => {
-            if (group.members.some(m => m.id === detail.databaseId)) {
+    useCustomEvent('token-created-from-group', ({ groupId, databaseId, newToken }: { groupId: number, databaseId: number, newToken: UserDatabaseTokenProps }) => {
+        setGroups(prev => prev.map(g => {
+            if (g.id === groupId) {
+                const exists = g.database_tokens.some(t => t.database_id === databaseId);
+
                 return {
-                    ...group,
-                    database_tokens: [...group.database_tokens, detail.token]
-                };
+                    ...g,
+                    database_tokens: exists ? g.database_tokens : [
+                        ...g.database_tokens,
+                        {
+                            ...newToken,
+                            database_id: databaseId
+                        }
+                    ]
+                }
             }
-            return group;
+            return g;
         }));
+        setSelectedGroup(prev => prev?.id === groupId ? { ...prev, database_tokens: [...prev.database_tokens, newToken] } : prev);
     });
 
     return (
@@ -92,7 +108,10 @@ export default function DashboardGroup({
 
                     <div className="md:col-span-2">
                         {selectedGroup ? (
-                            <GroupDetail group={selectedGroup} availableDatabases={databaseNotInGroup} />
+                            <GroupDetail
+                                group={selectedGroup}
+                                availableDatabases={databaseNotInGroup}
+                            />
                         ) : (
                             <div className="h-full flex items-center justify-center border rounded-md p-8 text-center">
                                 <div>
