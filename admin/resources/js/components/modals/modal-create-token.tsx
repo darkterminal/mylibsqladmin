@@ -113,7 +113,7 @@ export function ModalCreateToken({
                                     </SelectItem>
                                 ))}
                                 {parentDatabases.map((db) => (
-                                    <React.Fragment key={db.database_id}>
+                                    <div key={db.database_id}>
                                         <SelectItem key={db.database_id} value={String(db.database_id)}>
                                             <Database className="h-3 w-3" /> {db.database_name}
                                         </SelectItem>
@@ -122,7 +122,7 @@ export function ModalCreateToken({
                                                 <GitBranch className="h-3 w-3" /> {db.database_name}
                                             </SelectItem>
                                         ))}
-                                    </React.Fragment>
+                                    </div>
                                 ))}
                             </SelectContent>
                         </Select>

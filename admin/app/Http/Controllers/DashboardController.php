@@ -32,15 +32,27 @@ class DashboardController extends Controller
     public function createDatabase(Request $request)
     {
         SqldService::createDatabase($request->database, $request->isSchema);
+
         $databases = SqldService::getDatabases();
-        return redirect()->back()->with('databases', $databases);
+        $mostUsedDatabases = UserDatabase::mostUsedDatabases();
+        $databaseMetrics = QueryMetric::summariezed();
+
+        return redirect()->route('dashboard')->with([
+            'databases' => $databases,
+            'databaseMetrics' => $databaseMetrics,
+            'mostUsedDatabases' => $mostUsedDatabases
+        ]);
     }
 
     public function deleteDatabase(string $database)
     {
         SqldService::deleteDatabase($database);
-        $databases = SqldService::getDatabases();
-        return redirect()->back()->with('databases', $databases);
+
+        return redirect()->route('dashboard')->with([
+            'databases' => SqldService::getDatabases(),
+            'mostUsedDatabases' => UserDatabase::mostUsedDatabases(),
+            'databaseMetrics' => QueryMetric::summariezed()
+        ]);
     }
 
     public function indexToken()
@@ -106,8 +118,12 @@ class DashboardController extends Controller
         try {
             UserDatabaseToken::updateOrCreate(
                 [
+                    'user_id' => auth()->id(),
                     'database_id' => $validated['databaseId'],
-                    'user_id' => auth()->id()
+                    'name' => $validated['name'],
+                    'full_access_token' => $tokenGenerator['full_access_token'],
+                    'read_only_token' => $tokenGenerator['read_only_token'],
+                    'expiration_day' => $validated['expiration'],
                 ],
                 $formData
             );

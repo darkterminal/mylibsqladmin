@@ -3,7 +3,7 @@ import { groupDatabases } from "@/lib/utils";
 import { type LibSQLDatabases } from "@/types";
 import { router } from "@inertiajs/react";
 import { Cylinder, Database, DatabaseIcon, Eye, GitBranch, Trash } from "lucide-react";
-import React, { useCallback } from "react";
+import { useCallback } from "react";
 import { toast } from "sonner";
 import { AppContextMenu, type ContextMenuItemProps } from "./app-context-menu";
 import { AppTooltip } from "./app-tooltip";
@@ -89,7 +89,7 @@ export function AppDatabaseSidebar({ databaseName, userDatabases }: { databaseNa
                             </AppContextMenu>
                         ))}
                         {parents.map((parent) => (
-                            <React.Fragment key={parent.database_name}>
+                            <div key={parent.database_name}>
                                 <AppContextMenu key={parent.database_name} items={getContextMenuItems(parent)}>
                                     <li
                                         key={parent.database_name}
@@ -124,7 +124,7 @@ export function AppDatabaseSidebar({ databaseName, userDatabases }: { databaseNa
                                         </li>
                                     </AppContextMenu>
                                 ))}
-                            </React.Fragment>
+                            </div>
                         ))}
                     </>
                 )}

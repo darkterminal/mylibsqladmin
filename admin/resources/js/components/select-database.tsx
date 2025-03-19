@@ -65,7 +65,11 @@ export function SelectDatabase() {
                             onClick: () => {
                                 router.delete(`/databases/delete/${database.database_name}`, {
                                     onFinish: () => {
-                                        router.get('/dashboard');
+                                        router.visit('/dashboard', {
+                                            only: ['databases', 'mostUsedDatabases', 'databaseMetrics'],
+                                            replace: true,
+                                            preserveScroll: true
+                                        });
                                     }
                                 });
                             }
@@ -101,7 +105,7 @@ export function SelectDatabase() {
                                 </div>
                             </ModalCreateDatabase>
                         </DropdownMenuItem>
-                        {databases.length > 0 && (
+                        {databases.length > 0 ? (
                             <>
                                 <Separator className='my-1' />
                                 {standalone.map((db) => (
@@ -155,6 +159,10 @@ export function SelectDatabase() {
                                     </div>
                                 ))}
                             </>
+                        ) : (
+                            <div className="p-2 text-sm text-muted-foreground">
+                                No databases found. Create one to get started.
+                            </div>
                         )}
                     </DropdownMenuContent>
                 </DropdownMenu>

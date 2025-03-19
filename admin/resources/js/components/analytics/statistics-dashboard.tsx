@@ -7,35 +7,63 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { databaseGroupType, formatBytes } from "@/lib/utils"
 import { MostUsedDatabaseProps, QueryMetrics } from "@/types"
 import { Calculator, Cylinder, Database, GitBranch, ReceiptText } from "lucide-react"
-import React, { useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 
 export default function StatisticsDashboard({
     databasesData: databaseMetricts,
-    mostUsedDatabases
+    mostUsedDatabases = []
 }: {
     databasesData: QueryMetrics[],
-    mostUsedDatabases: MostUsedDatabaseProps[]
+    mostUsedDatabases?: MostUsedDatabaseProps[]
 }) {
 
-    const [selectedDatabase, setSelectedDatabase] = useState(mostUsedDatabases.length > 0 ? mostUsedDatabases[0].database_name : "")
+    const [selectedDatabase, setSelectedDatabase] = useState(
+        mostUsedDatabases.length > 0 ? mostUsedDatabases[0].database_name : ""
+    )
     const [databaseStats, setDatabaseStats] = useState<QueryMetrics[] | undefined>()
-    const { standaloneDatabases, parentDatabases, childDatabases } = databaseGroupType(mostUsedDatabases)
-
-    const currentDb = databaseMetricts.find((db) => db.name === selectedDatabase) || undefined
 
     useEffect(() => {
         if (!selectedDatabase) return
         setDatabaseStats(databaseMetricts.filter((db) => db.name === selectedDatabase))
     }, [databaseMetricts, selectedDatabase])
 
+    const { standaloneDatabases, parentDatabases, childDatabases } = databaseGroupType(mostUsedDatabases || [])
+
+    if (!mostUsedDatabases) {
+        return <div>Loading databases...</div>;
+    }
+
+    if (mostUsedDatabases.length === 0) {
+        return (
+            <div className="container mx-auto py-2">
+                <div className="flex flex-col items-center justify-center h-64">
+                    <Database className="w-12 h-12 text-muted-foreground mb-4" />
+                    <p className="text-lg text-muted-foreground">
+                        No databases available. Create one to view statistics.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    const currentDb = databaseMetricts.find((db) => db.name === selectedDatabase) || undefined
+
     return (
         <div className="container mx-auto py-2">
             <div className="flex flex-col gap-6">
                 <div className="flex items-center justify-between">
                     <h1 className="text-3xl font-bold">Database Statistics</h1>
-                    <Select value={selectedDatabase} onValueChange={setSelectedDatabase}>
+                    <Select
+                        value={selectedDatabase}
+                        onValueChange={setSelectedDatabase}
+                        disabled={mostUsedDatabases.length === 0}
+                    >
                         <SelectTrigger className="w-[240px]">
-                            <SelectValue placeholder="Select database" />
+                            <SelectValue placeholder={
+                                mostUsedDatabases.length > 0
+                                    ? "Select database"
+                                    : "No databases available"
+                            } />
                         </SelectTrigger>
                         <SelectContent>
                             {standaloneDatabases.sort((a, b) => a.database_id - b.database_id).map((db) => (
@@ -44,7 +72,7 @@ export default function StatisticsDashboard({
                                 </SelectItem>
                             ))}
                             {parentDatabases.map((db) => (
-                                <React.Fragment key={db.database_id}>
+                                <div key={db.database_id}>
                                     <SelectItem key={db.database_id} value={db.database_name}>
                                         <Database className="h-3 w-3" /> {db.database_name}
                                     </SelectItem>
@@ -53,7 +81,7 @@ export default function StatisticsDashboard({
                                             <GitBranch className="h-3 w-3" /> {db.database_name}
                                         </SelectItem>
                                     ))}
-                                </React.Fragment>
+                                </div>
                             ))}
                         </SelectContent>
                     </Select>

@@ -44,7 +44,7 @@ export default function DatabaseToken({
                                 <AppTooltip text={isAllTokenized ? 'All databases are tokenized' : 'Generate New Token'}>
                                     <>
                                         <Plus className="h-4 w-4" />
-                                        <span>{isAllTokenized ? 'All databases are tokenized' : 'Generate New Token'}</span>
+                                        <span>{mostUsedDatabases.length === 0 ? 'There is no database' : mostUsedDatabases.length > 0 && isAllTokenized ? 'All databases are tokenized' : 'Generate New Token'}</span>
                                     </>
                                 </AppTooltip>
                             </Button>
