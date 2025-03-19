@@ -5,7 +5,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { route as routeFn } from 'ziggy-js';
 import { initializeTheme } from './hooks/use-appearance';
-import { OpenModalStateChangeProps, type AppearanceStateChangeProps, type DatabaseStatsChangeProps } from './types';
+import { OpenModalStateChangeProps, UserDatabaseTokenProps, type AppearanceStateChangeProps, type DatabaseStatsChangeProps } from './types';
 
 declare global {
     const route: typeof routeFn;
@@ -38,6 +38,11 @@ declare global {
         ): void;
         addEventListener(
             type: 'token-is-created',
+            listener: (event: CustomEvent<{ id: number, newToken: UserDatabaseTokenProps }>) => void,
+            options?: boolean | AddEventListenerOptions
+        ): void;
+        addEventListener(
+            type: 'group-token-is-created',
             listener: (event: CustomEvent<{ id: number }>) => void,
             options?: boolean | AddEventListenerOptions
         ): void;

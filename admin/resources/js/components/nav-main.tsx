@@ -11,7 +11,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                 {items.map((item) => (
                     <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton asChild isActive={item.url === page.url}>
-                            <Link href={item.url} prefetch>
+                            <Link href={item.url} prefetch cacheFor={5000}>
                                 {item.icon && <item.icon />}
                                 <span>{item.title}</span>
                             </Link>

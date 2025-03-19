@@ -6,9 +6,7 @@ import {
     TableHeader,
     TableRow
 } from "@/components/ui/table";
-import { useCustomEvent } from "@/hooks/use-custom-event";
 import { type UserDatabaseTokenProps } from "@/types";
-import { router } from "@inertiajs/react";
 import ButtonCopyFullAccessToken from "../button-actions/action-copy-full-access-token";
 import ButtonCopyReadOnlyToken from "../button-actions/action-copy-read-only-token";
 import ButtonCopyShellCommand from "../button-actions/action-copy-shell-command";
@@ -20,15 +18,6 @@ export default function TableTokenManagement({
 }: {
     userDatabaseTokens: UserDatabaseTokenProps[]
 }) {
-
-    useCustomEvent('token-is-deleted', () => {
-        router.reload({ only: ['userDatabaseTokens'] });
-    })
-
-    useCustomEvent('token-is-created', () => {
-        router.reload({ only: ['userDatabaseTokens'] });
-    })
-
     return (
         <Table>
             <TableHeader>
@@ -45,14 +34,14 @@ export default function TableTokenManagement({
                     userDatabaseTokens.map((token, index) => (
                         <TableRow key={index}>
                             <TableCell className="font-mono text-xs">{index + 1}</TableCell>
-                            <TableCell>{token.database.database_name}</TableCell>
+                            <TableCell>{token.database?.database_name}</TableCell>
                             <TableCell>{token.name}</TableCell>
                             <TableCell>{token.expiration_day}</TableCell>
                             <TableCell className="flex gap-2">
                                 <ButtonDeleteToken token={token} />
                                 <ButtonCopyReadOnlyToken token={token} />
                                 <ButtonCopyFullAccessToken token={token} />
-                                <ButtonOpenDatabaseStudio databaseName={token.database.database_name} />
+                                <ButtonOpenDatabaseStudio databaseName={token.database?.database_name} />
                                 <ButtonCopyShellCommand token={token} />
                             </TableCell>
                         </TableRow>

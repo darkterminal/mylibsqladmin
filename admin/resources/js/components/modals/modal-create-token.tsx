@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { triggerEvent } from "@/hooks/use-custom-event";
 import { databaseGroupType } from "@/lib/utils";
-import { type MostUsedDatabaseMinimalProps, type MostUsedDatabaseProps } from "@/types";
+import { UserDatabaseTokenProps, type MostUsedDatabaseMinimalProps, type MostUsedDatabaseProps } from "@/types";
 import { useForm, usePage } from "@inertiajs/react";
 import { Cylinder, Database, GitBranch } from "lucide-react";
 import React, { FormEventHandler, useState } from "react";
@@ -27,9 +27,18 @@ type CreateTokenProps = {
 type FlashMessageProps = {
     success?: string;
     error?: string;
+    newToken?: UserDatabaseTokenProps;
 }
 
-export function ModalCreateToken({ children, mostUsedDatabases }: { children: React.ReactNode, mostUsedDatabases: MostUsedDatabaseProps[] | MostUsedDatabaseMinimalProps[] }) {
+export function ModalCreateToken({
+    children,
+    mostUsedDatabases,
+    onCreateSuccess
+}: {
+    children: React.ReactNode,
+    mostUsedDatabases: MostUsedDatabaseProps[] | MostUsedDatabaseMinimalProps[],
+    onCreateSuccess?: () => void
+}) {
 
     const [selectedDatabase, setSelectedDatabase] = useState<string | undefined>(mostUsedDatabases.length > 0 ? String(mostUsedDatabases[0].database_id) : undefined)
     const { standaloneDatabases, parentDatabases, childDatabases } = databaseGroupType(mostUsedDatabases)
@@ -73,8 +82,11 @@ export function ModalCreateToken({ children, mostUsedDatabases }: { children: Re
                     })
                 }
 
-                triggerEvent('token-is-created', { id: data.databaseId });
+                triggerEvent('token-is-created', { id: data.databaseId, newToken: flash.newToken });
             },
+            onFinish: () => {
+                onCreateSuccess?.();
+            }
         });
     }
 

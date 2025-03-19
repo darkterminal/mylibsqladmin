@@ -1,9 +1,10 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { triggerEvent, useCustomEvent } from "@/hooks/use-custom-event"
-import { DatabaseInGroupProps, GroupDatabaseProps } from "@/types"
+import { DatabaseInGroupProps, GroupDatabaseProps, UserDatabaseTokenProps } from "@/types"
 import { router } from "@inertiajs/react"
 import { DatabaseIcon, KeyIcon, PlusCircleIcon, Server } from "lucide-react"
+import { useCallback } from "react"
 import { toast } from "sonner"
 import { AppTooltip } from "./app-tooltip"
 import ButtonCopyFullAccessToken from "./button-actions/action-copy-full-access-token"
@@ -11,6 +12,7 @@ import ButtonCopyReadOnlyToken from "./button-actions/action-copy-read-only-toke
 import ButtonDeleteGroup from "./button-actions/action-delete-group"
 import ButtonOpenDatabaseStudio from "./button-actions/action-open-database-studio"
 import ModalAddDatabaseToGroup from "./modals/modal-add-database-to-group"
+import { ModalCreateGroupToken } from "./modals/modal-create-group-token"
 import { ModalCreateToken } from "./modals/modal-create-token"
 import { Button } from "./ui/button"
 
@@ -26,15 +28,7 @@ export default function GroupDetail({
 
     const getDatabaseToken = (databaseId: number) => group.database_tokens.find(token => token.database_id === databaseId)
 
-    useCustomEvent('token-is-deleted', () => {
-        router.reload({ only: ['group'] });
-    })
-
-    useCustomEvent('token-is-created', () => {
-        router.reload({ only: ['group'] });
-    })
-
-    const deleteGroup = () => {
+    const deleteGroup = useCallback(() => {
         toast('Are you sure you want to delete this group?', {
             description: "This action cannot be undone.",
             duration: 7000,
@@ -59,7 +53,19 @@ export default function GroupDetail({
                 </Button>
             )
         })
-    }
+    }, [])
+
+    const handleOnSuccess = useCallback(() => {
+        toast.success('Group token created successfully');
+        router.reload();
+        triggerEvent('group-token-is-created', { id: group.id });
+    }, [])
+
+    useCustomEvent('token-is-created', ({ id, newToken }: { id: number, newToken: UserDatabaseTokenProps }) => {
+        toast.success('Token created successfully');
+        console.log('databaseId', id);
+        console.log('newToken', newToken);
+    })
 
     return (
         <Card>
@@ -74,9 +80,14 @@ export default function GroupDetail({
                     </div>
                     <div className="flex gap-2">
                         <AppTooltip text="Create Group Token">
-                            <Button variant="default" onClick={() => alert('Ok')}>
-                                <KeyIcon className="h-4 w-4" />
-                            </Button>
+                            <ModalCreateGroupToken
+                                groupId={group.id}
+                                onSuccess={handleOnSuccess}
+                            >
+                                <Button variant="default">
+                                    <KeyIcon className="h-4 w-4" />
+                                </Button>
+                            </ModalCreateGroupToken>
                         </AppTooltip>
                         <AppTooltip text="Add Database to Group">
                             <ModalAddDatabaseToGroup groupId={group.id} databases={availableDatabases}>

@@ -104,27 +104,30 @@ class DashboardController extends Controller
         ];
 
         try {
-            $save = UserDatabaseToken::updateOrCreate(
+            UserDatabaseToken::updateOrCreate(
                 [
                     'database_id' => $validated['databaseId'],
-                    'user_id' => auth()->id(),
+                    'user_id' => auth()->id()
                 ],
                 $formData
             );
 
-            return redirect()->back()
-                ->with('success', 'Token created/updated successfully');
+            return redirect()->back()->with([
+                'success' => 'Token created/updated successfully',
+                'newToken' => UserDatabaseToken::latest()->first(),
+            ]);
         } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Failed to save token: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to save token: ' . $e->getMessage());
         }
     }
 
     public function deleteToken(int $tokenId)
     {
         UserDatabaseToken::where('id', $tokenId)->delete();
-        return redirect()->back()
-            ->with('success', 'Token deleted successfully');
+        return redirect()->back()->with([
+            'success' => 'Token deleted successfully',
+            'userDatabaseTokens' => UserDatabaseToken::where('user_id', auth()->id())->get()
+        ]);
     }
 
     public function indexGroup()
@@ -139,31 +142,29 @@ class DashboardController extends Controller
             ->where('user_id', auth()->id())
             ->latest()
             ->get()
-            ->map(function ($group) {
-                return [
-                    'id' => $group->id,
-                    'name' => $group->name,
-                    'members_count' => $group->members_count,
-                    'user' => $group->user,
-                    'members' => $group->members->map(fn($m) => [
-                        'id' => $m->id,
-                        'database_name' => $m->database_name,
-                        'is_schema' => $m->is_schema
-                    ]),
-                    'database_tokens' => $group->members->flatMap(
-                        fn($member) =>
-                        $member->tokens->map(fn($token) => [
-                            'id' => $token->id,
-                            'name' => $token->name,
-                            'full_access_token' => $token->full_access_token,
-                            'read_only_token' => $token->read_only_token,
-                            'expiration_day' => $token->expiration_day,
-                            'database_id' => $token->database_id,
-                            'user_id' => $token->user_id,
-                        ])
-                    )
-                ];
-            });
+            ->map(fn($group) => [
+                'id' => $group->id,
+                'name' => $group->name,
+                'members_count' => $group->members_count,
+                'user' => $group->user,
+                'members' => $group->members->map(fn($m) => [
+                    'id' => $m->id,
+                    'database_name' => $m->database_name,
+                    'is_schema' => $m->is_schema
+                ]),
+                'database_tokens' => $group->members->flatMap(
+                    fn($member) =>
+                    $member->tokens->map(fn($token) => [
+                        'id' => $token->id,
+                        'name' => $token->name,
+                        'full_access_token' => $token->full_access_token,
+                        'read_only_token' => $token->read_only_token,
+                        'expiration_day' => $token->expiration_day,
+                        'database_id' => $token->database_id,
+                        'user_id' => $token->user_id,
+                    ])
+                )
+            ]);
 
         $databaseNotInGroup = UserDatabase::where('user_id', auth()->id())
             ->whereDoesntHave('groups')
@@ -188,8 +189,8 @@ class DashboardController extends Controller
             $validated['expiration']
         );
 
-        $token = DB::transaction(function () use ($group, $validated, $tokenGenerator) {
-            return $group->tokens()->create([
+        DB::transaction(function () use ($group, $validated, $tokenGenerator) {
+            return $group->group_tokens()->create([
                 'name' => $validated['name'],
                 'full_access_token' => $tokenGenerator['full_access_token'],
                 'read_only_token' => $tokenGenerator['read_only_token'],
@@ -198,8 +199,7 @@ class DashboardController extends Controller
         });
 
         return redirect()->back()->with([
-            'success' => 'Group token created successfully',
-            'newToken' => $token
+            'success' => 'Group token created successfully'
         ]);
     }
 
@@ -223,7 +223,7 @@ class DashboardController extends Controller
             ],
         ]);
 
-        $group = DB::transaction(function () use ($validated) {
+        DB::transaction(function () use ($validated) {
             $group = GroupDatabase::create([
                 'name' => $validated['name'],
                 'user_id' => auth()->id(),
@@ -235,20 +235,48 @@ class DashboardController extends Controller
                 ->loadCount('members');
         });
 
-        return redirect()->back()->with([
-            'success' => 'Group created successfully',
-            'newGroup' => [
+        $databaseGroups = GroupDatabase::withCount('members')
+            ->with([
+                'user:id,name',
+                'members' => function ($query) {
+                    $query->with('tokens');
+                }
+            ])
+            ->where('user_id', auth()->id())
+            ->latest()
+            ->get()
+            ->map(fn($group) => [
                 'id' => $group->id,
                 'name' => $group->name,
                 'members_count' => $group->members_count,
-                'created_at' => $group->created_at,
                 'user' => $group->user,
                 'members' => $group->members->map(fn($m) => [
                     'id' => $m->id,
-                    'database_name' => $m->database_name
+                    'database_name' => $m->database_name,
+                    'is_schema' => $m->is_schema
                 ]),
-                'database_tokens' => []
-            ]
+                'database_tokens' => $group->members->flatMap(
+                    fn($member) =>
+                    $member->tokens->map(fn($token) => [
+                        'id' => $token->id,
+                        'name' => $token->name,
+                        'full_access_token' => $token->full_access_token,
+                        'read_only_token' => $token->read_only_token,
+                        'expiration_day' => $token->expiration_day,
+                        'database_id' => $token->database_id,
+                        'user_id' => $token->user_id,
+                    ])
+                )
+            ]);
+
+        $databaseNotInGroup = UserDatabase::where('user_id', auth()->id())
+            ->whereDoesntHave('groups')
+            ->get(['id', 'database_name']);
+
+        return redirect()->back()->with([
+            'success' => 'Group created successfully',
+            'databaseGroups' => $databaseGroups,
+            'databaseNotInGroup' => $databaseNotInGroup
         ]);
     }
 
@@ -264,8 +292,49 @@ class DashboardController extends Controller
             $group->delete();
         });
 
-        return redirect()->back()
-            ->with('success', 'Group deleted successfully');
+        $databaseGroups = GroupDatabase::withCount('members')
+            ->with([
+                'user:id,name',
+                'members' => function ($query) {
+                    $query->with('tokens');
+                }
+            ])
+            ->where('user_id', auth()->id())
+            ->latest()
+            ->get()
+            ->map(fn($group) => [
+                'id' => $group->id,
+                'name' => $group->name,
+                'members_count' => $group->members_count,
+                'user' => $group->user,
+                'members' => $group->members->map(fn($m) => [
+                    'id' => $m->id,
+                    'database_name' => $m->database_name,
+                    'is_schema' => $m->is_schema
+                ]),
+                'database_tokens' => $group->members->flatMap(
+                    fn($member) =>
+                    $member->tokens->map(fn($token) => [
+                        'id' => $token->id,
+                        'name' => $token->name,
+                        'full_access_token' => $token->full_access_token,
+                        'read_only_token' => $token->read_only_token,
+                        'expiration_day' => $token->expiration_day,
+                        'database_id' => $token->database_id,
+                        'user_id' => $token->user_id,
+                    ])
+                )
+            ]);
+
+        $databaseNotInGroup = UserDatabase::where('user_id', auth()->id())
+            ->whereDoesntHave('groups')
+            ->get(['id', 'database_name']);
+
+        return redirect()->back()->with([
+            'success' => 'Group deleted successfully',
+            'databaseGroups' => $databaseGroups,
+            'databaseNotInGroup' => $databaseNotInGroup
+        ]);
     }
 
     public function addDatabasesToGroup(GroupDatabase $group, Request $request)
@@ -292,6 +361,8 @@ class DashboardController extends Controller
             $group->members()->syncWithoutDetaching($validated['databases']);
         });
 
-        return redirect()->back()->with('success', 'Databases added successfully');
+        return redirect()->back()->with([
+            'success' => 'Databases added successfully'
+        ]);
     }
 }

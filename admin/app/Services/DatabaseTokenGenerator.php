@@ -56,35 +56,67 @@ class DatabaseTokenGenerator
         );
     }
 
-    public function generateToken(int $databaseId, int $userId, int $tokenExpiration = 30): array|false
+    public function generateToken(int|string $databaseId, int $userId, int $tokenExpiration = 30): array|false
     {
         $tokenExpiration = $tokenExpiration ?: $this->tokenExpiration;
-        $userDatabase = UserDatabase::select(['id', 'database_name', 'user_id'])->find($databaseId);
 
-        $fullAccessToken = (new JwtFacade())->issue(
-            new Eddsa(),
-            $this->key,
-            static fn(
-            Builder $builder,
-            \DateTimeImmutable $issuedAt
-        ): Builder => $builder
-                ->identifiedBy($userDatabase->database_name)
-                ->withClaim('id', $userDatabase->database_name)
-                ->expiresAt($issuedAt->modify("+{$tokenExpiration} days"))
-        );
+        if (is_string($databaseId) && !is_numeric($databaseId)) {
+            $fullAccessToken = (new JwtFacade())->issue(
+                new Eddsa(),
+                $this->key,
+                static fn(
+                Builder $builder,
+                \DateTimeImmutable $issuedAt
+            ): Builder => $builder
+                    ->identifiedBy($databaseId)
+                    ->withClaim('id', $databaseId)
+                    ->withClaim('uid', $userId)
+                    ->expiresAt($issuedAt->modify("+{$tokenExpiration} days"))
+            );
 
-        $readOnlyToken = (new JwtFacade())->issue(
-            new Eddsa(),
-            $this->key,
-            static fn(
-            Builder $builder,
-            \DateTimeImmutable $issuedAt
-        ): Builder => $builder
-                ->identifiedBy($userDatabase->database_name)
-                ->withClaim('id', $userDatabase->database_name)
-                ->withClaim('a', 'ro')
-                ->expiresAt($issuedAt->modify("+{$tokenExpiration} days"))
-        );
+            $readOnlyToken = (new JwtFacade())->issue(
+                new Eddsa(),
+                $this->key,
+                static fn(
+                Builder $builder,
+                \DateTimeImmutable $issuedAt
+            ): Builder => $builder
+                    ->identifiedBy($databaseId)
+                    ->withClaim('id', $databaseId)
+                    ->withClaim('a', 'ro')
+                    ->withClaim('uid', $userId)
+                    ->expiresAt($issuedAt->modify("+{$tokenExpiration} days"))
+            );
+        } else {
+            $userDatabase = UserDatabase::select(['id', 'database_name', 'user_id'])->find($databaseId);
+
+            $fullAccessToken = (new JwtFacade())->issue(
+                new Eddsa(),
+                $this->key,
+                static fn(
+                Builder $builder,
+                \DateTimeImmutable $issuedAt
+            ): Builder => $builder
+                    ->identifiedBy($userDatabase->database_name)
+                    ->withClaim('id', $userDatabase->database_name)
+                    ->withClaim('uid', $userId)
+                    ->expiresAt($issuedAt->modify("+{$tokenExpiration} days"))
+            );
+
+            $readOnlyToken = (new JwtFacade())->issue(
+                new Eddsa(),
+                $this->key,
+                static fn(
+                Builder $builder,
+                \DateTimeImmutable $issuedAt
+            ): Builder => $builder
+                    ->identifiedBy($userDatabase->database_name)
+                    ->withClaim('id', $userDatabase->database_name)
+                    ->withClaim('a', 'ro')
+                    ->withClaim('uid', $userId)
+                    ->expiresAt($issuedAt->modify("+{$tokenExpiration} days"))
+            );
+        }
 
         return [
             'full_access_token' => $fullAccessToken->toString(),

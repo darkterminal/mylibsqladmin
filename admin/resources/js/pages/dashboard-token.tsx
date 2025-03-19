@@ -9,7 +9,7 @@ import {
     type MostUsedDatabaseProps,
     type UserDatabaseTokenProps
 } from "@/types";
-import { Head } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import { Plus } from "lucide-react";
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -39,7 +39,7 @@ export default function DatabaseToken({
                 <Card className="flex-1">
                     <CardHeader className="flex flex-row gap-1.5 justify-between items-center">
                         <h2 className="text-2xl font-semibold tracking-tight">Database Token Management</h2>
-                        <ModalCreateToken mostUsedDatabases={mostUsedDatabases}>
+                        <ModalCreateToken mostUsedDatabases={mostUsedDatabases} onCreateSuccess={() => router.reload()}>
                             <Button variant={'default'} disabled={isAllTokenized}>
                                 <AppTooltip text={isAllTokenized ? 'All databases are tokenized' : 'Generate New Token'}>
                                     <>

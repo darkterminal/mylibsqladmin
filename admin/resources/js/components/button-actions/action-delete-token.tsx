@@ -27,8 +27,8 @@ export default function ButtonDeleteToken({ token }: { token: UserDatabaseTokenP
                                 onClick={() => {
                                     router.delete(`/tokens/delete/${token.id}`, {
                                         onSuccess: () => {
-                                            triggerEvent('token-is-deleted', { id: token.id })
                                             toast.dismiss();
+                                            triggerEvent('token-is-deleted', { id: token.id })
                                         }
                                     });
                                 }}

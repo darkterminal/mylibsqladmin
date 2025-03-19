@@ -5,12 +5,13 @@ import { useCustomEvent } from "@/hooks/use-custom-event";
 import AppLayout from "@/layouts/app-layout";
 import {
     DatabaseInGroupProps,
+    UserDatabaseTokenProps,
     type BreadcrumbItem,
     type GroupDatabaseProps
 } from "@/types";
-import { Head, router, usePage } from "@inertiajs/react";
+import { Head } from "@inertiajs/react";
 import { Users2Icon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -33,30 +34,21 @@ export default function DashboardGroup({
     const [groups, setGroups] = useState<GroupDatabaseProps[]>(databaseGroups);
     const [selectedGroup, setSelectedGroup] = useState<GroupDatabaseProps | null>(null);
 
-    const { props } = usePage<{
-        databaseGroups: GroupDatabaseProps[];
-        databaseNotInGroup: DatabaseInGroupProps[];
-        flash: {
-            success?: string;
-            newGroup?: GroupDatabaseProps;
-        };
-    }>();
-
-    useCustomEvent('database-group-is-deleted', ({ id }: { id: number }) => {
-        setGroups((prev) => prev.filter((group) => group.id !== id));
-        setSelectedGroup(null);
-        router.reload({ only: ['databaseGroups'] })
-    });
-
-    useEffect(() => {
-        if (props.flash?.newGroup) {
-            setGroups((prev) => [...prev, props.flash.newGroup!].reverse());
-        }
-    }, [props.flash?.newGroup]);
-
     const handleGroupClick = (group: (typeof databaseGroups)[0]) => {
         setSelectedGroup(group)
     }
+
+    useCustomEvent('token-created', (detail: { databaseId: number, token: UserDatabaseTokenProps }) => {
+        setGroups(prev => prev.map(group => {
+            if (group.members.some(m => m.id === detail.databaseId)) {
+                return {
+                    ...group,
+                    database_tokens: [...group.database_tokens, detail.token]
+                };
+            }
+            return group;
+        }));
+    });
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
