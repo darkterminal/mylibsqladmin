@@ -14,10 +14,13 @@ case "${command[0]}" in
         if [ "${command[1]}" == "shell" ]; then
             cmd="turso db shell \"$(echo \"${command[2]}?authToken=${LIBSQL_AUTH_TOKEN}\")\""
             eval "$cmd"
+            unset LIBSQL_AUTH_TOKEN
         fi
         ;;
     *)
         echo "Command not found"
         ;;
 esac
+
+unset LIBSQL_AUTH_TOKEN
 

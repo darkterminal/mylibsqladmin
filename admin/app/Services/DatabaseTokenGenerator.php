@@ -56,8 +56,12 @@ class DatabaseTokenGenerator
         );
     }
 
-    public function generateToken(int|string $databaseId, int $userId, int $tokenExpiration = 30): array|false
-    {
+    public function generateToken(
+        int|string $databaseId,
+        int|null $userOrGroupId = null,
+        int $tokenExpiration = 30,
+        bool $isGroup = false
+    ): array|false {
         $tokenExpiration = $tokenExpiration ?: $this->tokenExpiration;
 
         if (is_string($databaseId) && !is_numeric($databaseId)) {
@@ -70,8 +74,14 @@ class DatabaseTokenGenerator
             ): Builder => $builder
                     ->identifiedBy($databaseId)
                     ->withClaim('id', $databaseId)
-                    ->withClaim('uid', $userId)
-                    ->expiresAt($issuedAt->modify("+{$tokenExpiration} days"))
+                    ->withClaim('uid', $isGroup ? 'none' : $userOrGroupId)
+                    ->withClaim('gid', $isGroup ? $userOrGroupId : 'none')
+                    ->withHeader('is_group', $isGroup ? 'yes' : 'no')
+                    ->expiresAt(
+                        $issuedAt
+                            ->setTimezone(new \DateTimeZone(env('APP_TIMEZONE', 'UTC')))
+                            ->modify("+{$tokenExpiration} days")
+                    )
             );
 
             $readOnlyToken = (new JwtFacade())->issue(
@@ -84,8 +94,14 @@ class DatabaseTokenGenerator
                     ->identifiedBy($databaseId)
                     ->withClaim('id', $databaseId)
                     ->withClaim('a', 'ro')
-                    ->withClaim('uid', $userId)
-                    ->expiresAt($issuedAt->modify("+{$tokenExpiration} days"))
+                    ->withClaim('uid', $isGroup ? 'none' : $userOrGroupId)
+                    ->withClaim('gid', $isGroup ? $userOrGroupId : 'none')
+                    ->withHeader('is_group', $isGroup ? 'yes' : 'no')
+                    ->expiresAt(
+                        $issuedAt
+                            ->setTimezone(new \DateTimeZone(env('APP_TIMEZONE', 'UTC')))
+                            ->modify("+{$tokenExpiration} days")
+                    )
             );
         } else {
             $userDatabase = UserDatabase::select(['id', 'database_name', 'user_id'])->find($databaseId);
@@ -99,8 +115,14 @@ class DatabaseTokenGenerator
             ): Builder => $builder
                     ->identifiedBy($userDatabase->database_name)
                     ->withClaim('id', $userDatabase->database_name)
-                    ->withClaim('uid', $userId)
-                    ->expiresAt($issuedAt->modify("+{$tokenExpiration} days"))
+                    ->withClaim('uid', $isGroup ? 'none' : $userOrGroupId)
+                    ->withClaim('gid', $isGroup ? $userOrGroupId : 'none')
+                    ->withHeader('is_group', $isGroup ? 'yes' : 'no')
+                    ->expiresAt(
+                        $issuedAt
+                            ->setTimezone(new \DateTimeZone(env('APP_TIMEZONE', 'UTC')))
+                            ->modify("+{$tokenExpiration} days")
+                    )
             );
 
             $readOnlyToken = (new JwtFacade())->issue(
@@ -113,8 +135,14 @@ class DatabaseTokenGenerator
                     ->identifiedBy($userDatabase->database_name)
                     ->withClaim('id', $userDatabase->database_name)
                     ->withClaim('a', 'ro')
-                    ->withClaim('uid', $userId)
-                    ->expiresAt($issuedAt->modify("+{$tokenExpiration} days"))
+                    ->withClaim('uid', $isGroup ? 'none' : $userOrGroupId)
+                    ->withClaim('gid', $isGroup ? $userOrGroupId : 'none')
+                    ->withHeader('is_group', $isGroup ? 'yes' : 'no')
+                    ->expiresAt(
+                        $issuedAt
+                            ->setTimezone(new \DateTimeZone(env('APP_TIMEZONE', 'UTC')))
+                            ->modify("+{$tokenExpiration} days")
+                    )
             );
         }
 

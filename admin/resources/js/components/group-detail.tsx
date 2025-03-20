@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { triggerEvent } from "@/hooks/use-custom-event"
 import { DatabaseInGroupProps, GroupDatabaseProps } from "@/types"
 import { router } from "@inertiajs/react"
-import { DatabaseIcon, KeyIcon, PlusCircleIcon, Server } from "lucide-react"
+import { DatabaseIcon, KeyIcon, PlusCircleIcon, Server, TrashIcon } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { AppTooltip } from "./app-tooltip"
@@ -134,6 +134,33 @@ export default function GroupDetail({
                                     <Badge variant="outline" className="ml-auto border-green-400 dark:border-green-600 text-green-400 dark:text-green-600">
                                         Active
                                     </Badge>
+                                    <AppTooltip text="Delete Database">
+                                        <Button variant={'destructive'} size="sm" onClick={() => {
+                                            toast('Are you sure you want to delete this database from this group?', {
+                                                description: "This action cannot be undone.",
+                                                position: 'top-center',
+                                                action: (
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            router.delete(route('database.delete', { database: database.database_name }), {
+                                                                preserveScroll: true,
+                                                                onSuccess: () => {
+                                                                    toast.success('Database deleted successfully');
+                                                                    router.visit(route('dashboard.groups'));
+                                                                }
+                                                            });
+                                                        }}
+                                                    >
+                                                        Delete
+                                                    </Button>
+                                                )
+                                            })
+                                        }}>
+                                            <TrashIcon className="h-4 w-4" />
+                                        </Button>
+                                    </AppTooltip>
                                     {token ? (
                                         <>
                                             <ButtonCopyReadOnlyToken token={token} />
@@ -147,10 +174,12 @@ export default function GroupDetail({
                                                 is_schema: database.is_schema
                                             }]}
                                         >
-                                            <Button variant="default" size="sm">
-                                                <KeyIcon className="h-4 w-4" />
-                                                <span>Create Token</span>
-                                            </Button>
+                                            <AppTooltip text={`Create Database Token for ${database.database_name}`}>
+                                                <Button variant="default" size="sm">
+                                                    <KeyIcon className="h-4 w-4" />
+                                                    <span>Create Token</span>
+                                                </Button>
+                                            </AppTooltip>
                                         </ModalCreateToken>
                                     )}
                                     <ButtonOpenDatabaseStudio databaseName={database.database_name} />

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { DatabaseInGroupProps } from "@/types"
-import { useForm } from "@inertiajs/react"
+import { router, useForm } from "@inertiajs/react"
 import { DialogDescription } from "@radix-ui/react-dialog"
 import type React from "react"
 import { useState } from "react"
@@ -33,6 +33,7 @@ export default function ModalAddDatabaseToGroup({
             onSuccess: () => {
                 reset()
                 setOpen(false)
+                router.visit(route('dashboard.groups'));
             },
         })
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\GroupDatabase;
+use App\Models\GroupDatabaseToken;
 use App\Models\QueryMetric;
 use App\Models\TopQuery;
 use App\Models\UserDatabase;
@@ -164,18 +165,20 @@ class DashboardController extends Controller
     public function createGroupToken(GroupDatabase $group, Request $request)
     {
         $validated = $request->validate([
+            'group_id' => 'required|integer|exists:group_databases,id',
             'name' => 'required|string|max:255',
             'expiration' => 'required|integer|min:1|max:365'
         ]);
 
         $tokenGenerator = (new DatabaseTokenGenerator())->generateToken(
             $validated['name'],
-            auth()->id(),
-            $validated['expiration']
+            $validated['group_id'],
+            $validated['expiration'],
+            true
         );
 
         DB::transaction(function () use ($group, $validated, $tokenGenerator) {
-            return $group->tokens()->create([
+            return $group->tokens()->updateOrCreate([
                 'name' => $validated['name'],
                 'full_access_token' => $tokenGenerator['full_access_token'],
                 'read_only_token' => $tokenGenerator['read_only_token'],
@@ -185,6 +188,14 @@ class DashboardController extends Controller
 
         return redirect()->back()->with([
             'success' => 'Group token created successfully'
+        ]);
+    }
+
+    public function deleteGroupToken($tokenId)
+    {
+        GroupDatabaseToken::where('id', $tokenId)->delete();
+        return redirect()->back()->with([
+            'success' => 'Group token deleted successfully'
         ]);
     }
 

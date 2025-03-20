@@ -29,6 +29,20 @@ class GroupDatabase extends Model
         return $this->hasMany(GroupDatabaseToken::class, 'group_id');
     }
 
+    public static function getGroupDatabasesIfContains(int $groupId, string $databaseName)
+    {
+        $groupExists = self::where('id', $groupId)
+            ->whereHas('members', function ($query) use ($databaseName) {
+                $query->where('database_name', $databaseName);
+            })->exists();
+
+        if (!$groupExists) {
+            return null;
+        }
+
+        return self::with(['members', 'tokens'])->find($groupId);
+    }
+
     public static function databaseGroups(int $userId)
     {
         return self::withCount('members')
