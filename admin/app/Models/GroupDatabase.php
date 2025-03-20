@@ -28,4 +28,42 @@ class GroupDatabase extends Model
     {
         return $this->hasMany(GroupDatabaseToken::class, 'group_id');
     }
+
+    public static function databaseGroups(int $userId)
+    {
+        return self::withCount('members')
+            ->with([
+                'user:id,name',
+                'members' => function ($query) {
+                    $query->with('tokens');
+                }
+            ])
+            ->where('user_id', $userId)
+            ->latest()
+            ->get()
+            ->map(fn($group) => [
+                'id' => $group->id,
+                'name' => $group->name,
+                'members_count' => $group->members_count,
+                'user' => $group->user,
+                'members' => $group->members->map(fn($m) => [
+                    'id' => $m->id,
+                    'database_name' => $m->database_name,
+                    'is_schema' => $m->is_schema
+                ]),
+                'database_tokens' => $group->members->flatMap(
+                    fn($member) =>
+                    $member->tokens->map(fn($token) => [
+                        'id' => $token->id,
+                        'name' => $token->name,
+                        'full_access_token' => $token->full_access_token,
+                        'read_only_token' => $token->read_only_token,
+                        'expiration_day' => $token->expiration_day,
+                        'database_id' => $token->database_id,
+                        'user_id' => $token->user_id,
+                    ])
+                ),
+                'has_token' => $group->tokens()->exists()
+            ]);
+    }
 }

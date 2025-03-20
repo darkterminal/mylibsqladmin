@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useForm } from "@inertiajs/react";
+import { router, useForm } from "@inertiajs/react";
 import React, { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
 
@@ -42,7 +42,7 @@ export function ModalCreateGroupToken({
                 setOpen(false);
                 reset();
                 onSuccess?.();
-                toast.success('Group token created successfully');
+                router.visit(route('dashboard.groups'));
             },
             onError: () => {
                 toast.error('Failed to create group token');

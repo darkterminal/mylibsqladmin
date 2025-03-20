@@ -23,11 +23,9 @@ export default function GroupDetail({
     group: GroupDatabaseProps | null
     availableDatabases: DatabaseInGroupProps[]
 }) {
-    // State hooks first
     const [isLoading, setIsLoading] = useState(true);
     const [group, setGroup] = useState<GroupDatabaseProps | null>(null);
 
-    // Effects next
     useEffect(() => {
         if (initialGroup) {
             setGroup(initialGroup);
@@ -35,7 +33,6 @@ export default function GroupDetail({
         }
     }, [initialGroup]);
 
-    // Callbacks next
     const deleteGroup = useCallback(() => {
         if (!group) return;
 
@@ -65,16 +62,15 @@ export default function GroupDetail({
         if (!group) return;
 
         toast.success('Group token created successfully');
-        router.reload();
+
+        router.reload({ only: ['databaseGroups'] });
         triggerEvent('group-token-is-created', { id: group.id });
     }, [group?.id]);
 
-    // Derived values
     const getDatabaseToken = useCallback((databaseId: number) => {
         return group?.database_tokens?.find(t => t.database_id === databaseId) ?? null;
     }, [group?.database_tokens]);
 
-    // Conditional renders last
     if (isLoading || !group) {
         return <div className="p-4 text-center text-muted-foreground">Loading group details...</div>;
     }
@@ -83,7 +79,6 @@ export default function GroupDetail({
         return <div className="p-4 text-center text-muted-foreground">No databases in this group</div>;
     }
 
-    // Main render
     return (
         <Card>
             <CardHeader className="pb-3">
@@ -99,6 +94,15 @@ export default function GroupDetail({
                         </CardDescription>
                     </div>
                     <div className="flex gap-2">
+                        {(group.has_token) && (
+                            <Badge
+                                variant="outline"
+                                className="ml-2 border-green-400 text-green-400"
+                            >
+                                <KeyIcon className="h-3 w-3 mr-1" />
+                                Token Active
+                            </Badge>
+                        )}
                         <AppTooltip text="Create Group Token">
                             <ModalCreateGroupToken groupId={group.id} onSuccess={handleOnSuccess}>
                                 <Button variant="default">

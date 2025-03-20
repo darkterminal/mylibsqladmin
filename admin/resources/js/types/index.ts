@@ -146,5 +146,6 @@ export interface GroupDatabaseProps {
         name: string;
     };
     members: DatabaseInGroupProps[];
-    database_tokens: UserDatabaseTokenProps[]
+    database_tokens: UserDatabaseTokenProps[];
+    has_token: boolean
 }
