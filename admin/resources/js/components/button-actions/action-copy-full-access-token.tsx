@@ -1,10 +1,10 @@
 import { AppTooltip } from "@/components/app-tooltip";
 import { Button } from "@/components/ui/button";
 import useCopyToClipboard from "@/hooks/copy-to-clipboard";
-import { type UserDatabaseTokenProps } from "@/types";
+import { type GroupDatabaseTokenProps, type UserDatabaseTokenProps } from "@/types";
 import { CheckIcon, Fingerprint } from "lucide-react";
 
-export default function ButtonCopyFullAccessToken({ token }: { token: UserDatabaseTokenProps }) {
+export default function ButtonCopyFullAccessToken({ token, text = undefined }: { token: UserDatabaseTokenProps | GroupDatabaseTokenProps, text?: string }) {
     const { copiedText, copyToClipboard } = useCopyToClipboard();
     return (
         <AppTooltip text="Copy Full Access Token">
@@ -20,6 +20,9 @@ export default function ButtonCopyFullAccessToken({ token }: { token: UserDataba
                     <CheckIcon className="h-4 w-4 text-primary dark:text-primary-foreground" />
                 ) : (
                     <Fingerprint className="h-4 w-4" />
+                )}
+                {text && (
+                    <span className="ml-2">{text}</span>
                 )}
             </Button>
         </AppTooltip>

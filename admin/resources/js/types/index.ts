@@ -137,6 +137,16 @@ export interface DatabaseInGroupProps {
     is_schema: string
 }
 
+export interface GroupDatabaseTokenProps {
+    id: number;
+    group_id: number;
+    database_id: number;
+    name: string;
+    full_access_token: string;
+    read_only_token: string;
+    expiration_day: number;
+}
+
 export interface GroupDatabaseProps {
     id: number;
     name: string;
@@ -147,5 +157,6 @@ export interface GroupDatabaseProps {
     };
     members: DatabaseInGroupProps[];
     database_tokens: UserDatabaseTokenProps[];
-    has_token: boolean
+    has_token: boolean;
+    group_token: GroupDatabaseTokenProps
 }

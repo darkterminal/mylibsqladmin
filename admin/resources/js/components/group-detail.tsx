@@ -10,6 +10,7 @@ import { AppTooltip } from "./app-tooltip"
 import ButtonCopyFullAccessToken from "./button-actions/action-copy-full-access-token"
 import ButtonCopyReadOnlyToken from "./button-actions/action-copy-read-only-token"
 import ButtonDeleteGroup from "./button-actions/action-delete-group"
+import ButtonActionGroupToken from "./button-actions/action-group-token"
 import ButtonOpenDatabaseStudio from "./button-actions/action-open-database-studio"
 import ModalAddDatabaseToGroup from "./modals/modal-add-database-to-group"
 import { ModalCreateGroupToken } from "./modals/modal-create-group-token"
@@ -95,28 +96,22 @@ export default function GroupDetail({
                     </div>
                     <div className="flex gap-2">
                         {(group.has_token) && (
-                            <Badge
-                                variant="outline"
-                                className="ml-2 border-green-400 text-green-400"
-                            >
-                                <KeyIcon className="h-3 w-3 mr-1" />
-                                Token Active
-                            </Badge>
+                            <ButtonActionGroupToken group_token={group.group_token} />
                         )}
-                        <AppTooltip text="Create Group Token">
-                            <ModalCreateGroupToken groupId={group.id} onSuccess={handleOnSuccess}>
+                        <ModalCreateGroupToken groupId={group.id} onSuccess={handleOnSuccess}>
+                            <AppTooltip text="Create Group Token">
                                 <Button variant="default">
                                     <KeyIcon className="h-4 w-4" />
                                 </Button>
-                            </ModalCreateGroupToken>
-                        </AppTooltip>
-                        <AppTooltip text="Add Database to Group">
-                            <ModalAddDatabaseToGroup groupId={group.id} databases={availableDatabases}>
+                            </AppTooltip>
+                        </ModalCreateGroupToken>
+                        <ModalAddDatabaseToGroup groupId={group.id} databases={availableDatabases}>
+                            <AppTooltip text="Add Database to Group">
                                 <Button variant="default">
                                     <PlusCircleIcon className="h-4 w-4" />
                                 </Button>
-                            </ModalAddDatabaseToGroup>
-                        </AppTooltip>
+                            </AppTooltip>
+                        </ModalAddDatabaseToGroup>
                     </div>
                 </div>
             </CardHeader>

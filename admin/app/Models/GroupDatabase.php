@@ -63,7 +63,8 @@ class GroupDatabase extends Model
                         'user_id' => $token->user_id,
                     ])
                 ),
-                'has_token' => $group->tokens()->exists()
+                'has_token' => $group->tokens()->exists(),
+                'group_token' => $group->tokens()->first()
             ]);
     }
 }
