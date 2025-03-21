@@ -19,9 +19,10 @@ type LoginForm = {
 interface LoginProps {
     status?: string;
     canResetPassword: boolean;
+    disabledSignUpPage: boolean;
 }
 
-export default function Login({ status, canResetPassword }: LoginProps) {
+export default function Login({ status, canResetPassword, disabledSignUpPage }: LoginProps) {
     const { data, setData, post, processing, errors, reset } = useForm<LoginForm>({
         username: '',
         password: '',
@@ -90,12 +91,14 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                     </Button>
                 </div>
 
-                <div className="text-muted-foreground text-center text-sm">
-                    Don't have an account?{' '}
-                    <TextLink href={route('register')} tabIndex={5}>
-                        Sign up
-                    </TextLink>
-                </div>
+                {disabledSignUpPage && (
+                    <div className="text-muted-foreground text-center text-sm">
+                        Don't have an account?{' '}
+                        <TextLink href={route('register')} tabIndex={5}>
+                            Sign up
+                        </TextLink>
+                    </div>
+                )}
             </form>
 
             {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
