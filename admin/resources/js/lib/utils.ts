@@ -71,3 +71,15 @@ export function databaseGroupType(dbs: MostUsedDatabaseProps[] | MostUsedDatabas
 
     return { standaloneDatabases, parentDatabases, childDatabases }
 }
+
+export function calculateExpirationDate(createdAt: string, expirationDays: number) {
+    const createdDate = new Date(createdAt);
+    const expirationDate = new Date(createdDate);
+    expirationDate.setDate(createdDate.getDate() + expirationDays);
+
+    if (expirationDate.getTime() < new Date().getTime()) {
+        return 'expired';
+    }
+
+    return expirationDate.toISOString().slice(0, 10);
+}

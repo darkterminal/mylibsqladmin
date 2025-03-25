@@ -145,6 +145,7 @@ export interface GroupDatabaseTokenProps {
     full_access_token: string;
     read_only_token: string;
     expiration_day: number;
+    created_at: string
 }
 
 export interface GroupDatabaseProps {

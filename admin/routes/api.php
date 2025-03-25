@@ -43,6 +43,28 @@ Route::get('/validate-subdomain', function (Request $request) {
         ? Str::after($authToken, 'Bearer ')
         : $authToken;
 
+    if (empty($token)) {
+        $groupToken = GroupDatabase::with(['members', 'tokens'])
+            ->whereHas('members', function ($query) use ($subdomain) {
+                $query->where('database_name', $subdomain);
+            });
+
+        $databaseToken = UserDatabaseToken::with('database')
+            ->whereHas('database', function ($query) use ($subdomain) {
+                $query->where('database_name', $subdomain);
+            });
+
+        if (!$databaseToken->exists()) {
+            return response(null, 200)->header('X-Access-Level', 'full-access');
+        }
+
+        if (!$groupToken->exists()) {
+            return response(null, 200)->header('X-Access-Level', 'full-access');
+        }
+
+        return response(null, 200)->header('X-Access-Level', 'none');
+    }
+
     try {
         $validateToken = $parser->parse($token);
     } catch (CannotDecodeContent | InvalidTokenStructure | UnsupportedHeaderFound $e) {
@@ -55,7 +77,7 @@ Route::get('/validate-subdomain', function (Request $request) {
 
     logger('DEBUG: ', [
         'headers' => $headers,
-        'claims' => $claims
+        'claims' => $claims,
     ]);
 
     if ($validateToken->isExpired(now(new DateTimeZone(env('APP_TIMEZONE', 'UTC'))))) {

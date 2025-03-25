@@ -178,12 +178,17 @@ class DashboardController extends Controller
         );
 
         DB::transaction(function () use ($group, $validated, $tokenGenerator) {
-            return $group->tokens()->updateOrCreate([
-                'name' => $validated['name'],
-                'full_access_token' => $tokenGenerator['full_access_token'],
-                'read_only_token' => $tokenGenerator['read_only_token'],
-                'expiration_day' => $validated['expiration']
-            ]);
+            return $group->tokens()->updateOrCreate(
+                [
+                    'group_id' => $validated['group_id'],
+                ],
+                [
+                    'name' => $validated['name'],
+                    'full_access_token' => $tokenGenerator['full_access_token'],
+                    'read_only_token' => $tokenGenerator['read_only_token'],
+                    'expiration_day' => $validated['expiration']
+                ]
+            );
         });
 
         return redirect()->back()->with([
@@ -295,6 +300,15 @@ class DashboardController extends Controller
 
         return redirect()->back()->with([
             'success' => 'Databases added successfully'
+        ]);
+    }
+
+    public function deleteDatabaseFromGroup(GroupDatabase $group, UserDatabase $database)
+    {
+        $group->members()->detach($database);
+
+        return redirect()->back()->with([
+            'success' => 'Database removed successfully'
         ]);
     }
 }

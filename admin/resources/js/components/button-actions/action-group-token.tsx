@@ -4,10 +4,12 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
+import { calculateExpirationDate } from "@/lib/utils"
 import { GroupDatabaseTokenProps } from "@/types"
 import { router } from "@inertiajs/react"
 import { KeyIcon, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import { AppTooltip } from "../app-tooltip"
 import { Button } from "../ui/button"
 import ButtonCopyFullAccessToken from "./action-copy-full-access-token"
 import ButtonCopyReadOnlyToken from "./action-copy-read-only-token"
@@ -16,10 +18,12 @@ export default function ButtonActionGroupToken({ group_token }: { group_token: G
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="flex items-center bg-green-400 hover:bg-green-500 dark:bg-green-600 dark:hover:bg-green-700">
-                    <KeyIcon className="h-3 w-3 mr-1" />
-                    <span>Token Active</span>
-                </Button>
+                <AppTooltip text={`Active until ${calculateExpirationDate(group_token.created_at, group_token.expiration_day)}`}>
+                    <Button variant="outline" className="flex items-center bg-green-400 hover:bg-green-500 dark:bg-green-600 dark:hover:bg-green-700">
+                        <KeyIcon className="h-3 w-3 mr-1" />
+                        <span>Token Active</span>
+                    </Button>
+                </AppTooltip>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
                 <DropdownMenuItem>

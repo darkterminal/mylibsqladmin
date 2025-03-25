@@ -26,6 +26,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('create', [App\Http\Controllers\DashboardController::class, 'createGroup'])->name('group.create');
         Route::delete('delete/{groupId}', [App\Http\Controllers\DashboardController::class, 'deleteGroup'])->name('group.delete');
         Route::post('{group}/add-databases', [App\Http\Controllers\DashboardController::class, 'addDatabasesToGroup'])->name('group.add-databases');
+        Route::delete('{group}/delete-database/{database}', [App\Http\Controllers\DashboardController::class, 'deleteDatabaseFromGroup'])->name('group.delete-databases');
         Route::post('{group}/tokens', [App\Http\Controllers\DashboardController::class, 'createGroupToken'])->name('group.token.create');
         Route::delete('{tokenId}/tokens', [App\Http\Controllers\DashboardController::class, 'deleteGroupToken'])->name('group.token.delete');
     });

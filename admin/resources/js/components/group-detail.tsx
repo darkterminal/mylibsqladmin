@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { triggerEvent } from "@/hooks/use-custom-event"
+import { calculateExpirationDate } from "@/lib/utils"
 import { DatabaseInGroupProps, GroupDatabaseProps } from "@/types"
 import { router } from "@inertiajs/react"
 import { DatabaseIcon, KeyIcon, PlusCircleIcon, Server, TrashIcon } from "lucide-react"
@@ -92,10 +93,13 @@ export default function GroupDetail({
                         </CardTitle>
                         <CardDescription>
                             {group.members_count} {group.members_count === 1 ? "database" : "databases"} in this group
+                            <span className="ml-2">
+                                {calculateExpirationDate(group.group_token.created_at, group.group_token.expiration_day) === 'expired' ? <Badge variant="destructive">Expired</Badge> : <Badge variant={'outline'}>Active</Badge>}
+                            </span>
                         </CardDescription>
                     </div>
                     <div className="flex gap-2">
-                        {(group.has_token) && (
+                        {(group.has_token && calculateExpirationDate(group.group_token.created_at, group.group_token.expiration_day) !== 'expired') && (
                             <ButtonActionGroupToken group_token={group.group_token} />
                         )}
                         <ModalCreateGroupToken groupId={group.id} onSuccess={handleOnSuccess}>
@@ -144,7 +148,7 @@ export default function GroupDetail({
                                                         variant="destructive"
                                                         size="sm"
                                                         onClick={() => {
-                                                            router.delete(route('database.delete', { database: database.database_name }), {
+                                                            router.delete(route('group.delete-databases', { group: group.id, database: database.id }), {
                                                                 preserveScroll: true,
                                                                 onSuccess: () => {
                                                                     toast.success('Database deleted successfully');
