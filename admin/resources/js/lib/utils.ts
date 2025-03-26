@@ -1,4 +1,4 @@
-import { MostUsedDatabaseMinimalProps, MostUsedDatabaseProps, type LibSQLDatabases } from "@/types";
+import { MostUsedDatabaseMinimalProps, MostUsedDatabaseProps, Permission, SharedData, type LibSQLDatabases } from "@/types";
 import { usePage } from "@inertiajs/react";
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -82,4 +82,12 @@ export function calculateExpirationDate(createdAt: string, expirationDays: numbe
     }
 
     return expirationDate.toISOString().slice(0, 10);
+}
+
+export const can = (permission: Permission) => {
+    return usePage<SharedData>().props.auth.user?.permissions?.includes(permission);
+}
+
+export const isRole = (role: string) => {
+    return usePage<SharedData>().props.auth.user.role === role;
 }
