@@ -15,6 +15,7 @@ return new class extends Migration {
             $table->string('read_only_token')->unique();
             $table->integer('expiration_day');
             $table->timestamps();
+            $table->softDeletes();
 
             $table->foreign('group_id')
                 ->references('id')

@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->string('database_name')->unique();
             $table->string('is_schema');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
@@ -25,6 +26,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_database');
+        Schema::dropIfExists('user_databases');
     }
 };
