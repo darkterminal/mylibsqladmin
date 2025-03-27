@@ -41,6 +41,18 @@ class RoleUserSeeder extends Seeder
                 'name' => 'manage-database-tokens',
                 'description' => 'Manage personal database access tokens'
             ],
+            [
+                'name' => 'manage-team-groups',
+                'description' => 'Manage groups within assigned teams'
+            ],
+            [
+                'name' => 'access-team-databases',
+                'description' => 'Access databases through team group tokens'
+            ],
+            [
+                'name' => 'create-teams',
+                'description' => 'Create new teams'
+            ]
         ];
 
         foreach ($permissions as $permissionData) {
@@ -50,25 +62,36 @@ class RoleUserSeeder extends Seeder
         // Create roles with permissions
         $roles = [
             'Super Admin' => [
+                'description' => 'Full access to everything',
+                'permissions' => [
+                    'manage-teams',
+                    'create-teams',
+                    'manage-group-databases',
+                    'manage-group-database-tokens',
+                    'manage-database-tokens',
+                    'manage-team-groups',
+                    'access-team-databases'
+                ]
+            ],
+            'Team Manager' => [
+                'description' => 'Manage team members and their roles',
                 'permissions' => [
                     'manage-teams',
                     'manage-group-databases',
                     'manage-group-database-tokens',
-                    'manage-database-tokens'
-                ],
-                'description' => 'Full system access and administrative privileges'
+                    'manage-team-groups'
+                ]
             ],
-            'Team Manager' => [
+            'Database Maintainer' => [
+                'description' => 'Manage group databases',
                 'permissions' => [
-                    'manage-teams',
-                    'manage-group-databases',
-                    'manage-group-database-tokens'
-                ],
-                'description' => 'Manages team members and group databases'
+                    'manage-group-database-tokens',
+                    'access-team-databases'
+                ]
             ],
             'Member' => [
-                'permissions' => ['manage-database-tokens'],
-                'description' => 'Regular user with personal database access'
+                'description' => 'Access team databases',
+                'permissions' => ['access-team-databases', 'manage-database-tokens']
             ]
         ];
 
@@ -78,8 +101,9 @@ class RoleUserSeeder extends Seeder
                 'description' => $data['description']
             ]);
 
-            $permissions = Permission::whereIn('name', $data['permissions'])->get();
-            $role->permissions()->attach($permissions);
+            $role->permissions()->sync(
+                Permission::whereIn('name', $data['permissions'])->pluck('id')
+            );
         }
 
         // Create users with roles
@@ -104,6 +128,13 @@ class RoleUserSeeder extends Seeder
                 'email' => 'member@mylibsqladmin.oss',
                 'password' => Hash::make('dimonggoin123'),
                 'role' => 'Member'
+            ],
+            [
+                'name' => 'Jane Doe',
+                'username' => 'janedoe',
+                'email' => 'database_maintainer@mylibsqladmin.oss',
+                'password' => Hash::make('dimonggoin123'),
+                'role' => 'Database Maintainer'
             ]
         ];
 

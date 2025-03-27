@@ -128,3 +128,11 @@ Route::get('/validate-subdomain', function (Request $request) {
 
     return response(null, 403)->header('X-Access-Level', $accessLevel);
 });
+
+Route::post('/check-gate', function (Request $request) {
+    $model = $request->model_type::findOrFail($request->model_id);
+
+    return response()->json([
+        'allowed' => Gate::allows($request->ability, $model)
+    ]);
+})->middleware('auth');

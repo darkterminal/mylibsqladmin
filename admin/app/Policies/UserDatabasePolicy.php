@@ -4,67 +4,28 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Models\UserDatabase;
-use Illuminate\Auth\Access\Response;
 
 class UserDatabasePolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny(User $user): bool
+    public function view(User $user, UserDatabase $database)
     {
-        return $user->can('manage-database-tokens') ||
-            $user->can('manage-group-databases');
+        return $user->ownsDatabase($database) ||
+            $user->hasTeamAccessToDatabase($database);
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(User $user, UserDatabase $userDatabase): bool
+    public function update(User $user, UserDatabase $database)
     {
-        return $user->id === $userDatabase->user_id ||
-            $user->can('manage-group-databases');
+        return $user->ownsDatabase($database);
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
-    public function create(User $user): bool
+    public function delete(User $user, UserDatabase $database)
     {
-        return $user->can('manage-database-tokens');
+        return $user->ownsDatabase($database);
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update(User $user, UserDatabase $userDatabase): bool
+    public function manageTokens(User $user, UserDatabase $database)
     {
-        return $user->id === $userDatabase->user_id ||
-            $user->can('manage-group-databases');
-    }
-
-    /**
-     * Determine whether the user can delete the model.
-     */
-    public function delete(User $user, UserDatabase $userDatabase): bool
-    {
-        return $user->id === $userDatabase->user_id ||
-            $user->can('manage-group-databases');
-    }
-
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(User $user, UserDatabase $userDatabase): bool
-    {
-        return false;
-    }
-
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(User $user, UserDatabase $userDatabase): bool
-    {
-        return false;
+        return $user->ownsDatabase($database) &&
+            $user->hasPermission('manage-database-tokens');
     }
 }

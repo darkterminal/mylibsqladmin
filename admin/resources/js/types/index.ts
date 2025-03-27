@@ -2,7 +2,23 @@ import { LucideIcon } from 'lucide-react';
 
 export interface Auth {
     user: User;
+    permissions: PermissionsResponse;
 }
+
+export interface Permissions {
+    abilities: string[];
+    can: {
+        manageTeams: boolean;
+        createTeam: boolean;
+        manageGroupDatabases: boolean;
+        manageGroupDatabaseTokens: boolean;
+        manageDatabaseTokens: boolean;
+        manageTeamGroups: boolean;
+        accessTeamDatabases: boolean;
+    };
+}
+
+export type PermissionsResponse = Permissions | null;
 
 export interface BreadcrumbItem {
     title: string;
@@ -32,26 +48,9 @@ export interface User {
     id: number;
     name: string;
     email: string;
-    avatar?: string;
-    email_verified_at: string | null;
-    created_at: string;
-    updated_at: string;
     role: string;
-    roles: Role;
-    permissions: Permission[];
+    permissions: string[];
     [key: string]: unknown; // This allows for additional properties...
-}
-
-export interface Role {
-    id: number;
-    name: string;
-    description: string;
-}
-
-export interface Permission {
-    id: number;
-    name: string;
-    description: string;
 }
 
 export interface LibSQLDatabases {
@@ -175,4 +174,14 @@ export interface GroupDatabaseProps {
     database_tokens: UserDatabaseTokenProps[];
     has_token: boolean;
     group_token: GroupDatabaseTokenProps
+}
+
+export enum AccessPermissions {
+    MANAGE_TEAMS = 'manage-teams',
+    CREATE_TEAMS = 'create-teams',
+    MANAGE_GROUP_DATABASES = 'manage-group-databases',
+    MANAGE_GROUP_DATABASE_TOKENS = 'manage-group-database-tokens',
+    MANAGE_DATABASE_TOKENS = 'manage-database-tokens',
+    MANAGE_TEAM_GROUPS = 'manage-team-groups',
+    ACCESS_TEAM_DATABASES = 'access-team-databases'
 }

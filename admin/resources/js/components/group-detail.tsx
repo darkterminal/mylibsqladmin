@@ -93,9 +93,11 @@ export default function GroupDetail({
                         </CardTitle>
                         <CardDescription>
                             {group.members_count} {group.members_count === 1 ? "database" : "databases"} in this group
-                            <span className="ml-2">
-                                {calculateExpirationDate(group.group_token.created_at, group.group_token.expiration_day) === 'expired' ? <Badge variant="destructive">Expired</Badge> : <Badge variant={'outline'}>Active</Badge>}
-                            </span>
+                            {group.has_token && (
+                                <span className="ml-2">
+                                    {calculateExpirationDate(group.group_token.created_at, group.group_token.expiration_day) === 'expired' ? <Badge variant="destructive">Expired</Badge> : <Badge variant={'outline'}>Active</Badge>}
+                                </span>
+                            )}
                         </CardDescription>
                     </div>
                     <div className="flex gap-2">

@@ -51,10 +51,22 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $request->user() ? [
-                    ...$request->user()->toArray(),
-                    'permissions' => $request->user()->permissions(),
-                    'roles' => $request->user()->roles(),
+                'user' => fn() => $request->user() ?
+                    $request->user()
+                        ->append('permission_names')
+                        ->only('id', 'username', 'name', 'email', 'role', 'permission_names') :
+                    null,
+                'permissions' => fn() => $request->user() ? [
+                    'abilities' => $request->user()->getAllPermissions(),
+                    'can' => [
+                        'manageTeams' => $request->user()->can('manage-teams'),
+                        'createTeam' => $request->user()->can('create-teams'),
+                        'manageGroupDatabases' => $request->user()->can('manage-group-databases'),
+                        'manageGroupDatabaseTokens' => $request->user()->can('manage-group-database-tokens'),
+                        'manageDatabaseTokens' => $request->user()->can('manage-database-tokens'),
+                        'manageTeamGroups' => $request->user()->can('manage-team-groups'),
+                        'accessTeamDatabases' => $request->user()->can('access-team-databases'),
+                    ]
                 ] : null,
             ],
             'flash' => [

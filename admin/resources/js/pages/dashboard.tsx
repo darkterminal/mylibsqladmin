@@ -6,6 +6,7 @@ import { useCustomEvent } from '@/hooks/use-custom-event';
 import AppLayout from '@/layouts/app-layout';
 import { getQuery } from '@/lib/utils';
 import {
+    SharedData,
     type BreadcrumbItem,
     type DatabaseStatsChangeProps,
     type LibSQLDatabases,
@@ -24,8 +25,10 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function Dashboard({ databaseMetrics, mostUsedDatabases }: { databaseMetrics: QueryMetrics[], mostUsedDatabases: MostUsedDatabaseProps[] }) {
 
-    const { props } = usePage();
+    const { props } = usePage<SharedData>();
     const userDatabases = props.databases as LibSQLDatabases[];
+
+    console.log(props);
 
     const [clientUrl, setClientUrl] = useState<string | null>("http://localhost:8080");
     const [authToken, _] = useState<string | undefined>("");
