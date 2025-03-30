@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\TeamController;
 use App\Models\GroupDatabase;
 use App\Models\UserDatabase;
 use App\Models\UserDatabaseToken;
@@ -31,6 +33,9 @@ Route::middleware('auth')->group(function () {
             'details' => $response->body()
         ], $response->status());
     });
+
+    Route::post('/api/group/create-only', [DashboardController::class, 'createGroupOnly'])->name('api.group.create-only');
+    Route::get('/api/teams/{teamId}/databases', [TeamController::class, 'getDatabases'])->name('api.teams.databases');
 });
 
 Route::get('/validate-subdomain', function (Request $request) {

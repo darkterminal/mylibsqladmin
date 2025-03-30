@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { databaseGroupType, formatBytes } from "@/lib/utils"
-import { MostUsedDatabaseProps, QueryMetrics } from "@/types"
+import { MostUsedDatabaseProps, QueryMetrics, SharedData } from "@/types"
+import { usePage } from "@inertiajs/react"
 import { Calculator, Cylinder, Database, GitBranch, ReceiptText } from "lucide-react"
 import { useEffect, useState } from "react"
 
@@ -28,12 +29,13 @@ export default function StatisticsDashboard({
     }, [databaseMetricts, selectedDatabase])
 
     const { standaloneDatabases, parentDatabases, childDatabases } = databaseGroupType(mostUsedDatabases || [])
+    const { databases } = usePage<SharedData>().props
 
     if (!mostUsedDatabases) {
         return <div>Loading databases...</div>;
     }
 
-    if (mostUsedDatabases.length === 0) {
+    if (mostUsedDatabases.length === 0 || databases.length === 0) {
         return (
             <div className="container mx-auto py-2">
                 <div className="flex flex-col items-center justify-center h-64">

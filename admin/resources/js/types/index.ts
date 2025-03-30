@@ -41,6 +41,16 @@ export interface SharedData {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
+    flash: FlashMessageProps;
+    databases: LibSQLDatabases[];
+    groups: GroupDatabaseProps[];
+    [key: string]: unknown;
+}
+
+export interface FlashMessageProps {
+    success?: string;
+    error?: string;
+    newToken?: UserDatabaseTokenProps;
     [key: string]: unknown;
 }
 
@@ -50,7 +60,15 @@ export interface User {
     email: string;
     role: string;
     permissions: string[];
+    teams: Team[];
     [key: string]: unknown; // This allows for additional properties...
+}
+
+export interface Team {
+    id: number;
+    name: string;
+    description: string;
+    [key: string]: unknown;
 }
 
 export interface LibSQLDatabases {

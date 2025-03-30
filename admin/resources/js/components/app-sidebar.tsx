@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Fingerprint, Folder, LayoutGrid, UsersRound } from 'lucide-react';
+import { BookOpen, Fingerprint, Folder, Handshake, LayoutGrid, UsersRound } from 'lucide-react';
 import AppLogo from './app-logo';
 import { SelectDatabase } from './select-database';
 
@@ -32,6 +32,11 @@ const mainNavItems: NavItem[] = [
         title: 'Groups',
         url: '/dashboard/groups',
         icon: UsersRound,
+    },
+    {
+        title: 'Teams',
+        url: '/dashboard/teams',
+        icon: Handshake,
     }
 ];
 

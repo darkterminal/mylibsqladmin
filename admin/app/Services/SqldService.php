@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\GroupDatabase;
 use App\Models\User;
 use App\Models\UserDatabase;
 use Illuminate\Support\Facades\Http;
@@ -90,11 +91,15 @@ class SqldService
             return false;
         }
 
-        UserDatabase::create([
+        $userDatabase = UserDatabase::create([
             'user_id' => auth()->user()->id,
             'database_name' => $database,
             'is_schema' => $isSchema
         ]);
+
+        if (!$userDatabase) {
+            return false;
+        }
 
         return true;
     }

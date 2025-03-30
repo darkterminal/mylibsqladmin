@@ -6,6 +6,7 @@ import { router } from '@inertiajs/react';
 import { Database, Unlink } from 'lucide-react';
 import { AppTooltip } from './app-tooltip';
 import AppearanceToggleDropdown from './appearance-dropdown';
+import { TeamSwitcher } from './team-switcher';
 import { Button } from './ui/button';
 
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
@@ -32,7 +33,8 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                             </Button>
                         </AppTooltip>
                     )}
-                    <div className="ml-2 pl-2 border-l">
+                    <div className="flex items-centerml-2 pl-2 ml-2 border-l">
+                        <TeamSwitcher />
                         <AppearanceToggleDropdown />
                     </div>
                 </div>

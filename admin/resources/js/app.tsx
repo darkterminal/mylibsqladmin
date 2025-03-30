@@ -60,8 +60,14 @@ createInertiaApp({
     title: (title) => `${title} - ${appName}`,
     resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),
     setup({ el, App, props }) {
-        const root = createRoot(el);
 
+        const csrfMetaTag = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]');
+        if (csrfMetaTag) {
+            // @ts-ignore
+            props.initialPage.props.auth.csrfToken = csrfMetaTag.content;
+        }
+
+        const root = createRoot(el);
         root.render(<App {...props} />);
     },
     progress: {

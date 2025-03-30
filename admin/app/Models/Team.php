@@ -23,25 +23,46 @@ class Team extends Model
         return $this->hasMany(GroupDatabase::class);
     }
 
+    public function getAllGroupsAttribute()
+    {
+        return $this->groups()->with(['members', 'tokens'])->get();
+    }
+
     public function hasAccess(User $user, string $requiredLevel)
     {
         $levels = ['member' => 1, 'maintainer' => 2, 'admin' => 3];
 
         return $user->hasRole('Super Admin') ||
             ($this->members->contains($user) &&
-                $levels[$this->members->find($user->id)->pivot->permission_level] >= $levels[$requiredLevel]);
+                $levels[$this->getPermissionLevel($user)] >= $levels[$requiredLevel]);
     }
 
-    public function scopedGroups(User $user)
+    public function getPermissionLevel(User $user)
     {
-        if ($user->hasRole('Super Admin')) {
-            return $this->groups;
-        }
+        return $this->members->find($user->id)->pivot->permission_level;
+    }
 
-        return $this->groups()->whereHas('team', function ($q) use ($user) {
-            $q->whereHas('members', function ($q) use ($user) {
-                $q->where('user_id', $user->id);
-            });
-        });
+    public static function setTeamDatabases(int $userId, int $teamId)
+    {
+        $team = Team::with(['groups.members.user'])
+            ->findOrFail($teamId);
+
+        // Format data
+        $databases = $team->groups->flatMap(fn($group) => $group->members->map(fn($member) => [
+            'id' => $member->id,
+            'user_id' => $member->user_id,
+            'database_name' => $member->database_name,
+            'is_schema' => $member->is_schema,
+        ]));
+
+        // Store in session
+        session([
+            'team_databases' => [
+                'team_id' => $teamId,
+                'databases' => $databases,
+                'groups' => GroupDatabase::databaseGroups($userId, $teamId),
+                'expires_at' => now()->addHours(2)
+            ]
+        ]);
     }
 }

@@ -1,13 +1,17 @@
 import { triggerEvent } from '@/hooks/use-custom-event';
+import { useSignal } from '@/hooks/use-signal';
+import { apiFetch } from '@/lib/api';
 import { getQuery, groupDatabases } from '@/lib/utils';
-import { type LibSQLDatabases } from '@/types';
+import { currentTeamId } from '@/signals/team-signal';
+import { SharedData, type LibSQLDatabases } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { ChevronRight, Database, DatabaseIcon, Eye, FileText, Plus, Trash } from 'lucide-react';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { AppContextMenu, ContextMenuItemProps } from './app-context-menu';
 import { AppTooltip } from './app-tooltip';
 import { CreateDatabaseProps, ModalCreateDatabase } from './modals/modal-create-database';
+import { ComboboxOption } from './ui/combobox';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -18,16 +22,46 @@ import { Separator } from './ui/separator';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from './ui/sidebar';
 
 export function SelectDatabase() {
-    const { props } = usePage();
+    const { props } = usePage<SharedData>();
     const { isMobile } = useSidebar();
+    const [teamId] = useSignal(currentTeamId)
     const databases = props.databases as LibSQLDatabases[];
+    const groupedDatabases = (props.groups || [])
+        .map?.(group => ({
+            label: group.name,
+            value: group.id.toString()
+        }))
+        ?.sort((a, b) => Number(b.value) - Number(a.value)) || [];
     const { standalone, parents, childrenMap } = groupDatabases(databases);
     const selectedDatabase = getQuery('database', 'Select Database');
+    const [groups, setGroups] = useState<ComboboxOption[]>(groupedDatabases);
+
+    const handleCreateGroup = async (name: string): Promise<string> => {
+        try {
+            const response = await apiFetch(route('api.group.create-only'), {
+                method: 'POST',
+                body: JSON.stringify({ name, team_id: teamId }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to create group');
+            }
+
+            const data = await response.json();
+            const newGroupId = data.group.id as string;
+            const newGroup: ComboboxOption = { value: newGroupId, label: name };
+            setGroups((prev) => [...prev, newGroup].sort((a, b) => Number(b.value) - Number(a.value)));
+            return newGroupId;
+        } catch (error) {
+            console.error("Error creating group:", error);
+            throw error;
+        }
+    }
 
     const handleDatabaseSubmit = async (formData: CreateDatabaseProps) => {
         const submittedData = {
             database: formData.useExisting ? formData.childDatabase : formData.database,
-            isSchema: formData.useExisting ? formData.database : formData.isSchema,
+            isSchema: formData.useExisting ? formData.database : formData.isSchema
         };
 
         router.post(route('database.create'), submittedData, {
@@ -98,7 +132,12 @@ export function SelectDatabase() {
                         sideOffset={4}
                     >
                         <DropdownMenuItem asChild>
-                            <ModalCreateDatabase existingDatabases={parents} onSubmit={handleDatabaseSubmit}>
+                            <ModalCreateDatabase
+                                existingDatabases={databases}
+                                onSubmit={handleDatabaseSubmit}
+                                groups={groups}
+                                onCreateGroup={handleCreateGroup}
+                            >
                                 <div className="flex items-center p-1 text-sm">
                                     <Plus className="mr-1 w-4 h-4" />
                                     <span>New Database</span>

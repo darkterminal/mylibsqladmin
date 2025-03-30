@@ -1,6 +1,7 @@
 import GroupDetail from "@/components/group-detail";
 import ModalCreateGroup from "@/components/modals/modal-create-group";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCustomEvent } from "@/hooks/use-custom-event";
 import AppLayout from "@/layouts/app-layout";
 import {
@@ -31,6 +32,7 @@ export default function DashboardGroup({
     databaseGroups: GroupDatabaseProps[],
     databaseNotInGroup: DatabaseInGroupProps[]
 }) {
+    console.log(databaseGroups);
     const [groups, setGroups] = useState<GroupDatabaseProps[]>(databaseGroups);
     const [selectedGroup, setSelectedGroup] = useState<GroupDatabaseProps | null>(null);
 
@@ -83,27 +85,29 @@ export default function DashboardGroup({
 
                 <div className="grid md:grid-cols-3 gap-6">
                     <div className="md:col-span-1">
-                        <div className="space-y-3">
-                            {groups.map((group) => (
-                                <div
-                                    key={group.id}
-                                    className={`p-4 border rounded-md cursor-pointer transition-colors ${selectedGroup?.id === group.id ? "bg-primary/10 border-primary" : "hover:bg-muted"
-                                        }`}
-                                    onClick={() => handleGroupClick(group)}
-                                >
-                                    <h3 className="font-medium">{group.name}</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        {group.members_count} {group.members_count === 1 ? "database" : "databases"}
-                                    </p>
-                                </div>
-                            ))}
+                        <ScrollArea className="h-[calc(100vh-300px)]">
+                            <div className="space-y-3">
+                                {groups.map((group) => (
+                                    <div
+                                        key={group.id}
+                                        className={`p-4 border rounded-md cursor-pointer transition-colors ${selectedGroup?.id === group.id ? "bg-primary/10 border-primary" : "hover:bg-muted"
+                                            }`}
+                                        onClick={() => handleGroupClick(group)}
+                                    >
+                                        <h3 className="font-medium">{group.name}</h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            {group.members_count} {group.members_count === 1 ? "database" : "databases"}
+                                        </p>
+                                    </div>
+                                ))}
 
-                            {groups.length === 0 && (
-                                <div className="p-4 border rounded-md text-center text-muted-foreground">
-                                    No groups yet. Create your first group!
-                                </div>
-                            )}
-                        </div>
+                                {groups.length === 0 && (
+                                    <div className="p-4 border rounded-md text-center text-muted-foreground">
+                                        No groups yet. Create your first group!
+                                    </div>
+                                )}
+                            </div>
+                        </ScrollArea>
                     </div>
 
                     <div className="md:col-span-2">

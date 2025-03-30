@@ -28,8 +28,6 @@ export default function Dashboard({ databaseMetrics, mostUsedDatabases }: { data
     const { props } = usePage<SharedData>();
     const userDatabases = props.databases as LibSQLDatabases[];
 
-    console.log(props);
-
     const [clientUrl, setClientUrl] = useState<string | null>("http://localhost:8080");
     const [authToken, _] = useState<string | undefined>("");
 

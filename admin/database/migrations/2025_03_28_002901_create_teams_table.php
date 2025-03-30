@@ -26,11 +26,6 @@ return new class extends Migration {
 
             $table->primary(['team_id', 'user_id']);
         });
-
-        Schema::table('group_databases', function (Blueprint $table) {
-            $table->foreignId('team_id')->after('id')->constrained()->cascadeOnDelete();
-            $table->dropColumn('user_id');
-        });
     }
 
     /**
@@ -38,11 +33,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::table('group_databases', function (Blueprint $table) {
-            $table->dropForeign(['team_id']);
-            $table->unsignedBigInteger('user_id')->after('id');
-            $table->dropColumn('team_id');
-        });
         Schema::dropIfExists('team_user');
         Schema::dropIfExists('teams');
     }

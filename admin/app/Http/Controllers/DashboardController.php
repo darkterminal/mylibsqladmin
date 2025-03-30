@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\GroupDatabase;
 use App\Models\GroupDatabaseToken;
 use App\Models\QueryMetric;
+use App\Models\Team;
 use App\Models\TopQuery;
 use App\Models\UserDatabase;
 use App\Models\UserDatabaseToken;
@@ -13,13 +14,16 @@ use App\Services\SqldService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $databases = SqldService::getDatabases();
+        $databases = session('team_databases')['databases'] ?? SqldService::getDatabases();
         $mostUsedDatabases = UserDatabase::mostUsedDatabases();
         $databaseMetrics = QueryMetric::summariezed();
 
@@ -32,9 +36,11 @@ class DashboardController extends Controller
 
     public function createDatabase(Request $request)
     {
+        Gate::authorize('create', UserDatabase::class);
+
         SqldService::createDatabase($request->database, $request->isSchema);
 
-        $databases = SqldService::getDatabases();
+        $databases = session('team_databases')['databases'] ?? SqldService::getDatabases();
         $mostUsedDatabases = UserDatabase::mostUsedDatabases();
         $databaseMetrics = QueryMetric::summariezed();
 
@@ -58,32 +64,39 @@ class DashboardController extends Controller
 
     public function indexToken()
     {
+        $userId = auth()->id();
+
         $mostUsedDatabases = UserDatabase::mostUsedDatabases();
-        $databases = collect($mostUsedDatabases)->map(function ($database) {
-            $databaseToken = UserDatabaseToken::where('database_id', $database['database_id']);
-            $alreadyHasToken = $databaseToken->exists() ? 'tokenized' : 'not-tokenized';
+
+        $databases = collect($mostUsedDatabases)->map(function ($database) use ($userId) {
+            $exists = UserDatabaseToken::where('database_id', $database['database_id'])
+                ->where('user_id', $userId)
+                ->exists();
+
             return [
                 ...$database,
-                'database_name' => $database['database_name'] . ' - (' . $alreadyHasToken . ')',
-                'is_tokenized' => $databaseToken->exists()
+                'database_name' => "{$database['database_name']} - (" . ($exists ? 'tokenized' : 'not-tokenized') . ")",
+                'is_tokenized' => $exists
             ];
         });
-        $allTokenized = collect($databases)->every(fn($database) => $database['is_tokenized']);
+
         $userDatabaseTokens = UserDatabaseToken::with(['database'])
-            ->where('user_id', auth()->user()->id)
+            ->where('user_id', $userId)
             ->get()
             ->map(function ($token) {
-                $expirationDate = Carbon::now()->addDays($token->expiration_day)->format('Y-m-d');
+                $expirationDate = Carbon::now()->addDays($token->expiration_day);
 
                 return [
                     ...$token->toArray(),
-                    'expiration_day' => Carbon::now()->isAfter(Carbon::parse($expirationDate)) ? "Expired" : $expirationDate
+                    'expiration_day' => Carbon::now()->isAfter($expirationDate)
+                        ? "Expired"
+                        : $expirationDate->format('Y-m-d')
                 ];
             });
 
         return Inertia::render('dashboard-token', [
             'mostUsedDatabases' => $databases,
-            'isAllTokenized' => $allTokenized,
+            'isAllTokenized' => $databases->every('is_tokenized'),
             'userDatabaseTokens' => $userDatabaseTokens
         ]);
     }
@@ -132,7 +145,7 @@ class DashboardController extends Controller
             return redirect()->back()->with([
                 'success' => 'Token created/updated successfully',
                 'newToken' => UserDatabaseToken::latest()->first(),
-                'databaseGroups' => GroupDatabase::databaseGroups(auth()->id()),
+                'databaseGroups' => GroupDatabase::databaseGroups(auth()->id(), session('team_databases')['team_id'] ?? null),
             ]);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to save token: ' . $e->getMessage());
@@ -150,7 +163,8 @@ class DashboardController extends Controller
 
     public function indexGroup()
     {
-        $databaseGroups = GroupDatabase::databaseGroups(auth()->id());
+
+        $databaseGroups = GroupDatabase::databaseGroups(auth()->id(), session('team_databases')['team_id'] ?? null);
 
         $databaseNotInGroup = UserDatabase::where('user_id', auth()->id())
             ->whereDoesntHave('groups')
@@ -204,10 +218,72 @@ class DashboardController extends Controller
         ]);
     }
 
+    public function createGroupOnly(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    Rule::unique('group_databases')->where(function ($query) use ($request) {
+                        return $query->where('team_id', $request->team_id);
+                    })
+                ],
+                'team_id' => [
+                    'required',
+                    'integer',
+                    'exists:teams,id',
+                    function ($attribute, $value, $fail) {
+                        if (!auth()->user()->teams()->where('team_id', $value)->exists()) {
+                            $fail('You are not a member of this team.');
+                        }
+                    }
+                ]
+            ]);
+
+            // Authorization check
+            $team = Team::findOrFail($validated['team_id']);
+            if (!$team->hasAccess(auth()->user(), 'maintainer')) {
+                abort(403, 'Unauthorized action');
+            }
+
+            $group = DB::transaction(function () use ($validated) {
+                $group = GroupDatabase::create([
+                    'name' => $validated['name'],
+                    'user_id' => auth()->id(),
+                    'team_id' => $validated['team_id'],
+                ]);
+
+                return $group->load(['team', 'user:id,name'])
+                    ->loadCount('members');
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Group created successfully',
+                'group' => $group
+            ], 201);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Group creation failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function createGroup(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'team_id' => 'required|integer|exists:teams,id',
             'databases' => 'required|array|min:1',
             'databases.*' => [
                 'required',
@@ -228,6 +304,7 @@ class DashboardController extends Controller
             $group = GroupDatabase::create([
                 'name' => $validated['name'],
                 'user_id' => auth()->id(),
+                'team_id' => $validated['team_id'],
             ]);
 
             $group->members()->sync($validated['databases']);
@@ -236,7 +313,7 @@ class DashboardController extends Controller
                 ->loadCount('members');
         });
 
-        $databaseGroups = GroupDatabase::databaseGroups(auth()->id());
+        $databaseGroups = GroupDatabase::databaseGroups(auth()->id(), $validated['team_id']);
 
         $databaseNotInGroup = UserDatabase::where('user_id', auth()->id())
             ->whereDoesntHave('groups')
@@ -261,7 +338,7 @@ class DashboardController extends Controller
             $group->delete();
         });
 
-        $databaseGroups = GroupDatabase::databaseGroups(auth()->id());
+        $databaseGroups = GroupDatabase::databaseGroups(auth()->id(), $group->team_id);
 
         $databaseNotInGroup = UserDatabase::where('user_id', auth()->id())
             ->whereDoesntHave('groups')
@@ -310,5 +387,10 @@ class DashboardController extends Controller
         return redirect()->back()->with([
             'success' => 'Database removed successfully'
         ]);
+    }
+
+    public function indexTeams()
+    {
+        return Inertia::render('dashboard-team');
     }
 }

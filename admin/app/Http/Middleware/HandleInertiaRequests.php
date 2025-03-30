@@ -2,7 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\GroupDatabase;
 use App\Models\QueryMetric;
+use App\Models\Team;
 use App\Models\UserDatabase;
 use App\Services\SqldService;
 use Illuminate\Foundation\Inspiring;
@@ -42,20 +44,33 @@ class HandleInertiaRequests extends Middleware
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
-        $databases = collect(SqldService::getDatabases() ?? [])
-            ->values()
-            ->all();
+        $currentTeamDatabases = session('team_databases') ?? [];
 
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => fn() => $request->user() ?
-                    $request->user()
-                        ->append('permission_names')
-                        ->only('id', 'username', 'name', 'email', 'role', 'permission_names') :
-                    null,
+                'user' => function () use ($request) {
+                    if (!$user = $request->user()) {
+                        return null;
+                    }
+
+                    if ($user->teams()->doesntExist()) {
+                        $team = Team::firstOrCreate(
+                            ["name" => "{$user->username} space"],
+                            ['description' => 'Personal workspace']
+                        );
+
+                        $user->teams()->syncWithoutDetaching([
+                            $team->id => ['permission_level' => 'admin']
+                        ]);
+                    }
+
+                    return $user->append('permission_names')
+                        ->load('teams:id,name,description')
+                        ->only('id', 'username', 'name', 'email', 'role', 'permission_names', 'teams');
+                },
                 'permissions' => fn() => $request->user() ? [
                     'abilities' => $request->user()->getAllPermissions(),
                     'can' => [
@@ -82,7 +97,8 @@ class HandleInertiaRequests extends Middleware
                 'location' => $request->url(),
                 'query' => $request->query(),
             ],
-            'databases' => $databases
+            'databases' => fn() => $currentTeamDatabases['databases'] ?? [],
+            'groups' => fn() => $currentTeamDatabases['groups'] ?? [],
         ];
     }
 }

@@ -1,6 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useEffect } from 'react';
 
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
@@ -13,6 +13,7 @@ import AuthLayout from '@/layouts/auth-layout';
 type LoginForm = {
     username: string;
     password: string;
+    currentTeamId: string;
     remember: boolean;
 };
 
@@ -26,8 +27,23 @@ export default function Login({ status, canResetPassword, disabledSignUpPage }: 
     const { data, setData, post, processing, errors, reset } = useForm<LoginForm>({
         username: '',
         password: '',
+        currentTeamId: 'null',
         remember: false,
     });
+
+    useEffect(() => {
+        const storedTeamId = localStorage.getItem('currentTeamId') || 'null';
+        setData('currentTeamId', storedTeamId);
+
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'currentTeamId') {
+                setData('currentTeamId', e.newValue || 'null');
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -84,6 +100,7 @@ export default function Login({ status, canResetPassword, disabledSignUpPage }: 
                         <Checkbox id="remember" name="remember" checked={data.remember} onClick={() => setData('remember', !data.remember)} tabIndex={3} />
                         <Label htmlFor="remember">Remember me</Label>
                     </div>
+                    <Input type="hidden" name="currentTeamId" value={data.currentTeamId} />
 
                     <Button type="submit" className="mt-4 w-full" tabIndex={4} disabled={processing}>
                         {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}

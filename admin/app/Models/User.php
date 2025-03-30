@@ -27,6 +27,8 @@ class User extends Authenticatable
 
     protected $appends = ['permission_names'];
 
+    protected $with = ['teams'];
+
     protected function casts(): array
     {
         return [
@@ -141,5 +143,12 @@ class User extends Authenticatable
             ->flatMap(fn($role) => $role->permissions)
             ->pluck('name')
             ->unique();
+    }
+
+    public function teams()
+    {
+        return $this->belongsToMany(Team::class)
+            ->withPivot('permission_level')
+            ->withTimestamps();
     }
 }

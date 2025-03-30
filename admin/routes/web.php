@@ -10,6 +10,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
         Route::get('tokens', [App\Http\Controllers\DashboardController::class, 'indexToken'])->name('dashboard.tokens');
         Route::get('groups', [App\Http\Controllers\DashboardController::class, 'indexGroup'])->name('dashboard.groups');
+        Route::get('teams', [App\Http\Controllers\DashboardController::class, 'indexTeams'])->name('dashboard.teams');
     });
 
     Route::group(['prefix' => 'databases'], function () {
