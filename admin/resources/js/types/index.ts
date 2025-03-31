@@ -131,6 +131,7 @@ export interface MostUsedDatabaseProps {
     query_metrics_sum_query_count: number;
     query_metrics_count: number | null;
     created_at: string;
+    team_id?: number;
 }
 
 export interface MostUsedDatabaseMinimalProps {
@@ -202,4 +203,12 @@ export enum AccessPermissions {
     MANAGE_DATABASE_TOKENS = 'manage-database-tokens',
     MANAGE_TEAM_GROUPS = 'manage-team-groups',
     ACCESS_TEAM_DATABASES = 'access-team-databases'
+}
+
+export interface Member {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    [key: string]: unknown;
 }
