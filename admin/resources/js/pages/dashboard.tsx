@@ -4,6 +4,7 @@ import { LibsqlStudio } from '@/components/libsql-studio';
 import DashboardStatisticSkeleton from '@/components/skeletons/DashboardStatisticSkeleton';
 import { useCustomEvent } from '@/hooks/use-custom-event';
 import AppLayout from '@/layouts/app-layout';
+import { apiFetch } from '@/lib/api';
 import { getQuery } from '@/lib/utils';
 import {
     SharedData,
@@ -71,8 +72,24 @@ export default function Dashboard({ databaseMetrics, mostUsedDatabases }: { data
         }
     }, [parent]);
 
-    useCustomEvent<DatabaseStatsChangeProps>('stats-changed', async ({ databaseName }) => {
+    useCustomEvent<DatabaseStatsChangeProps>('stats-changed', async ({ databaseName, statement, type }) => {
         const statsEndpoint = route('trigger.stats-changed', { databaseName });
+        const logEndpoint = route('activities.store');
+        const currentTeamId = localStorage.getItem('currentTeamId') || 'null';
+
+        if (statement !== undefined) {
+            await apiFetch(logEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    team_id: currentTeamId,
+                    database_name: databaseName,
+                    query: statement
+                })
+            });
+        }
 
         await fetch(statsEndpoint, {
             method: 'GET',
@@ -80,6 +97,7 @@ export default function Dashboard({ databaseMetrics, mostUsedDatabases }: { data
                 'Content-Type': 'application/json',
             }
         });
+
     });
 
     return (
