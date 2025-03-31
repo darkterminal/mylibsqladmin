@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SubdomainValidationController;
 use App\Http\Controllers\TeamController;
 use App\Models\GroupDatabase;
 use App\Models\UserDatabase;
@@ -36,108 +37,13 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/api/group/create-only', [DashboardController::class, 'createGroupOnly'])->name('api.group.create-only');
     Route::get('/api/teams/{teamId}/databases', [TeamController::class, 'getDatabases'])->name('api.teams.databases');
+    Route::post('/api/check-gate', function (Request $request) {
+        $model = $request->model_type::findOrFail($request->model_id);
+
+        return response()->json([
+            'allowed' => Gate::allows($request->ability, $model)
+        ]);
+    })->name('api.check-gate');
 });
 
-Route::get('/validate-subdomain', function (Request $request) {
-    $subdomain = $request->header('X-Subdomain');
-    $authToken = $request->header('X-Auth-Token');
-    $accessLevel = 'read-only';
-    $parser = new Parser(new JoseEncoder());
-
-    $token = Str::startsWith($authToken, 'Bearer ')
-        ? Str::after($authToken, 'Bearer ')
-        : $authToken;
-
-    if (empty($token)) {
-        $groupToken = GroupDatabase::with(['members', 'tokens'])
-            ->whereHas('members', function ($query) use ($subdomain) {
-                $query->where('database_name', $subdomain);
-            });
-
-        $databaseToken = UserDatabaseToken::with('database')
-            ->whereHas('database', function ($query) use ($subdomain) {
-                $query->where('database_name', $subdomain);
-            });
-
-        if (!$databaseToken->exists()) {
-            return response(null, 200)->header('X-Access-Level', 'full-access');
-        }
-
-        if (!$groupToken->exists()) {
-            return response(null, 200)->header('X-Access-Level', 'full-access');
-        }
-
-        return response(null, 200)->header('X-Access-Level', 'none');
-    }
-
-    try {
-        $validateToken = $parser->parse($token);
-    } catch (CannotDecodeContent | InvalidTokenStructure | UnsupportedHeaderFound $e) {
-        logger('Oh no, an error: ' . $e->getMessage());
-        return response(null, 200)->header('X-Access-Level', 'none');
-    }
-
-    $headers = $validateToken->headers();
-    $claims = $validateToken->claims();
-
-    logger('DEBUG: ', [
-        'headers' => $headers,
-        'claims' => $claims,
-    ]);
-
-    if ($validateToken->isExpired(now(new DateTimeZone(env('APP_TIMEZONE', 'UTC'))))) {
-        return response(null, 200)->header('X-Access-Level', 'none');
-    }
-
-    if ($headers->get('is_group') === 'yes' && $claims->get('uid') === 'none') {
-        $group_id = $claims->get('gid');
-        $group = GroupDatabase::getGroupDatabasesIfContains($group_id, $subdomain);
-
-        if (!$group) {
-            return response(null, 200)->header('X-Access-Level', 'none');
-        }
-
-        if ($group->tokens()->first()->full_access_token === $token) {
-            $accessLevel = 'full-access';
-        }
-    } else {
-        $databaseToken = UserDatabaseToken::with('database')
-            ->whereHas('database', function ($query) use ($subdomain) {
-                $query->where('database_name', $subdomain);
-            })->first();
-
-        if (empty($token) && !empty($databaseToken)) {
-            return response(null, 200)->header('X-Access-Level', 'none');
-        }
-
-        if ($databaseToken && $databaseToken->full_access_token === $token) {
-            $accessLevel = 'full-access';
-        }
-    }
-
-    logger("DEBUG ACCESS LEVEL: $accessLevel");
-
-    $response = Http::withHeaders([
-        'Authorization' => 'realm=' . env('BRIDGE_HTTP_PASSWORD', 'libsql'),
-        'Content-Type' => 'application/json',
-    ])
-        ->get('http://bridge:4500/api/databases');
-
-    if ($response->successful()) {
-        $namespaces = array_map(fn($db) => $db['name'], $response->json());
-        if (in_array($subdomain, $namespaces)) {
-            return response(null, 200)
-                ->header('X-Access-Level', $accessLevel);
-        }
-    }
-
-    return response(null, 403)->header('X-Access-Level', $accessLevel);
-});
-
-Route::post('/check-gate', function (Request $request) {
-    $model = $request->model_type::findOrFail($request->model_id);
-
-    return response()->json([
-        'allowed' => Gate::allows($request->ability, $model)
-    ]);
-})->middleware('auth');
+Route::get('/validate-subdomain', [SubdomainValidationController::class, 'validateSubdomain']);
