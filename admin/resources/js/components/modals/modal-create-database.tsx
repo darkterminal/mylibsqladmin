@@ -50,7 +50,9 @@ export function ModalCreateDatabase({
     const [availableGroups, setAvailableGroups] = useState<ComboboxOption[]>(groups)
 
     useEffect(() => {
-        setAvailableGroups(groups)
+        if (groups) {
+            setAvailableGroups(groups)
+        }
     }, [groups])
 
     const sharedDatabases = existingDatabases.filter((db) => db.is_schema)
