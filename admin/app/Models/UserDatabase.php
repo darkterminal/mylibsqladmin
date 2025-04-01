@@ -37,28 +37,39 @@ class UserDatabase extends Model
         return $this->belongsToMany(GroupDatabase::class, 'group_database_members', 'database_id', 'group_id');
     }
 
+    public function latestActivity()
+    {
+        return $this->hasOne(ActivityLog::class, 'database_id')->latestOfMany();
+    }
+
     public static function mostUsedDatabases()
     {
-        $mostUsedDatabases = self::withCount('queryMetrics')
-            ->select('database_name', 'id', 'is_schema', 'created_at')
+        $teamId = session('team_databases')['team_id'] ?? null;
+
+        $query = self::withCount('queryMetrics')
+            ->select('user_databases.*')
             ->withSum('queryMetrics', 'query_count')
-            ->limit(10)
-            ->get();
+            ->when($teamId, function ($query) use ($teamId) {
+                $query->whereHas('groups.team', function ($q) use ($teamId) {
+                    $q->where('id', $teamId);
+                });
+            })
+            ->limit(10);
 
-        $databases = [];
+        $mostUsedDatabases = $query->get();
 
-        foreach ($mostUsedDatabases as $db) {
-            array_push($databases, [
-                'query_metrics_id' => $db->queryMetrics()->first()?->id,
+        return $mostUsedDatabases->map(function ($db) {
+            return [
+                'query_metrics_id' => $db->queryMetrics->first()?->id,
                 'database_id' => $db->id,
+                'team_id' => $db->groups->first()?->team_id,
                 'database_name' => $db->database_name,
                 'is_schema' => $db->is_schema,
                 'query_metrics_sum_query_count' => $db->query_metrics_sum_query_count,
                 'query_metrics_count' => $db->query_count,
-                'created_at' => Carbon::parse($db->created_at)->format('Y-m-d H:i:S')
-            ]);
-        }
-        return $databases;
+                'created_at' => $db->created_at->format('Y-m-d H:i:s')
+            ];
+        })->toArray();
     }
 
     public static function mostAffectedQueries()
