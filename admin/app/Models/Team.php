@@ -42,10 +42,17 @@ class Team extends Model
         return $this->members->find($user->id)->pivot->permission_level;
     }
 
-    public static function setTeamDatabases(int $userId, int $teamId)
+    public static function setTeamDatabases(int $userId, int|string $teamId)
     {
+        if ($teamId === 'null') {
+            $team = Team::whereHas('members', fn($q) => $q->where('user_id', $userId))->latest()->first();
+            $teamId = $team->id;
+        }
+
         $team = Team::with(['groups.members.user'])
             ->findOrFail($teamId);
+
+        $team->touch();
 
         // Format data
         $databases = $team->groups->flatMap(fn($group) => $group->members->map(fn($member) => [
@@ -63,6 +70,25 @@ class Team extends Model
                 'groups' => GroupDatabase::databaseGroups($userId, $teamId),
                 'expires_at' => now()->addHours(2)
             ]
+        ]);
+    }
+
+    public function recentActivities()
+    {
+        return $this->hasMany(ActivityLog::class)
+            ->with(['user', 'database'])
+            ->latest()
+            ->limit(10);
+    }
+
+    public function getRecentActivityAttribute()
+    {
+        return $this->recentActivities->map(fn($activity) => [
+            'id' => $activity->id,
+            'user' => $activity->user->name,
+            'action' => $activity->action,
+            'database' => $activity->database->database_name,
+            'time' => $activity->time_ago
         ]);
     }
 }
