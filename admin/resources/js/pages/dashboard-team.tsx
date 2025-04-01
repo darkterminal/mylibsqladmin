@@ -1,6 +1,11 @@
 "use client"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import ButtonOpenDatabaseStudio from "@/components/button-actions/action-open-database-studio"
+import { ModalCreateGroupOnly } from "@/components/modals/modal-create-group-only"
+import { ModalCreateTeam } from "@/components/modals/modal-create-team"
+import { ModalEditTeam } from "@/components/modals/modal-edit-team"
+import { ModalManageMembers } from "@/components/modals/modal-manage-members"
+import { Avatar } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,10 +20,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useInitials } from "@/hooks/use-initials"
 import AppLayout from "@/layouts/app-layout"
-import { BreadcrumbItem } from "@/types"
+import { cn } from "@/lib/utils"
+import { BreadcrumbItem, Member } from "@/types"
 import { Head } from "@inertiajs/react"
-import { Activity, Database, FolderClosed, MoreHorizontal, Search, Users } from "lucide-react"
+import { Activity, ChevronDown, ChevronRight, Cylinder, Database, File, FolderClosed, GitBranch, MoreHorizontal, Search, Users } from "lucide-react"
 import { useState } from "react"
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -33,20 +40,20 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 // Types
-interface Database {
+export interface Database {
     id: number
     name: string
     type: string
     lastActivity: string
 }
 
-interface Group {
+export interface Group {
     id: number
     name: string
     databases: Database[]
 }
 
-interface RecentActivity {
+export interface RecentActivity {
     id: number
     user: string
     action: string
@@ -54,120 +61,17 @@ interface RecentActivity {
     time: string
 }
 
-interface Team {
+export interface Team {
     id: number
     name: string
     description: string
     members: number
     groups: Group[]
+    team_members: Member[]
     recentActivity: RecentActivity[]
 }
 
-// Mock data
-const teams: Team[] = [
-    {
-        id: 1,
-        name: "Engineering",
-        description: "Product development team",
-        members: 12,
-        groups: [
-            {
-                id: 101,
-                name: "Backend",
-                databases: [
-                    { id: 1001, name: "User Service DB", type: "standalone", lastActivity: "2 hours ago" },
-                    { id: 1002, name: "Auth Service DB", type: "schema database", lastActivity: "1 day ago" },
-                ],
-            },
-            {
-                id: 102,
-                name: "Frontend",
-                databases: [{ id: 1003, name: "Analytics DB", type: "child database", lastActivity: "3 hours ago" }],
-            },
-        ],
-        recentActivity: [
-            { id: 1, user: "Alex Kim", action: "Updated schema", database: "User Service DB", time: "2 hours ago" },
-            { id: 2, user: "Jamie Chen", action: "Added index", database: "Auth Service DB", time: "1 day ago" },
-            { id: 3, user: "Taylor Wong", action: "Query optimization", database: "Analytics DB", time: "3 hours ago" },
-        ],
-    },
-    {
-        id: 2,
-        name: "Marketing",
-        description: "Growth and acquisition team",
-        members: 8,
-        groups: [
-            {
-                id: 201,
-                name: "Content",
-                databases: [{ id: 2001, name: "CMS Database", type: "standalone", lastActivity: "5 hours ago" }],
-            },
-            {
-                id: 202,
-                name: "Analytics",
-                databases: [
-                    { id: 2002, name: "Marketing Metrics", type: "schema database", lastActivity: "30 minutes ago" },
-                    { id: 2003, name: "Campaign Data", type: "child database", lastActivity: "1 hour ago" },
-                ],
-            },
-        ],
-        recentActivity: [
-            { id: 4, user: "Morgan Smith", action: "Created report", database: "Marketing Metrics", time: "30 minutes ago" },
-            { id: 5, user: "Casey Johnson", action: "Updated campaign data", database: "Campaign Data", time: "1 hour ago" },
-            { id: 6, user: "Riley Brown", action: "Content update", database: "CMS Database", time: "5 hours ago" },
-        ],
-    },
-    {
-        id: 3,
-        name: "Finance",
-        description: "Accounting and financial operations",
-        members: 5,
-        groups: [
-            {
-                id: 301,
-                name: "Accounting",
-                databases: [
-                    { id: 3001, name: "General Ledger", type: "schema database", lastActivity: "1 day ago" },
-                    { id: 3002, name: "Transactions DB", type: "child database", lastActivity: "4 hours ago" },
-                ],
-            },
-        ],
-        recentActivity: [
-            { id: 7, user: "Jordan Lee", action: "Monthly reconciliation", database: "General Ledger", time: "1 day ago" },
-            {
-                id: 8,
-                user: "Avery Garcia",
-                action: "Transaction processing",
-                database: "Transactions DB",
-                time: "4 hours ago",
-            },
-        ],
-    },
-    {
-        id: 4,
-        name: "Product",
-        description: "Product management and design",
-        members: 10,
-        groups: [
-            {
-                id: 401,
-                name: "Design",
-                databases: [{ id: 4001, name: "Asset Library", type: "standalone", lastActivity: "6 hours ago" }],
-            },
-            {
-                id: 402,
-                name: "Research",
-                databases: [{ id: 4002, name: "User Research", type: "schema database", lastActivity: "2 days ago" }],
-            },
-        ],
-        recentActivity: [
-            { id: 9, user: "Quinn Martinez", action: "Added assets", database: "Asset Library", time: "6 hours ago" },
-            { id: 10, user: "Reese Wilson", action: "Updated research data", database: "User Research", time: "2 days ago" },
-        ],
-    },
-]
-
-export default function DashboardTeam() {
+export default function DashboardTeam({ teams }: { teams: Team[] }) {
     const [searchQuery, setSearchQuery] = useState<string>("")
 
     // Filter teams based on search query
@@ -197,10 +101,16 @@ export default function DashboardTeam() {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        <Button>
-                            <Users className="mr-2 h-4 w-4" />
-                            New Team
-                        </Button>
+                        <ModalCreateTeam
+                            trigger={
+                                <Button>
+                                    <Users className="mr-2 h-4 w-4" />
+                                    New Team
+                                </Button>
+                            }
+                            onSave={(team) => console.log(team)}
+                            validate={(team) => team.name.length < 3 ? "Name must be at least 3 characters" : null}
+                        />
                     </div>
                 </div>
 
@@ -219,6 +129,7 @@ interface TeamCardProps {
 }
 
 function TeamCard({ team }: TeamCardProps) {
+    const getInitials = useInitials();
     return (
         <Card className="h-full flex flex-col">
             <CardHeader className="pb-2">
@@ -243,9 +154,40 @@ function TeamCard({ team }: TeamCardProps) {
                         <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>Edit team</DropdownMenuItem>
-                            <DropdownMenuItem>Manage members</DropdownMenuItem>
-                            <DropdownMenuItem>Add group</DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <ModalEditTeam
+                                    trigger={
+                                        <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
+                                            Edit team
+                                        </Button>
+                                    }
+                                    onSave={(team) => console.log(team)}
+                                    initValues={team}
+                                />
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <ModalManageMembers
+                                    trigger={
+                                        <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
+                                            Manage members
+                                        </Button>
+                                    }
+                                    members={team.team_members}
+                                    onAddMember={(member) => console.log(member)}
+                                    onRemoveMember={(memberId) => console.log(memberId)}
+                                    onUpdateRole={(memberId, role) => console.log(memberId, role)}
+                                />
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <ModalCreateGroupOnly
+                                    trigger={
+                                        <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
+                                            Add group
+                                        </Button>
+                                    }
+                                    onSave={(groupName) => console.log(groupName)}
+                                />
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive">Delete team</DropdownMenuItem>
                         </DropdownMenuContent>
@@ -265,43 +207,17 @@ function TeamCard({ team }: TeamCardProps) {
                         </TabsTrigger>
                     </TabsList>
                     <TabsContent value="groups" className="flex-grow mt-4 space-y-4">
-                        {team.groups.map((group) => (
-                            <div key={group.id} className="space-y-2">
-                                <div className="flex items-center">
-                                    <FolderClosed className="h-4 w-4 mr-2 text-muted-foreground" />
-                                    <h3 className="font-medium">{group.name}</h3>
-                                </div>
-                                <div className="pl-6 space-y-2">
-                                    {group.databases.map((db) => (
-                                        <div key={db.id} className="flex items-center justify-between text-sm p-2 rounded-md bg-muted/50">
-                                            <div className="flex items-center">
-                                                <Database className="h-3.5 w-3.5 mr-2 text-primary" />
-                                                <span>{db.name}</span>
-                                            </div>
-                                            <div className="flex items-center">
-                                                <Badge variant="outline" className="text-xs">
-                                                    {db.type}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
+                        <ScrollArea className="h-[250px]">
+                            <GroupTree groups={team.groups} />
+                        </ScrollArea>
                     </TabsContent>
                     <TabsContent value="activity" className="flex-grow mt-4">
-                        <ScrollArea className="h-[200px]">
+                        <ScrollArea className="h-[250px]">
                             <div className="space-y-4">
                                 {team.recentActivity.map((activity) => (
                                     <div key={activity.id} className="flex items-start gap-3 text-sm">
-                                        <Avatar className="h-6 w-6">
-                                            <AvatarImage src={`/placeholder.svg?height=32&width=32`} alt={activity.user} />
-                                            <AvatarFallback>
-                                                {activity.user
-                                                    .split(" ")
-                                                    .map((n) => n[0])
-                                                    .join("")}
-                                            </AvatarFallback>
+                                        <Avatar className="flex items-center justify-center text-primary-foreground bg-primary">
+                                            <span className="text-xs">{getInitials(activity.user)}</span>
                                         </Avatar>
                                         <div className="flex-1 space-y-1">
                                             <p className="font-medium leading-none">{activity.user}</p>
@@ -327,3 +243,75 @@ function TeamCard({ team }: TeamCardProps) {
     )
 }
 
+function GroupTree({ groups }: { groups: Group[] }) {
+    // Initialize all groups as expanded by default
+    const [expandedGroups, setExpandedGroups] = useState<{
+        [groupId: number]: boolean;
+    }>(
+        groups.reduce<{ [groupId: number]: boolean }>((acc, group) => {
+            acc[group.id] = group.databases.length > 0
+            return acc
+        }, {}),
+    )
+
+    const toggleGroup = (groupId: number) => {
+        setExpandedGroups((prev) => ({
+            ...prev,
+            [groupId]: !prev[groupId],
+        }))
+    }
+
+    return (
+        <div className="space-y-1">
+            {groups.map((group) => (
+                <div key={group.id} className="rounded-md overflow-hidden">
+                    <button
+                        onClick={() => toggleGroup(group.id)}
+                        className="w-full flex items-center text-left p-2 hover:bg-muted/80 rounded-md transition-colors"
+                    >
+                        {expandedGroups[group.id] ? (
+                            <ChevronDown className="h-4 w-4 mr-1 text-muted-foreground shrink-0" />
+                        ) : (
+                            <ChevronRight className="h-4 w-4 mr-1 text-muted-foreground shrink-0" />
+                        )}
+                        <FolderClosed className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
+                        <span className="font-medium">{group.name}</span>
+                        <Badge variant="outline" className="ml-2 text-xs">
+                            {group.databases.length}
+                        </Badge>
+                    </button>
+
+                    <div
+                        className={cn(
+                            "pl-7 space-y-1 mt-1 overflow-hidden transition-all duration-200",
+                            expandedGroups[group.id] ? "max-h-96" : "max-h-0",
+                        )}
+                    >
+                        {group.databases.map((db) => (
+                            <div
+                                key={db.id}
+                                className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-muted/80 transition-colors"
+                            >
+                                <div className="flex items-center">
+                                    {db.type === "standalone" ? <Cylinder className="h-4 w-4 mr-2 text-muted-foreground shrink-0" /> : db.type == "schema" ? <File className="h-4 w-4 mr-2 text-muted-foreground shrink-0" /> : <GitBranch className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />}
+                                    <span>{db.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Badge
+                                        variant={
+                                            db.type === "standalone" ? "default" : db.type === "schema" ? "secondary" : "outline"
+                                        }
+                                        className="text-xs"
+                                    >
+                                        {db.type}
+                                    </Badge>
+                                    <ButtonOpenDatabaseStudio databaseName={db.name} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
