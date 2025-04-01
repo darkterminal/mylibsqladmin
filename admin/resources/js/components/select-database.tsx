@@ -1,8 +1,6 @@
 import { triggerEvent } from '@/hooks/use-custom-event';
-import { useSignal } from '@/hooks/use-signal';
 import { apiFetch } from '@/lib/api';
 import { getQuery, groupDatabases } from '@/lib/utils';
-import { currentTeamId } from '@/signals/team-signal';
 import { SharedData, type LibSQLDatabases } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { ChevronRight, Database, DatabaseIcon, Eye, FileText, Plus, Trash } from 'lucide-react';
@@ -24,7 +22,7 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from './u
 export function SelectDatabase() {
     const { props } = usePage<SharedData>();
     const { isMobile } = useSidebar();
-    const [teamId] = useSignal(currentTeamId)
+    const [teamId, setTeamId] = useState<string | null>(null);
     const databases = props.databases as LibSQLDatabases[];
     const groupedDatabases = (props.groups || [])
         .map?.(group => ({
