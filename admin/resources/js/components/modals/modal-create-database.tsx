@@ -9,7 +9,7 @@ import { ModalForm } from "@/components/ui/modal-form"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useCustomEvent } from "@/hooks/use-custom-event"
-import type { LibSQLDatabases, OpenModalStateChangeProps } from "@/types"
+import type { LibSQLDatabases, OpenModalStateChangeProps, Team } from "@/types"
 import { useEffect, useState } from "react"
 import { Combobox, ComboboxOption } from "../ui/combobox"
 
@@ -18,7 +18,8 @@ export type CreateDatabaseProps = {
     childDatabase: string
     isSchema: boolean | string
     useExisting: boolean
-    groupName: string
+    groupName: string,
+    teamId?: number | null
 }
 
 interface ModalCreateDatabaseProps {
@@ -28,6 +29,7 @@ interface ModalCreateDatabaseProps {
     onSubmit: (data: CreateDatabaseProps) => Promise<void>
     groups?: ComboboxOption[]
     onCreateGroup?: (name: string) => Promise<string>
+    currentTeam?: Team
 }
 
 export function ModalCreateDatabase({
@@ -37,6 +39,7 @@ export function ModalCreateDatabase({
     onSubmit,
     groups = [],
     onCreateGroup,
+    currentTeam,
 }: ModalCreateDatabaseProps) {
     const [isOpen, setOpen] = useState(false)
     const [formData, setFormData] = useState<CreateDatabaseProps>({
@@ -45,15 +48,33 @@ export function ModalCreateDatabase({
         isSchema: false,
         useExisting: useExistingDatabase,
         groupName: "",
+        teamId: currentTeam?.id
     })
+    const [activeTeamId, setActiveTeamId] = useState<string | null>(null)
     const [processing, setProcessing] = useState(false)
-    const [availableGroups, setAvailableGroups] = useState<ComboboxOption[]>(groups)
+
+    const getGroupOptions = (): ComboboxOption[] => {
+        if (currentTeam?.groups) {
+            return currentTeam.groups
+                .map(group => ({
+                    label: group.name,
+                    value: group.id.toString()
+                }))
+                .sort((a, b) => Number(b.value) - Number(a.value));
+        }
+        return groups;
+    }
+
+    const [availableGroups, setAvailableGroups] = useState<ComboboxOption[]>(getGroupOptions())
 
     useEffect(() => {
-        if (groups) {
-            setAvailableGroups(groups)
+        setAvailableGroups(getGroupOptions());
+        if (currentTeam) {
+            setActiveTeamId(currentTeam.id.toString());
+        } else {
+            setActiveTeamId(null);
         }
-    }, [groups])
+    }, [currentTeam, groups])
 
     const sharedDatabases = existingDatabases.filter((db) => db.is_schema)
 
@@ -79,6 +100,7 @@ export function ModalCreateDatabase({
                 isSchema: false,
                 useExisting: false,
                 groupName: "",
+                teamId: null
             })
         } catch (error) {
             console.error("Error submitting form:", error)
@@ -234,6 +256,7 @@ export function ModalCreateDatabase({
                         </div>
                     </div>
                 )}
+                <input type="hidden" name="teamId" value={activeTeamId?.toString()} />
             </div>
         </ModalForm>
     )

@@ -212,3 +212,38 @@ export interface Member {
     role: string;
     [key: string]: unknown;
 }
+
+export interface TeamDatabase {
+    id: number
+    name: string
+    type: string
+    lastActivity: string
+}
+
+export interface Group {
+    id: number
+    name: string
+    databases: TeamDatabase[]
+}
+
+export interface RecentActivity {
+    id: number
+    user: string
+    action: string
+    database: string
+    time: string
+}
+
+export interface Team {
+    id: number
+    name: string
+    description: string
+    members: number
+    groups: Group[]
+    team_members: Member[]
+    recentActivity: RecentActivity[]
+}
+
+export interface TeamCardProps {
+    team: Team
+}
