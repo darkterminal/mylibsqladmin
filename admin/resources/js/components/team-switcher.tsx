@@ -38,7 +38,7 @@ interface TeamSwitcherProps extends PopoverTriggerProps { }
 export function TeamSwitcher({ className }: TeamSwitcherProps) {
     const getInitials = useInitials();
     const { auth } = usePage<SharedData>().props
-    const [currentTeamId, setCurrentTeamId] = useLocalStorage<number | null>('currentTeamId', null)
+    const [currentTeamId, setCurrentTeamId] = useLocalStorage<number | null>('currentTeamId', auth.user.teams[0].id || null)
     const [open, setOpen] = React.useState(false)
     const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false)
     const [selectedTeam, setSelectedTeam] = React.useState<Team | null>(null)
