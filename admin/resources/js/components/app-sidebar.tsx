@@ -14,7 +14,6 @@ import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import { BookOpen, Fingerprint, Folder, Handshake, LayoutGrid, UsersRound } from 'lucide-react';
 import AppLogo from './app-logo';
-import { SelectDatabase } from './select-database';
 
 
 const mainNavItems: NavItem[] = [
@@ -66,7 +65,6 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
-                <SelectDatabase />
             </SidebarHeader>
 
             <SidebarContent>
