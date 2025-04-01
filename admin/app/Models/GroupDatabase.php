@@ -53,7 +53,6 @@ class GroupDatabase extends Model
                 'team:id,name',
                 'members' => fn($q) => $q->with('tokens')
             ])
-            ->latest()
             ->get()
             ->map(fn($group) => [
                 'id' => $group->id,
@@ -67,11 +66,21 @@ class GroupDatabase extends Model
                     'is_schema' => $m->is_schema,
                     'tokens' => $m->tokens
                 ]),
-                'group_tokens' => $group->tokens
+                'group_token' => $group->tokens()->where('group_id', $group->id)->first(),
+                'has_token' => ($group->tokens->count() + self::countMemberTokens()) > 0
             ]);
 
         return $groups->collect()->filter(function ($group) use ($userId, $teamId) {
             return $group['user']['id'] == $userId && $group['team']['id'] == $teamId;
-        })->values();
+        })->sortBy('members_count', SORT_REGULAR, true)->values();
+    }
+
+    private static function countMemberTokens()
+    {
+        return self::withCount('members')
+            ->with('tokens')
+            ->get()
+            ->map(fn($group) => $group->tokens->count())
+            ->sum();
     }
 }
