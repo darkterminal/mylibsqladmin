@@ -55,18 +55,16 @@ export default function TeamCard({ team }: TeamCardProps) {
     }
 
     const handleDatabaseSubmit = async (formData: CreateDatabaseProps) => {
-
+        const teamId = formData.teamId || localStorage.getItem('currentTeamId');
         const submittedData = {
             database: formData.useExisting ? formData.childDatabase : formData.database,
             isSchema: formData.useExisting ? formData.database : formData.isSchema,
             groupId: Number(formData.groupName),
-            teamId: Number(formData.teamId),
+            teamId: Number(teamId),
         };
 
         router.post(route('database.create'), submittedData, {
-            onSuccess: async () => {
-                await apiFetch(route('api.teams.databases', formData.teamId?.toString()))
-            },
+            onSuccess: async () => await apiFetch(route('api.teams.databases', Number(teamId))),
             onFinish: () => router.visit(window.location.href)
         });
     }

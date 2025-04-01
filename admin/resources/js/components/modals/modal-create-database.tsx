@@ -100,7 +100,7 @@ export function ModalCreateDatabase({
                 isSchema: false,
                 useExisting: false,
                 groupName: "",
-                teamId: null
+                teamId: currentTeam?.id
             })
         } catch (error) {
             console.error("Error submitting form:", error)
