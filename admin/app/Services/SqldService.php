@@ -73,7 +73,7 @@ class SqldService
 
     }
 
-    public static function createDatabase(string $database, mixed $isSchema): bool
+    public static function createDatabase(string $database, mixed $isSchema, int $groupId, int $teamId): bool
     {
         $host = self::useEndpoint('db');
         if (is_bool($isSchema)) {
@@ -98,6 +98,16 @@ class SqldService
         ]);
 
         if (!$userDatabase) {
+            return false;
+        }
+
+        $group = GroupDatabase::findOrFail($groupId);
+        $groupDatabase = $group->members()->create([
+            'user_id' => auth()->user()->id,
+            'team_id' => $teamId
+        ]);
+
+        if (!$groupDatabase) {
             return false;
         }
 
