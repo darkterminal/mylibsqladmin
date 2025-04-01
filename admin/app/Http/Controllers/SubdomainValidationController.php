@@ -14,6 +14,7 @@ use Lcobucci\JWT\Token\Parser;
 use Lcobucci\JWT\Token\UnsupportedHeaderFound;
 use App\Models\GroupDatabase;
 use App\Models\UserDatabaseToken;
+use Lcobucci\JWT\UnencryptedToken;
 
 class SubdomainValidationController extends Controller
 {
@@ -63,13 +64,13 @@ class SubdomainValidationController extends Controller
             || UserDatabaseToken::whereHas('database', fn($q) => $q->where('database_name', $subdomain))->exists();
     }
 
-    private function parseJwtToken(string $token): Token
+    private function parseJwtToken(string $token): UnencryptedToken
     {
         $parser = new Parser(new JoseEncoder());
         return $parser->parse($token);
     }
 
-    private function validateTokenExpiration(Token $token): void
+    private function validateTokenExpiration(UnencryptedToken $token): void
     {
         $timezone = new DateTimeZone(config('app.timezone', 'UTC'));
         if ($token->isExpired(now($timezone))) {
@@ -77,7 +78,7 @@ class SubdomainValidationController extends Controller
         }
     }
 
-    private function determineAccessLevel(Token $token, string $rawToken, string $subdomain): string
+    private function determineAccessLevel(UnencryptedToken $token, string $rawToken, string $subdomain): string
     {
         $headers = $token->headers();
         $claims = $token->claims();
