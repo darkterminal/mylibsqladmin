@@ -32,7 +32,6 @@ export default function DashboardGroup({
     databaseGroups: GroupDatabaseProps[],
     databaseNotInGroup: DatabaseInGroupProps[]
 }) {
-    console.log(databaseGroups);
     const [groups, setGroups] = useState<GroupDatabaseProps[]>(databaseGroups);
     const [selectedGroup, setSelectedGroup] = useState<GroupDatabaseProps | null>(null);
 
