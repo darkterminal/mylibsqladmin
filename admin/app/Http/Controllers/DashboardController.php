@@ -38,7 +38,12 @@ class DashboardController extends Controller
     {
         Gate::authorize('create', UserDatabase::class);
 
-        SqldService::createDatabase($request->database, $request->isSchema);
+        SqldService::createDatabase(
+            $request->database,
+            $request->isSchema,
+            $request->groupId,
+            $request->teamId
+        );
 
         $databases = session('team_databases')['databases'] ?? SqldService::getDatabases();
         $mostUsedDatabases = UserDatabase::mostUsedDatabases();
@@ -387,10 +392,5 @@ class DashboardController extends Controller
         return redirect()->back()->with([
             'success' => 'Database removed successfully'
         ]);
-    }
-
-    public function indexTeams()
-    {
-        return Inertia::render('dashboard-team');
     }
 }
