@@ -24,7 +24,7 @@ export function useGate() {
     return {
         check: async (ability: string, modelType: string, modelId: number) => {
             try {
-                const response = await fetch('/api/check-gate', {
+                const response = await fetch(route('api.check-gate'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
