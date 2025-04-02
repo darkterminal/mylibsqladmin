@@ -1,12 +1,11 @@
 import { cn } from "@/lib/utils";
-import { Group } from "@/types";
+import { Group, Team } from "@/types";
 import { ChevronDown, ChevronRight, Cylinder, File, FolderClosed, GitBranch } from "lucide-react";
 import { useState } from "react";
 import ButtonOpenDatabaseStudio from "../button-actions/action-open-database-studio";
 import { Badge } from "../ui/badge";
 
-export function GroupTree({ groups }: { groups: Group[] }) {
-    // Initialize all groups as expanded by default
+export function GroupTree({ groups, team }: { groups: Group[], team?: Team }) {
     const [expandedGroups, setExpandedGroups] = useState<{
         [groupId: number]: boolean;
     }>(
@@ -67,7 +66,7 @@ export function GroupTree({ groups }: { groups: Group[] }) {
                                     >
                                         {db.type}
                                     </Badge>
-                                    <ButtonOpenDatabaseStudio databaseName={db.name} />
+                                    <ButtonOpenDatabaseStudio databaseName={db.name} team={team} />
                                 </div>
                             </div>
                         ))}
