@@ -8,7 +8,7 @@ import AppLayout from "@/layouts/app-layout"
 import { BreadcrumbItem, Team } from "@/types"
 import { Head } from "@inertiajs/react"
 import { Search, Users } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -23,13 +23,22 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function DashboardTeam({ teams }: { teams: Team[] }) {
     const [searchQuery, setSearchQuery] = useState<string>("")
+    const [currentTeamId, setCurrentTeamId] = useState<string | null>(null)
 
-    // Filter teams based on search query
-    const filteredTeams = teams.filter(
-        (team) =>
+    useEffect(() => {
+        setCurrentTeamId(localStorage.getItem('currentTeamId'))
+    }, [])
+
+    const sortedAndFilteredTeams = teams
+        .filter(team =>
             team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            team.description.toLowerCase().includes(searchQuery.toLowerCase()),
-    )
+            team.description.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .sort((a, b) => {
+            if (String(a.id) === currentTeamId) return -1
+            if (String(b.id) === currentTeamId) return 1
+            return a.name.localeCompare(b.name)
+        })
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -65,8 +74,12 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredTeams.map((team) => (
-                        <TeamCard key={team.id} team={team} />
+                    {sortedAndFilteredTeams.map((team) => (
+                        <TeamCard
+                            key={team.id}
+                            team={team}
+                            isCurrent={String(team.id) === currentTeamId}
+                        />
                     ))}
                 </div>
             </div>

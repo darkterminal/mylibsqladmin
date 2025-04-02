@@ -19,7 +19,7 @@ import { ScrollArea } from "../ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { GroupTree } from "./group-tree";
 
-export default function TeamCard({ team }: TeamCardProps) {
+export default function TeamCard({ team, isCurrent }: TeamCardProps) {
     const getInitials = useInitials();
 
     const { databases, groups: databaseGroups } = usePage<SharedData>().props;
@@ -87,7 +87,7 @@ export default function TeamCard({ team }: TeamCardProps) {
                 <div className="flex justify-between items-start">
                     <div className="space-y-1">
                         <CardTitle className="flex items-center">
-                            {String(team.id) === localStorage.getItem('currentTeamId') && (
+                            {isCurrent && (
                                 <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
                             )}
                             {team.name}

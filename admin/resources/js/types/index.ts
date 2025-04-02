@@ -246,6 +246,7 @@ export interface Team {
 
 export interface TeamCardProps {
     team: Team
+    isCurrent?: boolean
 }
 
 export type TeamForm = {
