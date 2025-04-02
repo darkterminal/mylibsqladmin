@@ -26,6 +26,7 @@ import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useInitials } from "@/hooks/use-initials"
 import { useLocalStorage } from "@/hooks/use-localstorage"
+import { createSignal, useSignal } from "@/hooks/use-signal"
 import { apiFetch } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { SharedData, Team } from "@/types"
@@ -35,13 +36,16 @@ type PopoverTriggerProps = React.ComponentPropsWithoutRef<typeof PopoverTrigger>
 
 interface TeamSwitcherProps extends PopoverTriggerProps { }
 
+export const teamSignal = createSignal<Team | null>(null)
+
 export function TeamSwitcher({ className }: TeamSwitcherProps) {
-    const getInitials = useInitials();
     const { auth } = usePage<SharedData>().props
     const [currentTeamId, setCurrentTeamId] = useLocalStorage<number | null>('currentTeamId', auth.user.teams[0].id || null)
+
+    const getInitials = useInitials();
     const [open, setOpen] = React.useState(false)
     const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false)
-    const [selectedTeam, setSelectedTeam] = React.useState<Team | null>(null)
+    const [selectedTeam, setSelectedTeam] = useSignal<Team | null>(teamSignal)
 
     const handleTeamChanged = async (team: Team) => {
         setSelectedTeam(team)
