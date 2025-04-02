@@ -1,5 +1,6 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import usePrevUrl from '@/hooks/use-prev-url';
 import { apiFetch } from '@/lib/api';
 import { getQuery } from '@/lib/utils';
 import { SharedData, Team, type BreadcrumbItem as BreadcrumbItemType } from '@/types';
@@ -16,6 +17,7 @@ import { ComboboxOption } from './ui/combobox';
 
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
 
+    const lastNavigation = usePrevUrl('/');
     const { databases, groups: databaseGroups, auth } = usePage<SharedData>().props;
     const database = getQuery('database', 'No database selected');
     const groupedDatabases = (databaseGroups || [])
@@ -78,10 +80,8 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
     }
 
     const handleDisconnectDatabase = () => {
-        const prevUrl = localStorage.getItem('prevUrl') || route('dashboard');
         localStorage.setItem('sidebar', 'true');
-        localStorage.setItem('prevUrl', route('dashboard'));
-        router.get(prevUrl)
+        router.get(lastNavigation);
     }
 
     return (

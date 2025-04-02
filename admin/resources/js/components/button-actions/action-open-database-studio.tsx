@@ -16,15 +16,11 @@ export default function ButtonOpenDatabaseStudio({
     size?: VariantProps<typeof Button>["size"]
 }) {
     const handleSelectDatabase = async (database: string) => {
-        const currentUrl = window.location.href;
         localStorage.setItem('sidebar', 'false');
-        localStorage.setItem('prevUrl', currentUrl);
-
         if (team) {
             localStorage.setItem('currentTeamId', team.id.toString());
             await apiFetch(route('api.teams.databases', team.id));
         }
-
         router.get(route('database.studio', { database }));
     }
 
