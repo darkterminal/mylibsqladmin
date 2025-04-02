@@ -6,6 +6,8 @@ use Inertia\Inertia;
 Route::get('/', fn() => redirect()->route('login'))->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('database-studio', fn() => Inertia::render('database-studio'))->name('database.studio');
+
     Route::prefix('dashboard')->group(function () {
         Route::get('/', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
         Route::get('tokens', [App\Http\Controllers\DashboardController::class, 'indexToken'])->name('dashboard.tokens');
