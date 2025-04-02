@@ -30,7 +30,7 @@ import { createSignal, useSignal } from "@/hooks/use-signal"
 import { apiFetch } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { SharedData, Team } from "@/types"
-import { router, usePage } from "@inertiajs/react"
+import { router, useForm, usePage } from "@inertiajs/react"
 
 type PopoverTriggerProps = React.ComponentPropsWithoutRef<typeof PopoverTrigger>
 
@@ -46,6 +46,25 @@ export function TeamSwitcher({ className }: TeamSwitcherProps) {
     const [open, setOpen] = React.useState(false)
     const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false)
     const [selectedTeam, setSelectedTeam] = useSignal<Team | null>(teamSignal)
+
+    const { data, setData, post, processing, errors } = useForm({
+        name: '',
+        description: ''
+    })
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        post(route('team.create'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowNewTeamDialog(false)
+                setData({ name: '', description: '' })
+                router.visit(window.location.href, {
+                    preserveScroll: true
+                })
+            }
+        })
+    }
 
     const handleTeamChanged = async (team: Team) => {
         setSelectedTeam(team)
@@ -138,24 +157,46 @@ export function TeamSwitcher({ className }: TeamSwitcherProps) {
                     <DialogTitle>Create team</DialogTitle>
                     <DialogDescription>Add a new team to manage databases and users.</DialogDescription>
                 </DialogHeader>
-                <div>
+                <form onSubmit={handleSubmit}>
                     <div className="space-y-4 py-2 pb-4">
                         <div className="space-y-2">
                             <Label htmlFor="name">Team name</Label>
-                            <Input id="name" placeholder="Acme Inc." />
+                            <Input
+                                id="name"
+                                value={data.name}
+                                onChange={e => setData('name', e.target.value)}
+                                placeholder="Acme Inc."
+                            />
+                            {errors.name && (
+                                <p className="text-sm text-red-500">{errors.name}</p>
+                            )}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="description">Team description</Label>
-                            <Input id="description" placeholder="Your team description" />
+                            <Input
+                                id="description"
+                                value={data.description}
+                                onChange={e => setData('description', e.target.value)}
+                                placeholder="Your team description"
+                            />
+                            {errors.description && (
+                                <p className="text-sm text-red-500">{errors.description}</p>
+                            )}
                         </div>
                     </div>
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowNewTeamDialog(false)}>
-                        Cancel
-                    </Button>
-                    <Button type="submit">Continue</Button>
-                </DialogFooter>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowNewTeamDialog(false)}
+                            type="button"
+                        >
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={processing}>
+                            {processing ? 'Creating...' : 'Create'}
+                        </Button>
+                    </DialogFooter>
+                </form>
             </DialogContent>
         </Dialog>
     )

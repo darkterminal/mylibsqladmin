@@ -247,3 +247,8 @@ export interface Team {
 export interface TeamCardProps {
     team: Team
 }
+
+export type TeamForm = {
+    name: string
+    description: string
+}

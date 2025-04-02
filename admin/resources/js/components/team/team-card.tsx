@@ -1,6 +1,6 @@
 import { useInitials } from "@/hooks/use-initials";
 import { apiFetch } from "@/lib/api";
-import { SharedData, TeamCardProps } from "@/types";
+import { SharedData, TeamCardProps, TeamForm } from "@/types";
 import { router, usePage } from "@inertiajs/react";
 import { Activity, CheckCircle, CirclePlusIcon, FolderClosed, MoreHorizontal, Users } from "lucide-react";
 import { useState } from "react";
@@ -69,6 +69,18 @@ export default function TeamCard({ team }: TeamCardProps) {
         });
     }
 
+    const handleEditTeamOnSave = async (formData: TeamForm) => {
+        const response = await apiFetch(route('team.update', team.id), {
+            method: 'PUT',
+            body: JSON.stringify(formData),
+        });
+        if (response.ok) {
+            router.visit(window.location.href, {
+                preserveScroll: true,
+            });
+        }
+    }
+
     return (
         <Card className="h-full flex flex-col">
             <CardHeader className="pb-2">
@@ -117,7 +129,7 @@ export default function TeamCard({ team }: TeamCardProps) {
                                                 Edit team
                                             </Button>
                                         }
-                                        onSave={(team) => console.log(team)}
+                                        onSave={(team) => handleEditTeamOnSave(team)}
                                         initValues={team}
                                     />
                                 </DropdownMenuItem>

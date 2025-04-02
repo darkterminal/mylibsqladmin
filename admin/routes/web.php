@@ -33,6 +33,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('{group}/tokens', [App\Http\Controllers\DashboardController::class, 'createGroupToken'])->name('group.token.create');
         Route::delete('{tokenId}/tokens', [App\Http\Controllers\DashboardController::class, 'deleteGroupToken'])->name('group.token.delete');
     });
+
+    Route::group(['prefix' => 'teams'], function () {
+        Route::post('create', [App\Http\Controllers\TeamController::class, 'createTeam'])
+            ->name('team.create')
+            ->middleware('can:create,App\Models\Team');
+        Route::put('update/{teamId}', [App\Http\Controllers\TeamController::class, 'updateTeam'])
+            ->name('team.update')
+            ->middleware(['can:update,team']);
+    });
 });
 
 require __DIR__ . '/settings.php';

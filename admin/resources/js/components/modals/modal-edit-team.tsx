@@ -11,12 +11,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { TeamForm } from "@/types"
 import { ReactNode, useState } from "react"
-
-type TeamForm = {
-    name: string
-    description: string
-}
 
 export function ModalEditTeam({
     trigger,

@@ -28,18 +28,32 @@ class Team extends Model
         return $this->groups()->with(['members', 'tokens'])->get();
     }
 
-    public function hasAccess(User $user, string $requiredLevel)
-    {
-        $levels = ['super-admin' => 1, 'team-manager' => 2, 'database-maintener' => 3, 'member' => 4];
-
-        return $user->hasRole('Super Admin') ||
-            ($this->members->contains($user) &&
-                $levels[$this->getPermissionLevel($user)] >= $levels[$requiredLevel]);
-    }
-
     public function getPermissionLevel(User $user)
     {
-        return $this->members->find($user->id)->pivot->permission_level;
+        $member = $this->members()->find($user->id);
+        return $member ? $member->pivot->permission_level : null;
+    }
+
+    public function hasAccess(User $user, array $requiredLevels)
+    {
+        if ($user->hasRole('Super Admin'))
+            return true;
+
+        $userLevel = $this->getPermissionLevel($user);
+        if (!$userLevel)
+            return false;
+
+        $levels = [
+            'super-admin' => 1,
+            'team-manager' => 2,
+            'database-maintener' => 3,
+            'member' => 4
+        ];
+
+        $requiredLevels = array_map(fn($l) => $levels[$l], $requiredLevels);
+        $minRequired = min($requiredLevels);
+
+        return $levels[$userLevel] <= $minRequired;
     }
 
     public static function setTeamDatabases(int $userId, int|string $teamId)
