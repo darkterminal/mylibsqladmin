@@ -40,7 +40,7 @@ export default function DashboardGroup({
         if (!databaseGroups.find(g => g.id === selectedGroup?.id)) {
             setSelectedGroup(null);
         }
-    }, [databaseGroups, selectedGroup?.id]);
+    }, [databaseGroups, selectedGroup]);
 
     const handleGroupClick = (group: (typeof databaseGroups)[0]) => {
         setSelectedGroup(group)
