@@ -67,7 +67,7 @@ class GroupDatabase extends Model
                     'tokens' => $m->tokens
                 ]),
                 'group_token' => $group->tokens()->where('group_id', $group->id)->first(),
-                'has_token' => ($group->tokens->count() + self::countMemberTokens()) > 0
+                'has_token' => $group->tokens->count() > 0
             ]);
 
         return $groups->collect()->filter(function ($group) use ($userId, $teamId) {
