@@ -28,7 +28,7 @@ class TeamController extends Controller
                 'id' => $member->id,
                 'name' => $member->name,
                 'email' => $member->email,
-                'role' => $member->pivot->role,
+                'role' => $member->pivot->permission_level,
             ]),
             'groups' => $team->groups->map(fn($group) => [
                 'id' => $group->id,

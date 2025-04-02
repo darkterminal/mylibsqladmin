@@ -30,9 +30,9 @@ class TeamSeeder extends Seeder
                     'name' => 'Engineering Team',
                     'description' => 'Core software development team',
                     'members' => [
-                        ['user' => 'superadmin', 'role' => 'admin'],
-                        ['user' => 'manager', 'role' => 'admin'],
-                        ['user' => 'maintainer', 'role' => 'maintainer'],
+                        ['user' => 'superadmin', 'role' => 'super-admin'],
+                        ['user' => 'manager', 'role' => 'team-manager'],
+                        ['user' => 'maintainer', 'role' => 'database-maintainer'],
                         ['user' => 'member', 'role' => 'member']
                     ]
                 ],

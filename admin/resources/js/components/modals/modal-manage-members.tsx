@@ -36,13 +36,13 @@ export function ModalManageMembers({
 
     const handleAddMember = () => {
         onAddMember(newMember)
-        setNewMember({ name: "", email: "", role: "Dev" })
+        setNewMember({ name: "", email: "", role: "Member" })
     }
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-1/2">
                 <DialogHeader>
                     <DialogTitle>Manage Team Members</DialogTitle>
                     <DialogDescription>Add or remove team members</DialogDescription>
@@ -51,7 +51,7 @@ export function ModalManageMembers({
                 {/* Add Member Form */}
                 <div className="grid gap-4">
                     <div className="grid grid-cols-12 gap-2">
-                        <div className="col-span-5">
+                        <div className="col-span-4">
                             <Label>Name</Label>
                             <Input
                                 value={newMember.name}
@@ -59,7 +59,7 @@ export function ModalManageMembers({
                                 placeholder="John Doe"
                             />
                         </div>
-                        <div className="col-span-5">
+                        <div className="col-span-4">
                             <Label>Email</Label>
                             <Input
                                 type="email"
@@ -68,7 +68,7 @@ export function ModalManageMembers({
                                 placeholder="john@example.com"
                             />
                         </div>
-                        <div className="col-span-2">
+                        <div className="col-span-4">
                             <Label>Role</Label>
                             <Select
                                 value={newMember.role}
@@ -78,8 +78,10 @@ export function ModalManageMembers({
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Admin">Admin</SelectItem>
-                                    <SelectItem value="Dev">Dev</SelectItem>
+                                    <SelectItem value="super-admin">Super Admin</SelectItem>
+                                    <SelectItem value="team-manager">Team Manager</SelectItem>
+                                    <SelectItem value="member">Member</SelectItem>
+                                    <SelectItem value="database-maintainer">Database Maintener</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -101,7 +103,7 @@ export function ModalManageMembers({
                                     <span className="text-xs">{getInitials(member.name)}</span>
                                 </Avatar>
                                 <div>
-                                    <p className="font-medium">{member.name}</p>
+                                    <p className="font-medium">{member.name} {member.role}</p>
                                     <p className="text-sm text-muted-foreground">{member.email}</p>
                                 </div>
                             </div>
@@ -109,17 +111,19 @@ export function ModalManageMembers({
                                 <Select
                                     value={member.role}
                                     onValueChange={(value) => onUpdateRole(member.id, value)}
-                                    disabled={member.role === "Owner"}
+                                    disabled={member.role === "Super Admin"}
                                 >
-                                    <SelectTrigger className="w-[100px]">
+                                    <SelectTrigger className="w-[200px]">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Admin">Admin</SelectItem>
-                                        <SelectItem value="Dev">Dev</SelectItem>
+                                        <SelectItem value="super-admin">Super Admin</SelectItem>
+                                        <SelectItem value="team-manager">Team Manager</SelectItem>
+                                        <SelectItem value="member">Member</SelectItem>
+                                        <SelectItem value="database-maintainer">Database Maintener</SelectItem>
                                     </SelectContent>
                                 </Select>
-                                {member.role !== "Owner" && (
+                                {member.role !== "Super Admin" && (
                                     <Button
                                         variant="ghost"
                                         size="icon"

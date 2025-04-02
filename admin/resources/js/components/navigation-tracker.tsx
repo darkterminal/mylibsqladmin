@@ -6,20 +6,20 @@ type NavigationTrackerProps = Record<string, unknown>;
 export default function NavigationTracker(_: NavigationTrackerProps) {
     const { url: currentUrl } = usePage();
     const lastUrl = typeof window !== 'undefined'
-        ? localStorage.getItem('lastNavigation')
+        ? localStorage.getItem('prevUrl')
         : null;
 
     useEffect(() => {
         // Store initial navigation
         if (!lastUrl && currentUrl !== window.location.pathname) {
-            localStorage.setItem('lastNavigation', window.location.pathname);
+            localStorage.setItem('prevUrl', window.location.pathname);
         }
     }, []);
 
     useEffect(() => {
         const handleBeforeNavigate = (event: CustomEvent) => {
             // Store current URL as last navigation before new page loads
-            localStorage.setItem('lastNavigation', currentUrl);
+            localStorage.setItem('prevUrl', currentUrl);
         };
 
         // Listen to beforeNavigate event

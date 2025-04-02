@@ -30,7 +30,7 @@ class Team extends Model
 
     public function hasAccess(User $user, string $requiredLevel)
     {
-        $levels = ['member' => 1, 'maintainer' => 2, 'admin' => 3];
+        $levels = ['super-admin' => 1, 'team-manager' => 2, 'database-maintener' => 3, 'member' => 4];
 
         return $user->hasRole('Super Admin') ||
             ($this->members->contains($user) &&

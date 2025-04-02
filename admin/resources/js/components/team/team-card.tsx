@@ -2,7 +2,7 @@ import { useInitials } from "@/hooks/use-initials";
 import { apiFetch } from "@/lib/api";
 import { SharedData, TeamCardProps } from "@/types";
 import { router, usePage } from "@inertiajs/react";
-import { Activity, CirclePlusIcon, FolderClosed, MoreHorizontal, Users } from "lucide-react";
+import { Activity, CheckCircle, CirclePlusIcon, FolderClosed, MoreHorizontal, Users } from "lucide-react";
 import { useState } from "react";
 import { AppTooltip } from "../app-tooltip";
 import { CreateDatabaseProps, ModalCreateDatabase } from "../modals/modal-create-database";
@@ -22,7 +22,7 @@ import { GroupTree } from "./group-tree";
 export default function TeamCard({ team }: TeamCardProps) {
     const getInitials = useInitials();
 
-    const { databases, groups: databaseGroups, auth } = usePage<SharedData>().props;
+    const { databases, groups: databaseGroups } = usePage<SharedData>().props;
     const groupedDatabases = (databaseGroups || [])
         .map?.(group => ({
             label: group.name,
@@ -75,6 +75,9 @@ export default function TeamCard({ team }: TeamCardProps) {
                 <div className="flex justify-between items-start">
                     <div className="space-y-1">
                         <CardTitle className="flex items-center">
+                            {String(team.id) === localStorage.getItem('currentTeamId') && (
+                                <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                            )}
                             {team.name}
                             <Badge variant="outline" className="ml-2">
                                 <Users className="h-3 w-3 mr-1" />
