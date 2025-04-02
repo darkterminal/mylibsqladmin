@@ -24,7 +24,6 @@ export function DatabaseCommand({ databases, onSelect, triggerShortcut = "ctrl+k
 
     useEffect(() => {
         const down = (e: KeyboardEvent) => {
-            // Check if the key combination matches the trigger shortcut
             const isCtrlK = triggerShortcut === "ctrl+k" && e.ctrlKey && e.key === "k"
             const isMetaK = triggerShortcut === "meta+k" && e.metaKey && e.key === "k"
 
