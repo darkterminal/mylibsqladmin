@@ -27,7 +27,9 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
     const [groups, setGroups] = useState<ComboboxOption[]>(groupedDatabases);
 
     const handleSelectDatabase = (database: string) => {
-        router.get('/dashboard?database=' + database);
+        localStorage.setItem('sidebar', 'false');
+        localStorage.setItem('prevUrl', window.location.href);
+        router.get('/database-studio?database=' + database);
     }
 
     const handleCreateGroup = async (name: string): Promise<string> => {
@@ -75,6 +77,13 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
         });
     }
 
+    const handleDisconnectDatabase = () => {
+        const prevUrl = localStorage.getItem('prevUrl') || route('dashboard');
+        localStorage.setItem('sidebar', 'true');
+        localStorage.setItem('prevUrl', route('dashboard'));
+        router.get(prevUrl)
+    }
+
     return (
         <header className="border-sidebar-border/50 flex h-16 shrink-0 items-center gap-2 border-b px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-14 md:px-4">
             <div className="flex justify-between items-center gap-2 w-full">
@@ -101,7 +110,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                             <Database className='h-4 w-4 mr-1' />
                             <span>{database}</span>
                             <AppTooltip text='Disconnect'>
-                                <Button variant="destructive" size="sm" className='ml-2' aria-label='Disconnect' onClick={() => router.get(route('dashboard'))}>
+                                <Button variant="destructive" size="sm" className='ml-2' aria-label='Disconnect' onClick={handleDisconnectDatabase}>
                                     <Unlink className='h-4 w-4' />
                                     <span className='sr-only'>Disconnect</span>
                                 </Button>
