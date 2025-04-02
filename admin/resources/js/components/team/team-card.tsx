@@ -162,7 +162,7 @@ export default function TeamCard({ team }: TeamCardProps) {
                     </TabsList>
                     <TabsContent value="groups" className="flex-grow mt-4 space-y-4">
                         <ScrollArea className="h-[250px]">
-                            <GroupTree groups={team.groups} />
+                            <GroupTree groups={team.groups} team={team} />
                         </ScrollArea>
                     </TabsContent>
                     <TabsContent value="activity" className="flex-grow mt-4">
