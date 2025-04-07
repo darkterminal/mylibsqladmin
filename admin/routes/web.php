@@ -1,5 +1,14 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DatabaseController;
+use App\Http\Controllers\GroupController;
+use App\Http\Controllers\TeamController;
+use App\Http\Controllers\TokenController;
+use App\Models\GroupDatabase;
+use App\Models\Team;
+use App\Models\User;
+use App\Models\UserDatabase;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -9,39 +18,77 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('database-studio', fn() => Inertia::render('database-studio'))->name('database.studio');
 
     Route::prefix('dashboard')->group(function () {
-        Route::get('/', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
-        Route::get('tokens', [App\Http\Controllers\DashboardController::class, 'indexToken'])->name('dashboard.tokens');
-        Route::get('groups', [App\Http\Controllers\DashboardController::class, 'indexGroup'])->name('dashboard.groups');
-        Route::get('teams', [App\Http\Controllers\TeamController::class, 'index'])->name('dashboard.teams');
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('databases', [DashboardController::class, 'indexDatabase'])
+            ->name('dashboard.databases')
+            ->can('view', [User::class, UserDatabase::class]);
+
+        Route::get('tokens', [DashboardController::class, 'indexToken'])->name('dashboard.tokens');
+
+        Route::get('groups', [DashboardController::class, 'indexGroup'])
+            ->name('dashboard.groups')
+            ->can('view', [User::class, GroupDatabase::class]);
+
+        Route::get('teams', [DashboardController::class, 'indexTeam'])
+            ->name('dashboard.teams')
+            ->can('view', [User::class, Team::class]);
     });
 
     Route::group(['prefix' => 'databases'], function () {
-        Route::post('create', [App\Http\Controllers\DashboardController::class, 'createDatabase'])->name('database.create');
-        Route::delete('delete/{database}', [App\Http\Controllers\DashboardController::class, 'deleteDatabase'])->name('database.delete');
+        Route::post('create', [DatabaseController::class, 'createDatabase'])
+            ->name('database.create')
+            ->can('create', User::class);
+
+        Route::delete('delete/{database}', [DatabaseController::class, 'deleteDatabase'])
+            ->name('database.delete')
+            ->can('delete', [User::class, UserDatabase::class]);
     });
 
     Route::group(['prefix' => 'tokens'], function () {
-        Route::post('create', [App\Http\Controllers\DashboardController::class, 'createToken'])->name('token.create');
-        Route::delete('delete/{tokenId}', [App\Http\Controllers\DashboardController::class, 'deleteToken'])->name('token.delete');
+        Route::post('create', [TokenController::class, 'createToken'])
+            ->name('token.create');
+        Route::delete('delete/{tokenId}', [TokenController::class, 'deleteToken'])->name('token.delete');
     });
 
     Route::group(['prefix' => 'groups'], function () {
-        Route::post('create', [App\Http\Controllers\DashboardController::class, 'createGroup'])->name('group.create');
-        Route::delete('delete/{groupId}', [App\Http\Controllers\DashboardController::class, 'deleteGroup'])->name('group.delete');
-        Route::post('{group}/add-databases', [App\Http\Controllers\DashboardController::class, 'addDatabasesToGroup'])->name('group.add-databases');
-        Route::delete('{group}/delete-database/{database}', [App\Http\Controllers\DashboardController::class, 'deleteDatabaseFromGroup'])->name('group.delete-databases');
-        Route::post('{group}/tokens', [App\Http\Controllers\DashboardController::class, 'createGroupToken'])->name('group.token.create');
-        Route::delete('{tokenId}/tokens', [App\Http\Controllers\DashboardController::class, 'deleteGroupToken'])->name('group.token.delete');
+        Route::post('create', [GroupController::class, 'createGroup'])
+            ->name('group.create');
+        Route::delete('delete/{groupId}', [GroupController::class, 'deleteGroup'])
+            ->name('group.delete');
+        Route::post('{group}/add-databases', [GroupController::class, 'addDatabasesToGroup'])
+            ->name('group.add-databases');
+        Route::delete('{group}/delete-database/{database}', [GroupController::class, 'deleteDatabaseFromGroup'])
+            ->name('group.delete-databases');
+        Route::post('{group}/tokens', [GroupController::class, 'createGroupToken'])
+            ->name('group.token.create');
+        Route::delete('{tokenId}/tokens', [GroupController::class, 'deleteGroupToken'])
+            ->name('group.token.delete');
     });
 
     Route::group(['prefix' => 'teams'], function () {
-        Route::post('create', [App\Http\Controllers\TeamController::class, 'createTeam'])
+        Route::post('create', [TeamController::class, 'createTeam'])
             ->name('team.create')
-            ->middleware('can:create,App\Models\Team');
-        Route::put('update/{teamId}', [App\Http\Controllers\TeamController::class, 'updateTeam'])
+            ->can('create', 'user');
+        Route::put('update/{teamId}', [TeamController::class, 'updateTeam'])
             ->name('team.update')
-            ->middleware(['can:update,team']);
+            ->can('update', ['user', 'team']);
+        Route::post('{team}/invitations', [TeamController::class, 'invite'])
+            ->name('teams.invitations.store')
+            ->can('create', 'user');
+        Route::delete('invitations/{invitation}', [TeamController::class, 'revokeInvite'])
+            ->name('teams.invitations.destroy')
+            ->can('delete', ['user', 'team']);
     });
+});
+
+Route::get('invitations/{token}/accept', [TeamController::class, 'acceptInvite'])
+    ->name('invitations.accept');
+
+Route::get('mailable/{teamId}', function ($teamId) {
+    $team = App\Models\Team::where('id', $teamId)->first();
+    $invitation = $team->invitations()->first();
+    return (new App\Notifications\TeamInvitation($team, $invitation))->toMail((object) [])->render();
 });
 
 require __DIR__ . '/settings.php';

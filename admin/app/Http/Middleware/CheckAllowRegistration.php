@@ -15,7 +15,7 @@ class CheckAllowRegistration
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (config('app.registration_enabled') === false) {
+        if (!config('app.registration_enabled') && !$request->session()->has('valid_invitation')) {
             return redirect('/login')->with('error', 'Registration is currently disabled.');
         }
 

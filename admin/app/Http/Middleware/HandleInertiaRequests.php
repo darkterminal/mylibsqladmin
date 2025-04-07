@@ -99,6 +99,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'databases' => fn() => $currentTeamDatabases['databases'] ?? [],
             'groups' => fn() => $currentTeamDatabases['groups'] ?? [],
+            'invitation' => fn() => session('valid_invitation') ?? null,
         ];
     }
 }

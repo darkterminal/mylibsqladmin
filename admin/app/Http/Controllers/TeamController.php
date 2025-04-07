@@ -3,58 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Events\TeamDatabasesRequested;
+use App\Jobs\SendTeamInvitation;
+use App\Models\Invitation;
 use App\Models\Team;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class TeamController extends Controller
 {
-    public function index(Request $request)
-    {
-        $teams = Team::with([
-            'members',
-            'groups.members' => function ($query) {
-                $query->with(['latestActivity', 'user'])
-                    ->select('id', 'database_name', 'is_schema', 'user_id', 'created_at');
-            },
-            'recentActivities.user'
-        ])->get();
-
-        $teamData = $teams->map(fn($team) => [
-            'id' => $team->id,
-            'name' => $team->name,
-            'description' => $team->description,
-            'members' => $team->members->count(),
-            'team_members' => $team->members->map(fn($member) => [
-                'id' => $member->id,
-                'name' => $member->name,
-                'email' => $member->email,
-                'role' => $member->pivot->permission_level,
-            ]),
-            'groups' => $team->groups->map(fn($group) => [
-                'id' => $group->id,
-                'name' => $group->name,
-                'databases' => $group->members->map(fn($database) => [
-                    'id' => $database->id,
-                    'name' => $database->database_name,
-                    'type' => $this->determineDatabaseType($database->is_schema),
-                    'lastActivity' => $database->latestActivity?->created_at->diffForHumans() ?? 'No activity'
-                ])
-            ]),
-            'recentActivity' => $team->recentActivities->map(fn($activity) => [
-                'id' => $activity->id,
-                'user' => $activity->user->name,
-                'action' => $activity->action,
-                'database' => $activity->database->database_name,
-                'time' => $activity->created_at->diffForHumans()
-            ])
-        ]);
-
-        return Inertia::render('dashboard-team', [
-            'teams' => $teamData
-        ]);
-    }
-
     public function createTeam(Request $request)
     {
         $validated = $request->validate([
@@ -105,19 +62,6 @@ class TeamController extends Controller
         }
     }
 
-    private function determineDatabaseType($isSchema)
-    {
-        if (is_numeric($isSchema) && (int) $isSchema === 1) {
-            return 'schema';
-        }
-
-        if (is_numeric($isSchema) && (int) $isSchema === 0) {
-            return 'standalone';
-        }
-
-        return 'child';
-    }
-
     public function getDatabases(Request $request, $teamId)
     {
         try {
@@ -137,5 +81,64 @@ class TeamController extends Controller
                 'message' => $e->getMessage()
             ], $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ? 404 : 500);
         }
+    }
+
+    public function storeMember(Request $request, Team $team)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'permission_level' => 'required|in:super-admin,team-manager,database-maintener,member'
+        ]);
+
+        $team->members()->syncWithoutDetaching([
+            $request->user_id => ['permission_level' => $request->permission_level]
+        ]);
+
+        return redirect()->back()->with('success', 'Member added successfully');
+    }
+
+    public function invite(Request $request, Team $team)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'role' => 'required|in:super-admin,team-manager,database-maintener,member'
+        ]);
+
+        $invitation = $team->invitations()->create([
+            'email' => $request->email,
+            'token' => Str::random(64),
+            'inviter_id' => auth()->id(),
+            'permission_level' => $request->role,
+            'expires_at' => now()->addDays(7)
+        ]);
+
+        // Send notification
+        SendTeamInvitation::dispatch($invitation);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Invitation sent successfully'
+        ]);
+    }
+
+    public function acceptInvite($token)
+    {
+        $invitation = Invitation::where('token', $token)
+            ->where('expires_at', '>', now())
+            ->firstOrFail();
+
+        if (auth()->guest()) {
+            session()->put('valid_invitation', $invitation);
+            return redirect()->route('register');
+        }
+
+        $invitation->team->members()->attach(auth()->id(), [
+            'permission_level' => $invitation->permission_level
+        ]);
+
+        $invitation->delete();
+
+        return redirect()->route('dashboard.teams')
+            ->with('success', 'Joined team successfully');
     }
 }

@@ -15,6 +15,18 @@ class Role extends Model
         'description'
     ];
 
+    public static function getRoleName(string $name): string
+    {
+        $roles = [
+            'super-admin' => 'Super Admin',
+            'team-manager' => 'Team Manager',
+            'database-maintener' => 'Database Maintener',
+            'member' => 'Member'
+        ];
+
+        return $roles[$name] ?? $name;
+    }
+
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)->withTimestamps();

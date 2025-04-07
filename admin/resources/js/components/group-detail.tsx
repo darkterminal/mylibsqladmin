@@ -1,22 +1,25 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { triggerEvent } from "@/hooks/use-custom-event"
-import { calculateExpirationDate } from "@/lib/utils"
-import { DatabaseInGroupProps, GroupDatabaseProps } from "@/types"
-import { router } from "@inertiajs/react"
-import { DatabaseIcon, KeyIcon, PlusCircleIcon, Server, TrashIcon } from "lucide-react"
+import { apiFetch } from "@/lib/api"
+import { calculateExpirationDate, getQuery } from "@/lib/utils"
+import { DatabaseInGroupProps, GroupDatabaseProps, SharedData } from "@/types"
+import { router, usePage } from "@inertiajs/react"
+import { CirclePlusIcon, DatabaseIcon, KeyIcon, PlusCircleIcon, Server } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { AppTooltip } from "./app-tooltip"
 import ButtonCopyFullAccessToken from "./button-actions/action-copy-full-access-token"
 import ButtonCopyReadOnlyToken from "./button-actions/action-copy-read-only-token"
-import ButtonDeleteGroup from "./button-actions/action-delete-group"
+import ButtonDelete from "./button-actions/action-delete"
 import ButtonActionGroupToken from "./button-actions/action-group-token"
 import ButtonOpenDatabaseStudio from "./button-actions/action-open-database-studio"
 import ModalAddDatabaseToGroup from "./modals/modal-add-database-to-group"
+import { CreateDatabaseProps, ModalCreateDatabase } from "./modals/modal-create-database"
 import { ModalCreateGroupToken } from "./modals/modal-create-group-token"
 import { ModalCreateToken } from "./modals/modal-create-token"
 import { Button } from "./ui/button"
+import { ComboboxOption } from "./ui/combobox"
 import { ScrollArea } from "./ui/scroll-area"
 
 export default function GroupDetail({
@@ -26,6 +29,15 @@ export default function GroupDetail({
     group: GroupDatabaseProps | null
     availableDatabases: DatabaseInGroupProps[]
 }) {
+    const { databases, groups: databaseGroups } = usePage<SharedData>().props;
+    const database = getQuery('database', 'No database selected');
+    const groupedDatabases = (databaseGroups || [])
+        .map?.(group => ({
+            label: group.name,
+            value: group.id.toString()
+        }))
+        ?.sort((a, b) => Number(b.value) - Number(a.value)) || [];
+    const [groups, setGroups] = useState<ComboboxOption[]>(groupedDatabases);
     const [isLoading, setIsLoading] = useState(true);
     const [group, setGroup] = useState<GroupDatabaseProps | null>(null);
 
@@ -74,12 +86,78 @@ export default function GroupDetail({
         return group?.database_tokens?.find(t => t.database_id === databaseId) ?? null;
     }, [group?.database_tokens]);
 
+    const handleDatabaseSubmit = async (formData: CreateDatabaseProps) => {
+        const teamId = localStorage.getItem('currentTeamId');
+
+        const submittedData = {
+            database: formData.useExisting ? formData.childDatabase : formData.database,
+            isSchema: formData.useExisting ? formData.database : formData.isSchema,
+            groupId: Number(formData.groupName),
+            teamId: Number(teamId),
+        };
+
+        const response = await apiFetch(route('database.create'), {
+            method: 'POST',
+            body: JSON.stringify(submittedData),
+        });
+
+        if (response.ok) {
+            router.visit(window.location.href, {
+                preserveScroll: true,
+            });
+        }
+    }
+
+    const handleDeleteDatabase = useCallback((groupId: number, databaseId: number) => {
+        toast('Are you sure you want to delete this database from this group?', {
+            description: "This action cannot be undone.",
+            position: 'top-center',
+            action: (
+                <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                        router.delete(route('group.delete-databases', { group: groupId, database: databaseId }), {
+                            preserveScroll: true,
+                            onSuccess: () => {
+                                toast.success('Database deleted successfully');
+                            },
+                            onFinish: () => {
+                                router.visit(route('dashboard.groups'));
+                            }
+                        });
+                    }}
+                >
+                    Delete
+                </Button>
+            )
+        })
+    }, []);
+
     if (isLoading || !group) {
         return <div className="p-4 text-center text-muted-foreground">Loading group details...</div>;
     }
 
     if (!group.members?.length) {
-        return <div className="p-4 text-center text-muted-foreground">No databases in this group</div>;
+        return (
+            <div className="h-full flex items-center justify-center border rounded-md p-8 text-center">
+                <div>
+                    <h3 className="font-medium mb-2">There is no database in this group</h3>
+                    <ModalCreateDatabase
+                        existingDatabases={databases}
+                        onSubmit={handleDatabaseSubmit}
+                        groups={groups}
+                        currentGroup={group}
+                    >
+                        <AppTooltip text='Create new database'>
+                            <Button variant={'outline'} size={'default'}>
+                                <CirclePlusIcon className='h-4 w-4' /> Add New Database
+                            </Button>
+                        </AppTooltip>
+                    </ModalCreateDatabase>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -87,7 +165,7 @@ export default function GroupDetail({
             <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <ButtonDeleteGroup handleDelete={deleteGroup} />
+                        <ButtonDelete handleDelete={deleteGroup} />
                         <CardTitle className="text-xl flex items-center">
                             <Server className="h-5 w-5 text-muted-foreground mr-2" />
                             <span>{group.name}</span>
@@ -123,9 +201,9 @@ export default function GroupDetail({
                 </div>
             </CardHeader>
             <CardContent>
-                <ScrollArea className="h-[250px]">
+                <h3 className="text-sm font-medium mb-2">Databases in this group:</h3>
+                <ScrollArea className="h-[700px]">
                     <div className="space-y-4">
-                        <h3 className="text-sm font-medium">Databases in this group:</h3>
                         <div className="grid gap-2">
                             {group.members.map((database) => {
                                 if (!database.id || !database.database_name) return null;
@@ -142,33 +220,7 @@ export default function GroupDetail({
                                         <Badge variant="outline" className="ml-auto border-green-400 dark:border-green-600 text-green-400 dark:text-green-600">
                                             Active
                                         </Badge>
-                                        <AppTooltip text="Delete Database">
-                                            <Button variant={'destructive'} size="sm" onClick={() => {
-                                                toast('Are you sure you want to delete this database from this group?', {
-                                                    description: "This action cannot be undone.",
-                                                    position: 'top-center',
-                                                    action: (
-                                                        <Button
-                                                            variant="destructive"
-                                                            size="sm"
-                                                            onClick={() => {
-                                                                router.delete(route('group.delete-databases', { group: group.id, database: database.id }), {
-                                                                    preserveScroll: true,
-                                                                    onSuccess: () => {
-                                                                        toast.success('Database deleted successfully');
-                                                                        router.visit(route('dashboard.groups'));
-                                                                    }
-                                                                });
-                                                            }}
-                                                        >
-                                                            Delete
-                                                        </Button>
-                                                    )
-                                                })
-                                            }}>
-                                                <TrashIcon className="h-4 w-4" />
-                                            </Button>
-                                        </AppTooltip>
+                                        <ButtonDelete handleDelete={() => handleDeleteDatabase(group.id, database.id)} text="Delete Database" />
                                         {token ? (
                                             <>
                                                 <ButtonCopyReadOnlyToken token={token} />

@@ -1,46 +1,34 @@
-import { SharedData } from "@/types"
-import { usePage } from "@inertiajs/react"
+import { SharedData } from "@/types";
+import { usePage } from "@inertiajs/react";
+
+type PermissionAttributes =
+    'manage-teams' |
+    'create-teams' |
+    'manage-group-databases' |
+    'manage-group-database-tokens' |
+    'manage-database-tokens' |
+    'manage-team-groups' |
+    'access-team-databases';
+
+type RoleAttributes =
+    'Super Admin' |
+    'Team Manager' |
+    'Database Maintainer' |
+    'Member';
 
 // Check basic permissions
 export function usePermission() {
-    const { auth } = usePage<SharedData>().props
+    const { auth } = usePage<SharedData>().props;
 
     return {
-        can: (permission: string) => {
-            if (!auth) return false
-            return auth.permissions?.abilities.includes(permission)
+        can: (permission: PermissionAttributes) => {
+            return auth?.permissions?.abilities.includes(permission) ?? false;
         },
-        hasRole: (role: string) => {
-            if (!auth) return false
-            return auth.user.role === role
-        }
-    }
-}
-
-// For model-specific permissions
-export function useGate() {
-    const { auth } = usePage().props
-
-    return {
-        check: async (ability: string, modelType: string, modelId: number) => {
-            try {
-                const response = await fetch(route('api.check-gate'), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        ability,
-                        model_type: modelType,
-                        model_id: modelId
-                    })
-                })
-                if (!response.ok) throw new Error('Network response was not ok');
-                const data = await response.json();
-                return data.allowed;
-            } catch (error) {
-                return false;
-            }
+        hasRole: (role: RoleAttributes) => {
+            return auth?.user.role === role;
+        },
+        hasAnyRole: (...roles: RoleAttributes[]) => {
+            return roles.includes(auth?.user.role as RoleAttributes) ?? false;
         }
     }
 }

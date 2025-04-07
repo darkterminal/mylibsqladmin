@@ -123,19 +123,19 @@ class RoleUserSeeder extends Seeder
                 'role' => 'Team Manager'
             ],
             [
+                'name' => 'Jane Doe',
+                'username' => 'janedoe',
+                'email' => 'database_maintainer@mylibsqladmin.oss',
+                'password' => Hash::make('dimonggoin123'),
+                'role' => 'Database Maintainer'
+            ],
+            [
                 'name' => 'John Doe',
                 'username' => 'jdoe',
                 'email' => 'member@mylibsqladmin.oss',
                 'password' => Hash::make('dimonggoin123'),
                 'role' => 'Member'
             ],
-            [
-                'name' => 'Jane Doe',
-                'username' => 'janedoe',
-                'email' => 'database_maintainer@mylibsqladmin.oss',
-                'password' => Hash::make('dimonggoin123'),
-                'role' => 'Database Maintainer'
-            ]
         ];
 
         foreach ($users as $userData) {

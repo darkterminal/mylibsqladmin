@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GroupController;
 use App\Http\Controllers\SubdomainValidationController;
 use App\Http\Controllers\TeamController;
 use App\Models\GroupDatabase;
@@ -35,7 +35,7 @@ Route::middleware('auth')->group(function () {
         ], $response->status());
     });
 
-    Route::post('/api/group/create-only', [DashboardController::class, 'createGroupOnly'])->name('api.group.create-only');
+    Route::post('/api/group/create-only', [GroupController::class, 'createGroupOnly'])->name('api.group.create-only');
     Route::get('/api/teams/{teamId}/databases', [TeamController::class, 'getDatabases'])->name('api.teams.databases');
     Route::post('/api/check-gate', function (Request $request) {
         $model = $request->model_type::findOrFail($request->model_id);

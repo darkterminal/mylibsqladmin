@@ -1,6 +1,7 @@
 import { useInitials } from "@/hooks/use-initials";
 import { apiFetch } from "@/lib/api";
-import { SharedData, TeamCardProps, TeamForm } from "@/types";
+import { usePermission } from "@/lib/auth";
+import { MemberForm, SharedData, TeamCardProps, TeamForm } from "@/types";
 import { router, usePage } from "@inertiajs/react";
 import { Activity, CheckCircle, CirclePlusIcon, FolderClosed, MoreHorizontal, Users } from "lucide-react";
 import { useState } from "react";
@@ -21,6 +22,7 @@ import { GroupTree } from "./group-tree";
 
 export default function TeamCard({ team, isCurrent }: TeamCardProps) {
     const getInitials = useInitials();
+    const { can } = usePermission();
 
     const { databases, groups: databaseGroups } = usePage<SharedData>().props;
     const groupedDatabases = (databaseGroups || [])
@@ -81,6 +83,46 @@ export default function TeamCard({ team, isCurrent }: TeamCardProps) {
         }
     }
 
+    const handleAddMember = async (member: MemberForm) => {
+        const response = await apiFetch(route('teams.invitations.store', team.id), {
+            method: 'POST',
+            body: JSON.stringify(member),
+        });
+
+        if (response.ok) {
+            router.visit(window.location.href, {
+                preserveScroll: true,
+            });
+        }
+    }
+
+    const handleCreateGroupSubmit = async (name: string) => {
+        try {
+            const teamId = localStorage.getItem('currentTeamId');
+            const response = await apiFetch(route('api.group.create-only'), {
+                method: 'POST',
+                body: JSON.stringify({ name, team_id: teamId }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to create group');
+            }
+
+            const refreshSession = await apiFetch(route('api.teams.databases', Number(teamId)));
+
+            if (!refreshSession.ok) {
+                throw new Error('Failed to refresh session');
+            }
+
+            router.visit(window.location.href, {
+                preserveScroll: true,
+            });
+        } catch (error) {
+            console.error("Error creating group:", error);
+            throw error;
+        }
+    }
+
     return (
         <Card className="h-full flex flex-col">
             <CardHeader className="pb-2">
@@ -98,69 +140,71 @@ export default function TeamCard({ team, isCurrent }: TeamCardProps) {
                         </CardTitle>
                         <CardDescription>{team.description}</CardDescription>
                     </div>
-                    <div className="flex gap-2">
-                        <ModalCreateDatabase
-                            existingDatabases={databases}
-                            onSubmit={handleDatabaseSubmit}
-                            groups={groups}
-                            onCreateGroup={handleCreateGroup}
-                            currentTeam={team}
-                        >
-                            <AppTooltip text='Create new database'>
-                                <Button variant={'outline'} size='icon' className="h-8 w-8">
-                                    <CirclePlusIcon className='h-4 w-4' />
-                                </Button>
-                            </AppTooltip>
-                        </ModalCreateDatabase>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                    <span className="sr-only">Open menu</span>
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem asChild>
-                                    <ModalEditTeam
-                                        trigger={
-                                            <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
-                                                Edit team
-                                            </Button>
-                                        }
-                                        onSave={(team) => handleEditTeamOnSave(team)}
-                                        initValues={team}
-                                    />
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                    <ModalManageMembers
-                                        trigger={
-                                            <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
-                                                Manage members
-                                            </Button>
-                                        }
-                                        members={team.team_members}
-                                        onAddMember={(member) => console.log(member)}
-                                        onRemoveMember={(memberId) => console.log(memberId)}
-                                        onUpdateRole={(memberId, role) => console.log(memberId, role)}
-                                    />
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                    <ModalCreateGroupOnly
-                                        trigger={
-                                            <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
-                                                Add group
-                                            </Button>
-                                        }
-                                        onSave={(groupName) => console.log(groupName)}
-                                    />
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-destructive">Delete team</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
+                    {can('manage-teams') && (
+                        <div className="flex gap-2">
+                            <ModalCreateDatabase
+                                existingDatabases={databases}
+                                onSubmit={handleDatabaseSubmit}
+                                groups={groups}
+                                onCreateGroup={handleCreateGroup}
+                                currentTeam={team}
+                            >
+                                <AppTooltip text='Create new database'>
+                                    <Button variant={'outline'} size='icon' className="h-8 w-8">
+                                        <CirclePlusIcon className='h-4 w-4' />
+                                    </Button>
+                                </AppTooltip>
+                            </ModalCreateDatabase>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                        <span className="sr-only">Open menu</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem asChild>
+                                        <ModalEditTeam
+                                            trigger={
+                                                <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
+                                                    Edit team
+                                                </Button>
+                                            }
+                                            onSave={(team) => handleEditTeamOnSave(team)}
+                                            initValues={team}
+                                        />
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <ModalManageMembers
+                                            trigger={
+                                                <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
+                                                    Manage members
+                                                </Button>
+                                            }
+                                            members={team.team_members}
+                                            onAddMember={(member) => handleAddMember(member)}
+                                            onRemoveMember={(memberId) => console.log(memberId)}
+                                            onUpdateRole={(memberId, role) => console.log(memberId, role)}
+                                        />
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <ModalCreateGroupOnly
+                                            trigger={
+                                                <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
+                                                    Add group
+                                                </Button>
+                                            }
+                                            onSave={(groupName) => handleCreateGroupSubmit(groupName)}
+                                        />
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem className="text-destructive">Delete team</DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    )}
                 </div>
             </CardHeader>
             <CardContent className="flex-grow">

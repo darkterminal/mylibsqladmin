@@ -28,6 +28,7 @@ import { useInitials } from "@/hooks/use-initials"
 import { useLocalStorage } from "@/hooks/use-localstorage"
 import { createSignal, useSignal } from "@/hooks/use-signal"
 import { apiFetch } from "@/lib/api"
+import { usePermission } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 import { SharedData, Team } from "@/types"
 import { router, useForm, usePage } from "@inertiajs/react"
@@ -40,9 +41,10 @@ export const teamSignal = createSignal<Team | null>(null)
 
 export function TeamSwitcher({ className }: TeamSwitcherProps) {
     const { auth } = usePage<SharedData>().props
-    const [currentTeamId, setCurrentTeamId] = useLocalStorage<number | null>('currentTeamId', auth.user.teams[0].id || null)
+    const [currentTeamId, setCurrentTeamId] = useLocalStorage<number | null>('currentTeamId', auth.user.teams[0]?.id || null)
 
     const getInitials = useInitials();
+    const { can } = usePermission();
     const [open, setOpen] = React.useState(false)
     const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false)
     const [selectedTeam, setSelectedTeam] = useSignal<Team | null>(teamSignal)
@@ -79,12 +81,13 @@ export function TeamSwitcher({ className }: TeamSwitcherProps) {
     }
 
     React.useEffect(() => {
-        const teams = auth.user.teams
-        if (teams.length > 0) {
-            const team = teams.find(team => team.id === Number(currentTeamId)) as Team
-            (async () => await apiFetch(route('api.teams.databases', team.id)))()
-            setSelectedTeam(team)
-            setCurrentTeamId(team.id)
+        if (auth.user.teams.length > 0) {
+            const team = auth.user.teams.find(team => team.id === Number(currentTeamId)) || auth.user.teams[0]
+            if (team) {
+                (async () => await apiFetch(route('api.teams.databases', team.id)))()
+                setSelectedTeam(team)
+                setCurrentTeamId(team.id)
+            }
         }
     }, [auth.user.teams])
 
@@ -106,9 +109,9 @@ export function TeamSwitcher({ className }: TeamSwitcherProps) {
                     >
                         <div className="flex items-center gap-2">
                             <span className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                                {getInitials(selectedTeam.name)}
+                                {getInitials(selectedTeam?.name || "")}
                             </span>
-                            <span className="truncate">{selectedTeam.name}</span>
+                            <span className="truncate">{selectedTeam?.name || ""}</span>
                         </div>
                         <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
                     </Button>
@@ -129,26 +132,30 @@ export function TeamSwitcher({ className }: TeamSwitcherProps) {
                                             <span>{team.name}</span>
                                         </div>
                                         <Check
-                                            className={cn("ml-auto h-4 w-4", selectedTeam.id === team.id ? "opacity-100" : "opacity-0")}
+                                            className={cn("ml-auto h-4 w-4", selectedTeam?.id === team.id ? "opacity-100" : "opacity-0")}
                                         />
                                     </CommandItem>
                                 ))}
                             </CommandGroup>
                         </CommandList>
-                        <CommandSeparator />
-                        <CommandList>
-                            <CommandGroup>
-                                <CommandItem
-                                    onSelect={() => {
-                                        setOpen(false)
-                                        setShowNewTeamDialog(true)
-                                    }}
-                                >
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    Create Team
-                                </CommandItem>
-                            </CommandGroup>
-                        </CommandList>
+                        {can('manage-teams') && (
+                            <>
+                                <CommandSeparator />
+                                <CommandList>
+                                    <CommandGroup>
+                                        <CommandItem
+                                            onSelect={() => {
+                                                setOpen(false)
+                                                setShowNewTeamDialog(true)
+                                            }}
+                                        >
+                                            <PlusCircle className="mr-2 h-4 w-4" />
+                                            Create Team
+                                        </CommandItem>
+                                    </CommandGroup>
+                                </CommandList>
+                            </>
+                        )}
                     </Command>
                 </PopoverContent>
             </Popover>

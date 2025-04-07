@@ -18,6 +18,7 @@ class User extends Authenticatable
         'username',
         'email',
         'password',
+        'role'
     ];
 
     protected $hidden = [
@@ -94,6 +95,11 @@ class User extends Authenticatable
     public function ownsDatabase(UserDatabase $database)
     {
         return $this->id === $database->user_id;
+    }
+
+    public function hasTeamAccess(int $teamId)
+    {
+        return $this->teams()->where('team_id', $teamId)->exists();
     }
 
     public function hasTeamAccessToDatabase(UserDatabase $database)

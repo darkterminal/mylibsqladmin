@@ -1,9 +1,9 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import usePrevUrl from '@/hooks/use-prev-url';
 import { apiFetch } from '@/lib/api';
+import { usePermission } from '@/lib/auth';
 import { getQuery } from '@/lib/utils';
-import { SharedData, Team, type BreadcrumbItem as BreadcrumbItemType } from '@/types';
+import { SharedData, type BreadcrumbItem as BreadcrumbItemType } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { CirclePlusIcon, Database, Unlink } from 'lucide-react';
 import { useState } from 'react';
@@ -17,7 +17,7 @@ import { ComboboxOption } from './ui/combobox';
 
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
 
-    const lastNavigation = usePrevUrl('/');
+    const { can } = usePermission();
     const { databases, groups: databaseGroups, auth } = usePage<SharedData>().props;
     const database = getQuery('database', 'No database selected');
     const groupedDatabases = (databaseGroups || [])
@@ -67,61 +67,76 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
             teamId: Number(teamId),
         };
 
-        router.post(route('database.create'), submittedData, {
-            onSuccess: async () => {
-                const teams = auth.user.teams
-                if (teams.length > 0) {
-                    const team = teams.find(team => team.id === Number(teamId)) as Team
-                    await apiFetch(route('api.teams.databases', team.id))
-                }
-            },
-            onFinish: () => router.visit(window.location.href)
+        const response = await apiFetch(route('database.create'), {
+            method: 'POST',
+            body: JSON.stringify(submittedData),
         });
+
+        if (response.ok) {
+            router.visit(window.location.href, {
+                preserveScroll: true,
+            });
+        }
     }
 
     const handleDisconnectDatabase = () => {
         localStorage.setItem('sidebar', 'true');
-        router.get(lastNavigation);
+        router.visit(route('dashboard'));
     }
 
     return (
-        <header className="border-sidebar-border/50 flex h-16 shrink-0 items-center gap-2 border-b px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-14 md:px-4">
-            <div className="flex justify-between items-center gap-2 w-full">
-                <div className='flex items-center'>
-                    <SidebarTrigger className="-ml-1" />
+        <header className="border-sidebar-border/50 flex h-16 shrink-0 items-center border-b px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-14">
+            <div className="flex w-full items-center justify-between gap-2">
+                {/* Left Section */}
+                <div className="flex flex-1 items-center gap-2 min-w-0">
+                    <SidebarTrigger className="-ml-1.5 md:-ml-1" />
                     <Breadcrumbs breadcrumbs={breadcrumbs} />
                 </div>
-                <div className='flex items-center gap-3'>
-                    <ModalCreateDatabase
-                        existingDatabases={databases}
-                        onSubmit={handleDatabaseSubmit}
-                        groups={groups}
-                        onCreateGroup={handleCreateGroup}
-                    >
-                        <AppTooltip text='Create new database'>
-                            <Button variant={'outline'}>
-                                <CirclePlusIcon className='h-4 w-4' />
-                            </Button>
-                        </AppTooltip>
-                    </ModalCreateDatabase>
-                    <DatabaseCommand databases={databases} onSelect={(database) => handleSelectDatabase(database.database_name)} />
+
+                {/* Right Section */}
+                <div className="flex flex-shrink-0 items-center gap-2">
+                    {can('manage-group-databases') && (
+                        <ModalCreateDatabase
+                            existingDatabases={databases}
+                            onSubmit={handleDatabaseSubmit}
+                            groups={groups}
+                            onCreateGroup={handleCreateGroup}
+                        >
+                            <AppTooltip text='Create new database'>
+                                <Button variant={'outline'} size="sm" className="h-8 w-8 p-0">
+                                    <CirclePlusIcon className='h-4 w-4' />
+                                </Button>
+                            </AppTooltip>
+                        </ModalCreateDatabase>
+                    )}
+
+                    <DatabaseCommand
+                        databases={databases}
+                        onSelect={(database) => handleSelectDatabase(database.database_name)}
+                    />
+
                     {database !== 'No database selected' && (
-                        <div className='flex items-center'>
-                            <Database className='h-4 w-4 mr-1' />
-                            <span>{database}</span>
+                        <div className='hidden md:flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded-md'>
+                            <Database className='h-4 w-4 flex-shrink-0' />
+                            <span className="truncate max-w-[120px]">{database}</span>
                             <AppTooltip text='Disconnect'>
-                                <Button variant="destructive" size="sm" className='ml-2' aria-label='Disconnect' onClick={handleDisconnectDatabase}>
-                                    <Unlink className='h-4 w-4' />
-                                    <span className='sr-only'>Disconnect</span>
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    className='h-6 w-6 p-0'
+                                    onClick={handleDisconnectDatabase}
+                                >
+                                    <Unlink className='h-3.5 w-3.5' />
                                 </Button>
                             </AppTooltip>
                         </div>
                     )}
-                    <div className="flex items-centerml-2 pl-2 ml-2 border-l">
+
+                    <div className="flex items-center gap-2 ml-2 pl-2 border-l">
                         <TeamSwitcher />
-                        <AppearanceToggleDropdown />
                     </div>
                 </div>
+                <AppearanceToggleDropdown />
             </div>
         </header>
     );

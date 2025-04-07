@@ -5,9 +5,10 @@ import {
     TooltipTrigger
 } from "./ui/tooltip";
 
-export function AppTooltip({ children, text, ...props }: {
+export function AppTooltip({ children, text, align = "center", ...props }: {
     children: React.ReactNode;
     text: string;
+    align?: 'start' | 'center' | 'end';
 }) {
 
     return (
@@ -16,7 +17,7 @@ export function AppTooltip({ children, text, ...props }: {
                 <TooltipTrigger asChild {...props}>
                     {children}
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent align={align}>
                     <p>{text}</p>
                 </TooltipContent>
             </Tooltip>

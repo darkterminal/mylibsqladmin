@@ -12,7 +12,7 @@ class StatsFetcher extends Command
      *
      * @var string
      */
-    protected $signature = 'app:stats-fetcher';
+    protected $signature = 'app:stats-fetcher {databaseName?}';
 
     /**
      * The console command description.
@@ -26,6 +26,13 @@ class StatsFetcher extends Command
      */
     public function handle()
     {
+        $databaseName = $this->argument('databaseName');
+
+        if ($databaseName) {
+            StatsFetcherService::run($databaseName);
+            return;
+        }
+
         StatsFetcherService::run();
     }
 }

@@ -95,4 +95,14 @@ class QueryMetric extends Model
 
         return $databaseMetrics;
     }
+
+    public function scopeMinimalSummarized($query)
+    {
+        return $query->selectRaw('
+            SUM(rows_read) as rows_read_count,
+            SUM(rows_written) as rows_written_count,
+            COUNT(*) as query_count,
+            SUM(storage_bytes_used) as storage_bytes_used
+        ');
+    }
 }

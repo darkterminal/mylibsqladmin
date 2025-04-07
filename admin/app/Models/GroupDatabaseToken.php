@@ -22,4 +22,10 @@ class GroupDatabaseToken extends Model
     {
         return $this->belongsTo(GroupDatabase::class, 'group_id');
     }
+
+    public function isExpired(): bool
+    {
+        return $this->expiration_day &&
+            now()->gt($this->created_at->addDays($this->expiration_day));
+    }
 }

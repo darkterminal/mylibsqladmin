@@ -21,7 +21,8 @@ return new class extends Migration {
         Schema::create('team_user', function (Blueprint $table) {
             $table->foreignId('team_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('permission_level')->default('member'); // [admin, maintainer, member]
+            // default is member, allowed value is super-admin, team-manager, database-maintainer
+            $table->string('permission_level')->default('member');
             $table->timestamps();
 
             $table->primary(['team_id', 'user_id']);

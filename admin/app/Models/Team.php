@@ -18,6 +18,16 @@ class Team extends Model
             ->withTimestamps();
     }
 
+    public function hasMember(int $userId)
+    {
+        return $this->members()->where('users.id', $userId)->exists();
+    }
+
+    public function invitations()
+    {
+        return $this->hasMany(Invitation::class);
+    }
+
     public function groups()
     {
         return $this->hasMany(GroupDatabase::class);
@@ -54,6 +64,11 @@ class Team extends Model
         $minRequired = min($requiredLevels);
 
         return $levels[$userLevel] <= $minRequired;
+    }
+
+    public function isSuperAdmin(User $user)
+    {
+        return $this->getPermissionLevel($user) === 'super-admin';
     }
 
     public static function setTeamDatabases(int $userId, int|string $teamId)

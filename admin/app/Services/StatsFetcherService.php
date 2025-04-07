@@ -22,7 +22,7 @@ class StatsFetcherService
     {
         $databases = SqldService::getDatabases();
         foreach ($databases as $database) {
-            $response = Http::get("http://db:8081/v1/namespaces/{$database['database_name']}/stats");
+            $response = Http::get(SqldService::useEndpoint('db') . "/v1/namespaces/{$database['database_name']}/stats");
             $stats = $response->json();
 
             $queryMetric = QueryMetric::insertGetId([
@@ -79,7 +79,7 @@ class StatsFetcherService
         $databases = SqldService::getDatabases();
         $database = collect($databases)->where('database_name', $databaseName)->first();
 
-        $response = Http::get("http://db:8081/v1/namespaces/{$databaseName}/stats");
+        $response = Http::get(SqldService::useEndpoint('db') . "/v1/namespaces/{$databaseName}/stats");
         $stats = $response->json();
 
         $queryMetric = QueryMetric::insertGetId([

@@ -8,10 +8,12 @@ import { Button } from "../ui/button";
 
 export default function ButtonOpenDatabaseStudio({
     databaseName,
+    text,
     team,
     size = "sm"
 }: {
     databaseName: string,
+    text?: string,
     team?: Team,
     size?: VariantProps<typeof Button>["size"]
 }) {
@@ -32,6 +34,9 @@ export default function ButtonOpenDatabaseStudio({
                 onClick={() => handleSelectDatabase(databaseName)}
             >
                 <BoxIcon className="h-2 w-2" />
+                {text && (
+                    <span className="ml-1">{text}</span>
+                )}
             </Button>
         </AppTooltip>
     )

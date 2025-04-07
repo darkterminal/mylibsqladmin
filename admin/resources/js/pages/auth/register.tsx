@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
+import { SharedData } from '@/types';
 
 type RegisterForm = {
     name: string;
@@ -18,12 +19,13 @@ type RegisterForm = {
 };
 
 export default function Register() {
+    const { invitation } = usePage<SharedData>().props;
     const { data, setData, post, processing, errors, reset } = useForm<RegisterForm>({
         name: '',
         username: '',
-        email: '',
+        email: invitation?.email ?? '',
         password: '',
-        password_confirmation: '',
+        password_confirmation: ''
     });
 
     const submit: FormEventHandler = (e) => {
@@ -61,13 +63,12 @@ export default function Register() {
                             id="username"
                             type="text"
                             required
-                            autoFocus
                             tabIndex={2}
                             autoComplete="username"
                             value={data.username}
                             onChange={(e) => setData('username', e.target.value)}
                             disabled={processing}
-                            placeholder="Full username"
+                            placeholder="Username"
                         />
                         <InputError message={errors.username} className="mt-2" />
                     </div>

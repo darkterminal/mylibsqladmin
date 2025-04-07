@@ -43,36 +43,66 @@ class GroupDatabase extends Model
             ->find($groupId);
     }
 
-    public static function databaseGroups(int $userId, int $teamId)
+    public static function databaseGroups(int $userId, ?int $teamId = null)
     {
-        $groups = self::where('user_id', $userId)->where('team_id', $teamId)
-            ->orWhereHas('team.members', fn($q) => $q->where('user_id', $userId))
-            ->withCount('members')
+        $query = self::withCount('members')
             ->with([
                 'user:id,name',
-                'team:id,name',
-                'members' => fn($q) => $q->with('tokens')
-            ])
+                'members' => function ($query) {
+                    $query->with('tokens');
+                }
+            ]);
+
+        $user = User::find($userId);
+
+        // Super Admin sees all groups
+        if ($user->hasRole('Super Admin')) {
+            // No additional filters
+        }
+        // Filter by team if specified
+        elseif ($teamId) {
+            $query->whereHas('members.groups.team', function ($q) use ($teamId) {
+                $q->where('id', $teamId);
+            });
+        }
+        // Otherwise, show only user's own groups
+        else {
+            $query->where('user_id', $userId);
+        }
+
+        return $query->latest()
             ->get()
             ->map(fn($group) => [
                 'id' => $group->id,
                 'name' => $group->name,
-                'user' => $group->user->only('id', 'name'),
-                'team' => $group->team->only('id', 'name'),
                 'members_count' => $group->members_count,
+                'user' => $group->user,
                 'members' => $group->members->map(fn($m) => [
                     'id' => $m->id,
                     'database_name' => $m->database_name,
-                    'is_schema' => $m->is_schema,
-                    'tokens' => $m->tokens
+                    'is_schema' => $m->is_schema
                 ]),
-                'group_token' => $group->tokens()->where('group_id', $group->id)->first(),
-                'has_token' => $group->tokens->count() > 0
+                'database_tokens' => $group->members->flatMap(
+                    fn($member) =>
+                    $member->tokens->map(fn($token) => [
+                        'id' => $token->id,
+                        'name' => $token->name,
+                        'full_access_token' => $token->full_access_token,
+                        'read_only_token' => $token->read_only_token,
+                        'expiration_day' => $token->expiration_day,
+                        'database_id' => $token->database_id,
+                        'user_id' => $token->user_id,
+                    ])
+                ),
+                'has_token' => $group->tokens()->exists(),
+                'group_token' => $group->tokens()->first(),
+                'can_manage' => $user->hasRole('Super Admin') ||
+                    $user->can('manage-group-databases') ||
+                    $group->user_id === $userId,
+                'can_manage_tokens' => $user->hasRole('Super Admin') ||
+                    $user->can('manage-group-database-tokens') ||
+                    $group->user_id === $userId
             ]);
-
-        return $groups->collect()->filter(function ($group) use ($userId, $teamId) {
-            return $group['user']['id'] == $userId && $group['team']['id'] == $teamId;
-        })->sortBy('members_count', SORT_REGULAR, true)->values();
     }
 
     private static function countMemberTokens()

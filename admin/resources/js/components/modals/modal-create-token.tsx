@@ -98,7 +98,7 @@ export function ModalCreateToken({
                     })
                 }
 
-                router.visit(route('dashboard.groups'), {
+                router.visit(window.location.href, {
                     only: ['databaseGroups', 'databaseNotInGroup'],
                     replace: true,
                     preserveScroll: true

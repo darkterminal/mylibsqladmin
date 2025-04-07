@@ -30,6 +30,10 @@ interface ModalCreateDatabaseProps {
     groups?: ComboboxOption[]
     onCreateGroup?: (name: string) => Promise<string>
     currentTeam?: Team
+    currentGroup?: {
+        id: number,
+        name: string
+    }
 }
 
 export function ModalCreateDatabase({
@@ -40,6 +44,7 @@ export function ModalCreateDatabase({
     groups = [],
     onCreateGroup,
     currentTeam,
+    currentGroup
 }: ModalCreateDatabaseProps) {
     const [isOpen, setOpen] = useState(false)
     const [formData, setFormData] = useState<CreateDatabaseProps>({
@@ -47,9 +52,9 @@ export function ModalCreateDatabase({
         childDatabase: "",
         isSchema: false,
         useExisting: useExistingDatabase,
-        groupName: "",
+        groupName: currentGroup?.name || "",
         teamId: currentTeam?.id
-    })
+    });
     const [activeTeamId, setActiveTeamId] = useState<string | null>(null)
     const [processing, setProcessing] = useState(false)
 
@@ -67,14 +72,33 @@ export function ModalCreateDatabase({
 
     const [availableGroups, setAvailableGroups] = useState<ComboboxOption[]>(getGroupOptions())
 
+    // Update availableGroups when teams/groups change
     useEffect(() => {
         setAvailableGroups(getGroupOptions());
+    }, [currentTeam, groups]);
+
+    // Sync team-related data
+    useEffect(() => {
         if (currentTeam) {
             setActiveTeamId(currentTeam.id.toString());
+            setFormData(prev => ({
+                ...prev,
+                teamId: currentTeam.id,
+            }));
         } else {
             setActiveTeamId(null);
         }
-    }, [currentTeam, groups])
+    }, [currentTeam]);
+
+    // Sync group name
+    useEffect(() => {
+        if (currentGroup?.name) {
+            setFormData(prev => ({
+                ...prev,
+                groupName: currentGroup.name,
+            }));
+        }
+    }, [currentGroup?.name]);
 
     const sharedDatabases = existingDatabases.filter((db) => db.is_schema)
 
@@ -178,7 +202,10 @@ export function ModalCreateDatabase({
                     <Combobox
                         options={availableGroups}
                         value={formData.groupName}
-                        onValueChange={(value) => setFormData({ ...formData, groupName: value })}
+                        onValueChange={(value) => setFormData(prev => ({
+                            ...prev,
+                            groupName: value
+                        }))}
                         placeholder="Select a group"
                         emptyMessage="No groups found"
                         createNewOptionLabel="Create new group"

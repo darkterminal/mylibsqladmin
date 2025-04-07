@@ -34,7 +34,8 @@ class UserDatabase extends Model
 
     public function groups()
     {
-        return $this->belongsToMany(GroupDatabase::class, 'group_database_members', 'database_id', 'group_id');
+        return $this->belongsToMany(GroupDatabase::class, 'group_database_members', 'database_id', 'group_id')
+            ->with(['team' => fn($q) => $q->select('id', 'name', 'description')]);
     }
 
     public function latestActivity()
@@ -44,7 +45,7 @@ class UserDatabase extends Model
 
     public static function mostUsedDatabases()
     {
-        $teamId = session('team_databases')['team_id'] ?? null;
+        $teamId = session('team_databases.team_id') ?? null;
 
         $query = self::withCount('queryMetrics')
             ->select('user_databases.*')
@@ -63,11 +64,16 @@ class UserDatabase extends Model
                 'query_metrics_id' => $db->queryMetrics->first()?->id,
                 'database_id' => $db->id,
                 'team_id' => $db->groups->first()?->team_id,
+                'groups' => $db->groups->map(fn($group) => [
+                    'id' => $group->id,
+                    'name' => $group->name,
+                    'team_id' => $group->team_id
+                ]),
                 'database_name' => $db->database_name,
                 'is_schema' => $db->is_schema,
                 'query_metrics_sum_query_count' => $db->query_metrics_sum_query_count,
                 'query_metrics_count' => $db->query_count,
-                'created_at' => $db->created_at->format('Y-m-d H:i:s')
+                'created_at' => $db->created_at->format('Y-m-d H:i:s'),
             ];
         })->toArray();
     }

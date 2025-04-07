@@ -2,12 +2,12 @@ import { TrashIcon } from "lucide-react";
 import { AppTooltip } from "../app-tooltip";
 import { Button } from "../ui/button";
 
-export default function ButtonDeleteGroup({ handleDelete }: { handleDelete: () => void }) {
+export default function ButtonDelete({ handleDelete, text = undefined }: { handleDelete: () => void, text?: string }) {
     return (
-        <AppTooltip text="Delete Group">
+        <AppTooltip text={text || "Delete"}>
             <Button
                 variant="destructive"
-                size="icon"
+                size="sm"
                 onClick={handleDelete}
             >
                 <TrashIcon className="h-5 w-5" />

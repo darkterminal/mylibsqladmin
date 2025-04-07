@@ -1,16 +1,17 @@
 import GroupDetail from "@/components/group-detail";
-import ModalCreateGroup from "@/components/modals/modal-create-group";
+import { ModalCreateGroupOnly } from "@/components/modals/modal-create-group-only";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCustomEvent } from "@/hooks/use-custom-event";
 import AppLayout from "@/layouts/app-layout";
+import { apiFetch } from "@/lib/api";
 import {
     UserDatabaseTokenProps,
     type BreadcrumbItem,
     type DatabaseInGroupProps,
     type GroupDatabaseProps
 } from "@/types";
-import { Head } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import { Users2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -46,6 +47,33 @@ export default function DashboardGroup({
         setSelectedGroup(group)
     }
 
+    const handleCreateGroup = async (name: string) => {
+        try {
+            const teamId = localStorage.getItem('currentTeamId');
+            const response = await apiFetch(route('api.group.create-only'), {
+                method: 'POST',
+                body: JSON.stringify({ name, team_id: teamId }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to create group');
+            }
+
+            const refreshSession = await apiFetch(route('api.teams.databases', Number(teamId)));
+
+            if (!refreshSession.ok) {
+                throw new Error('Failed to refresh session');
+            }
+
+            router.visit(window.location.href, {
+                preserveScroll: true,
+            });
+        } catch (error) {
+            console.error("Error creating group:", error);
+            throw error;
+        }
+    }
+
     useCustomEvent('token-created-from-group', ({ groupId, databaseId, newToken }: { groupId: number, databaseId: number, newToken: UserDatabaseTokenProps }) => {
         setGroups(prev => prev.map(g => {
             if (g.id === groupId) {
@@ -75,16 +103,19 @@ export default function DashboardGroup({
 
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-semibold">Groups</h2>
-                    <ModalCreateGroup databases={databaseNotInGroup}>
-                        <Button>
-                            <Users2Icon className="h-4 w-4" /> Create New Group
-                        </Button>
-                    </ModalCreateGroup>
+                    <ModalCreateGroupOnly
+                        trigger={
+                            <Button variant="default">
+                                <Users2Icon className="mr-1 h-4 w-4" /> New group
+                            </Button>
+                        }
+                        onSave={(groupName) => handleCreateGroup(groupName)}
+                    />
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-6">
                     <div className="md:col-span-1">
-                        <ScrollArea className="h-[calc(100vh-300px)]">
+                        <ScrollArea className="h-[700px]">
                             <div className="space-y-3">
                                 {groups.map((group) => (
                                     <div

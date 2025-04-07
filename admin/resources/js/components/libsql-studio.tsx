@@ -14,43 +14,52 @@ export function LibsqlStudio({ databaseName, clientUrl, authToken }: LibSQLStudi
         window.matchMedia('(prefers-color-scheme: dark)').matches
     );
 
-    const getInitialTheme = () => {
+    // Get initial theme from localStorage or system preference
+    const [appearance, setAppearance] = useState<'light' | 'dark' | 'system'>(() => {
         const localAppearance = localStorage.getItem("appearance");
-        if (localAppearance) return localAppearance as 'light' | 'dark' | 'system';
-        return isSystemDark ? 'dark' : 'light';
-    };
+        return localAppearance ? localAppearance as 'light' | 'dark' | 'system' : 'system';
+    });
 
-    const [appearance, setAppearance] = useState<'light' | 'dark' | 'system'>(getInitialTheme);
-    const effectiveTheme = appearance === 'system' ? (isSystemDark ? 'dark' : 'light') : appearance;
+    // Calculate effective theme without modifying appearance state
+    const effectiveTheme = appearance === 'system'
+        ? (isSystemDark ? 'dark' : 'light')
+        : appearance;
 
+    // Update theme attribute and localStorage
     useEffect(() => {
-        const handleAppearanceChange = (event: CustomEvent<AppearanceStateChangeProps>) => {
-            const newAppearance = event.detail.appearance;
-            console.log('Appearance changed:', newAppearance);
+        document.documentElement.setAttribute('data-theme', effectiveTheme);
+        localStorage.setItem("appearance", appearance);
+    }, [appearance, effectiveTheme]);
 
-            if (newAppearance === 'system') {
-                setAppearance(effectiveTheme);
-            } else {
-                setAppearance(newAppearance);
+    // Handle system theme changes
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+        const handler = (e: MediaQueryListEvent) => {
+            setIsSystemDark(e.matches);
+            // Only update if we're in system mode
+            if (appearance === 'system') {
+                document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
             }
         };
 
-        window.addEventListener('appearance-changed', handleAppearanceChange as EventListener);
+        mediaQuery.addEventListener('change', handler);
+        return () => mediaQuery.removeEventListener('change', handler);
+    }, [appearance]);
 
+    // Handle custom appearance changes
+    useEffect(() => {
+        const handleAppearanceChange = (event: CustomEvent<AppearanceStateChangeProps>) => {
+            setAppearance(event.detail.appearance);
+        };
+
+        window.addEventListener('appearance-changed', handleAppearanceChange as EventListener);
         return () => {
             window.removeEventListener('appearance-changed', handleAppearanceChange as EventListener);
         };
     }, []);
 
-    useEffect(() => {
-        localStorage.setItem("appearance", appearance);
-    }, [appearance]);
-
-    useEffect(() => {
-        document.documentElement.setAttribute('data-theme', effectiveTheme);
-        setAppearance(effectiveTheme);
-    }, [effectiveTheme]);
-
+    // Rest of your component remains the same...
     const client = useMemo(() => {
         if (!clientUrl) return null;
         return createClient({
@@ -62,18 +71,9 @@ export function LibsqlStudio({ databaseName, clientUrl, authToken }: LibSQLStudi
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
     useEffect(() => {
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        const handler = (e: MediaQueryListEvent) => setIsSystemDark(e.matches);
-
-        mediaQuery.addEventListener('change', handler);
-        return () => mediaQuery.removeEventListener('change', handler);
-    }, []);
-
-    useEffect(() => {
         if (!client) return;
 
         const contentWindow = iframeRef.current?.contentWindow;
-
         if (contentWindow) {
             const handler = (e: MessageEvent<ClientRequest>) => {
                 if (e.data.type === "query" && e.data.statement) {

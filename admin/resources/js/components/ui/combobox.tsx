@@ -64,7 +64,7 @@ export function Combobox({
     }, [onCreateOption, searchQuery])
 
     const selectedOption = React.useMemo(() => {
-        return options.find((option) => option.value === value)
+        return options.find((option) => option.label === value)
     }, [options, value])
 
     // Reset search when popover closes

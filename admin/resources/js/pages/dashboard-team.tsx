@@ -5,6 +5,7 @@ import TeamCard from "@/components/team/team-card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import AppLayout from "@/layouts/app-layout"
+import { usePermission } from "@/lib/auth"
 import { BreadcrumbItem, Team } from "@/types"
 import { Head } from "@inertiajs/react"
 import { Search, Users } from "lucide-react"
@@ -22,6 +23,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function DashboardTeam({ teams }: { teams: Team[] }) {
+    const { can } = usePermission();
     const [searchQuery, setSearchQuery] = useState<string>("")
     const [currentTeamId, setCurrentTeamId] = useState<string | null>(null)
 
@@ -60,16 +62,18 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        <ModalCreateTeam
-                            trigger={
-                                <Button>
-                                    <Users className="mr-2 h-4 w-4" />
-                                    New Team
-                                </Button>
-                            }
-                            onSave={(team) => console.log(team)}
-                            validate={(team) => team.name.length < 3 ? "Name must be at least 3 characters" : null}
-                        />
+                        {can('manage-teams') && (
+                            <ModalCreateTeam
+                                trigger={
+                                    <Button>
+                                        <Users className="mr-2 h-4 w-4" />
+                                        New Team
+                                    </Button>
+                                }
+                                onSave={(team) => console.log(team)}
+                                validate={(team) => team.name.length < 3 ? "Name must be at least 3 characters" : null}
+                            />
+                        )}
                     </div>
                 </div>
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\TriggerDatabaseStatsChangeEvent;
 use DateTimeZone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -18,15 +19,24 @@ use Lcobucci\JWT\UnencryptedToken;
 
 class SubdomainValidationController extends Controller
 {
+    private string $subdomain;
+    private string|int $uid;
+
+    public function __construct()
+    {
+        $this->subdomain = '';
+        $this->uid = 0;
+    }
+
     public function validateSubdomain(Request $request)
     {
-        $subdomain = $request->header('X-Subdomain');
+        $this->subdomain = $request->header('X-Subdomain');
         $token = $this->extractToken($request);
 
         // logger()->debug('Validating subdomain', ['subdomain' => $subdomain, 'token' => $token]);
 
         if (empty($token)) {
-            return $this->handleEmptyToken($subdomain);
+            return $this->handleEmptyToken($this->subdomain);
         }
 
         try {
@@ -37,8 +47,8 @@ class SubdomainValidationController extends Controller
             return $this->createResponse('none');
         }
 
-        $accessLevel = $this->determineAccessLevel($jwtToken, $token, $subdomain);
-        return $this->handleFinalResponse($subdomain, $accessLevel);
+        $accessLevel = $this->determineAccessLevel($jwtToken, $token, $this->subdomain);
+        return $this->handleFinalResponse($this->subdomain, $accessLevel);
     }
 
     private function extractToken(Request $request): string
@@ -92,6 +102,7 @@ class SubdomainValidationController extends Controller
 
     private function isGroupToken($headers, $claims): bool
     {
+        $this->uid = $claims->get('uid');
         return $headers->get('is_group') === 'yes' && $claims->get('uid') === 'none';
     }
 
@@ -110,11 +121,19 @@ class SubdomainValidationController extends Controller
     {
         $databaseToken = UserDatabaseToken::with('database')
             ->whereHas('database', fn($q) => $q->where('database_name', $subdomain))
+            ->where('user_id', $this->uid)
             ->first();
 
         if (!$databaseToken) {
             return 'none';
         }
+
+        logger()->debug('Access level', [
+            'subdomain' => $subdomain,
+            'full_access_token' => $databaseToken->full_access_token,
+            'read_only_token' => $databaseToken->read_only_token,
+            'access_level' => $databaseToken->full_access_token === $token ? 'full-access' : 'read-only'
+        ]);
 
         return $databaseToken->full_access_token === $token ? 'full-access' : 'read-only';
     }
@@ -145,6 +164,7 @@ class SubdomainValidationController extends Controller
 
     private function createResponse(string $accessLevel)
     {
+        event(new TriggerDatabaseStatsChangeEvent($this->subdomain));
         return response()->noContent(200)->header('X-Access-Level', $accessLevel);
     }
 }

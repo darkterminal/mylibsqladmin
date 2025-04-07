@@ -1,10 +1,12 @@
 import { AppTooltip } from "@/components/app-tooltip";
 import { ModalCreateToken } from "@/components/modals/modal-create-token";
+import { PaginationControls } from "@/components/pagination-controls";
 import TableTokenManagement from "@/components/tables/token-management";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import AppLayout from "@/layouts/app-layout";
 import {
+    PaginatedResults,
     type BreadcrumbItem,
     type MostUsedDatabaseProps,
     type UserDatabaseTokenProps
@@ -30,7 +32,7 @@ export default function DatabaseToken({
 }: {
     mostUsedDatabases: MostUsedDatabaseProps[],
     isAllTokenized: boolean,
-    userDatabaseTokens: UserDatabaseTokenProps[]
+    userDatabaseTokens: PaginatedResults<UserDatabaseTokenProps>
 }) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -52,6 +54,7 @@ export default function DatabaseToken({
                     </CardHeader>
                     <CardContent>
                         <TableTokenManagement userDatabaseTokens={userDatabaseTokens} />
+                        <PaginationControls pagination={userDatabaseTokens} />
                     </CardContent>
                 </Card>
             </div>

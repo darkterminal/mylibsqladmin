@@ -10,7 +10,13 @@ import { AppTooltip } from "./app-tooltip";
 import { CreateDatabaseProps, ModalCreateDatabase } from "./modals/modal-create-database";
 import { Separator } from "./ui/separator";
 
-export function AppDatabaseSidebar({ databaseName, userDatabases }: { databaseName: string | null, userDatabases: LibSQLDatabases[] }) {
+export function AppDatabaseSidebar({
+    databaseName,
+    userDatabases
+}: {
+    databaseName: string | null,
+    userDatabases: LibSQLDatabases[]
+}) {
 
     const { standalone, parents, childrenMap } = groupDatabases(userDatabases);
 
@@ -32,9 +38,13 @@ export function AppDatabaseSidebar({ databaseName, userDatabases }: { databaseNa
                         action: {
                             label: 'Delete',
                             onClick: () => {
-                                router.delete(`/databases/delete/${database.database_name}`, {
+                                router.delete(route('database.delete', { database: database.database_name }), {
+                                    preserveScroll: true,
+                                    onSuccess: () => {
+                                        toast.success('Database deleted successfully');
+                                    },
                                     onFinish: () => {
-                                        router.get('/dashboard');
+                                        router.visit(window.location.href);
                                     }
                                 });
                             }
@@ -57,13 +67,15 @@ export function AppDatabaseSidebar({ databaseName, userDatabases }: { databaseNa
                     position: 'top-center',
                     action: {
                         label: <><Eye className="mr-1 w-4 h-4" /> View Database</>,
-                        onClick: () => {
-                            router.get('/dashboard?database=' + submittedData.database);
-                        },
+                        onClick: () => handleClickDatabaseOpen(submittedData.database),
                     }
                 });
             }
         });
+    }
+
+    const handleClickDatabaseOpen = (databaseName: string) => {
+        router.visit(route('database.studio', { database: databaseName }));
     }
 
     return (
@@ -82,7 +94,7 @@ export function AppDatabaseSidebar({ databaseName, userDatabases }: { databaseNa
                                     className={
                                         `flex justify-start items-center gap-2 p-2 mb-1 cursor-pointer rounded-sm ${database.database_name === databaseName ? 'dark:bg-neutral-700 dark:hover:bg-neutral-800 dark:text-neutral-100 bg-neutral-200 hover:bg-neutral-300' : 'dark:hover:bg-neutral-700 dark:hover:text-neutral-100 hover:bg-neutral-300'}`
                                     }
-                                    onClick={() => router.get('/dashboard', { database: database.database_name })}
+                                    onClick={() => handleClickDatabaseOpen(database.database_name)}
                                 >
                                     <Cylinder className="h-4 w-4" /> <span className={`text-sm ${database.database_name == databaseName ? 'font-semibold' : ''}`}>{database.database_name}</span>
                                 </li>
@@ -96,7 +108,7 @@ export function AppDatabaseSidebar({ databaseName, userDatabases }: { databaseNa
                                         className={
                                             `flex justify-start items-center gap-2 p-2 mb-1 cursor-pointer rounded-sm ${parent.database_name === databaseName ? 'dark:bg-neutral-700 dark:hover:bg-neutral-800 dark:text-neutral-100 bg-neutral-200 hover:bg-neutral-300' : 'dark:hover:bg-neutral-700 dark:hover:text-neutral-100 hover:bg-neutral-300'}`
                                         }
-                                        onClick={() => router.get('/dashboard', { database: parent.database_name })}
+                                        onClick={() => handleClickDatabaseOpen(parent.database_name)}
                                     >
                                         {(parent.is_schema === '1' || parent.is_schema !== '0') && (
                                             <AppTooltip text="Schema Database">
@@ -113,7 +125,7 @@ export function AppDatabaseSidebar({ databaseName, userDatabases }: { databaseNa
                                             className={
                                                 `ml-2 flex justify-start items-center gap-2 p-2 mb-1 cursor-pointer rounded-sm ${child.database_name === databaseName ? 'dark:bg-neutral-700 dark:hover:bg-neutral-800 dark:text-neutral-100 bg-neutral-200 hover:bg-neutral-300' : 'dark:hover:bg-neutral-700 dark:hover:text-neutral-100 hover:bg-neutral-300'}`
                                             }
-                                            onClick={() => router.get('/dashboard', { database: child.database_name })}
+                                            onClick={() => handleClickDatabaseOpen(child.database_name)}
                                         >
                                             {(child.is_schema === '1' || child.is_schema !== '0') && (
                                                 <AppTooltip text={`Child of ${parent.database_name}`}>

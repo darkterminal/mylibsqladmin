@@ -103,7 +103,7 @@ class SqldService
 
         $group = GroupDatabase::findOrFail($groupId);
         $groupDatabase = $group->members()->create([
-            'user_id' => auth()->user()->id,
+            'group_id' => $groupId,
             'team_id' => $teamId
         ]);
 

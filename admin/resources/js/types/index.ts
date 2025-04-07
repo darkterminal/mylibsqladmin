@@ -1,3 +1,4 @@
+import { usePermission } from '@/lib/auth';
 import { LucideIcon } from 'lucide-react';
 
 export interface Auth {
@@ -35,6 +36,17 @@ export interface NavItem {
     url: string;
     icon?: LucideIcon | null;
     isActive?: boolean;
+    isAllowed?: boolean | ((permissions: ReturnType<typeof usePermission>) => boolean);
+}
+
+export interface Invitation {
+    id: number;
+    team_id: number;
+    email: string;
+    token: string;
+    inviter_id: number;
+    permission_level: string;
+    expires_at: string;
 }
 
 export interface SharedData {
@@ -44,6 +56,7 @@ export interface SharedData {
     flash: FlashMessageProps;
     databases: LibSQLDatabases[];
     groups: GroupDatabaseProps[];
+    invitation?: Invitation;
     [key: string]: unknown;
 }
 
@@ -161,7 +174,20 @@ export interface UserDatabaseTokenProps {
     full_access_token: string;
     read_only_token: string;
     expiration_day: number;
-    database: LibSQLDatabases
+    database: LibSQLDatabases;
+    user: User;
+    groups: {
+        id: number;
+        name: string;
+        team: {
+            id: number;
+            name: string;
+        };
+    },
+    team: {
+        id: number;
+        name: string;
+    }
 }
 
 export interface DatabaseInGroupProps {
@@ -213,6 +239,12 @@ export interface Member {
     [key: string]: unknown;
 }
 
+export type MemberForm = {
+    name: string;
+    email: string;
+    role: string;
+}
+
 export interface TeamDatabase {
     id: number
     name: string
@@ -253,3 +285,16 @@ export type TeamForm = {
     name: string
     description: string
 }
+
+export type PaginatedResults<T> = {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    links: {
+        url: string | null;
+        label: string;
+        active: boolean;
+    }[];
+};
