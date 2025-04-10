@@ -13,7 +13,8 @@ class GroupDatabase extends Model
     protected $fillable = [
         'user_id',
         'team_id',
-        'name'
+        'name',
+        'created_by'
     ];
 
     public function user()
@@ -50,41 +51,43 @@ class GroupDatabase extends Model
                 'user:id,name',
                 'members' => function ($query) {
                     $query->with('tokens');
-                }
+                },
+                'team:id,name'
             ]);
 
         $user = User::find($userId);
 
-        // Super Admin sees all groups
+        // For Super Admin: Show all groups in the specified team
         if ($user->hasRole('Super Admin')) {
-            // No additional filters
+            if ($teamId) {
+                $query->where('team_id', $teamId);
+            }
         }
-        // Filter by team if specified
-        elseif ($teamId) {
-            $query->whereHas('members.groups.team', function ($q) use ($teamId) {
-                $q->where('id', $teamId);
+        // For other roles: Show groups in team that user has access to
+        else {
+            $query->where(function ($q) use ($user, $teamId) {
+                $q->where('team_id', $teamId)
+                    ->whereHas('team.members', function ($query) use ($user) {
+                        $query->where('user_id', $user->id);
+                    });
             });
         }
-        // Otherwise, show only user's own groups
-        else {
-            $query->where('user_id', $userId);
-        }
 
-        return $query->latest()
+        return $query->orderBy('created_at', 'desc')
             ->get()
             ->map(fn($group) => [
                 'id' => $group->id,
                 'name' => $group->name,
                 'members_count' => $group->members_count,
                 'user' => $group->user,
+                'team' => $group->team,
                 'members' => $group->members->map(fn($m) => [
                     'id' => $m->id,
                     'database_name' => $m->database_name,
                     'is_schema' => $m->is_schema
                 ]),
                 'database_tokens' => $group->members->flatMap(
-                    fn($member) =>
-                    $member->tokens->map(fn($token) => [
+                    fn($member) => $member->tokens->map(fn($token) => [
                         'id' => $token->id,
                         'name' => $token->name,
                         'full_access_token' => $token->full_access_token,
@@ -97,10 +100,10 @@ class GroupDatabase extends Model
                 'has_token' => $group->tokens()->exists(),
                 'group_token' => $group->tokens()->first(),
                 'can_manage' => $user->hasRole('Super Admin') ||
-                    $user->can('manage-group-databases') ||
+                    $user->can('manage-groups') ||
                     $group->user_id === $userId,
                 'can_manage_tokens' => $user->hasRole('Super Admin') ||
-                    $user->can('manage-group-database-tokens') ||
+                    $user->can('manage-tokens') ||
                     $group->user_id === $userId
             ]);
     }

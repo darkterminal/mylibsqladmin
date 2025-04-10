@@ -1,14 +1,15 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\DatabaseController;
-use App\Http\Controllers\GroupController;
+use App\Http\Controllers\UserDatabaseController;
+use App\Http\Controllers\GroupDatabaseController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TokenController;
 use App\Models\GroupDatabase;
 use App\Models\Team;
 use App\Models\User;
 use App\Models\UserDatabase;
+use App\Models\UserDatabaseToken;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -20,75 +21,117 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('dashboard')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-        Route::get('databases', [DashboardController::class, 'indexDatabase'])
+        Route::get('databases', [UserDatabaseController::class, 'index'])
             ->name('dashboard.databases')
-            ->can('view', [User::class, UserDatabase::class]);
+            ->can('viewAny', UserDatabase::class);
+        Route::get('database-archived', [UserDatabaseController::class, 'archived'])
+            ->name('dashboard.database-archived')
+            ->can('viewAny', UserDatabase::class);
 
-        Route::get('tokens', [DashboardController::class, 'indexToken'])->name('dashboard.tokens');
+        Route::get('tokens', [DashboardController::class, 'indexToken'])
+            ->name('dashboard.tokens')
+            ->can('viewAny', UserDatabaseToken::class);
 
-        Route::get('groups', [DashboardController::class, 'indexGroup'])
+        Route::get('groups', [GroupDatabaseController::class, 'index'])
             ->name('dashboard.groups')
-            ->can('view', [User::class, GroupDatabase::class]);
+            ->can('viewAny', GroupDatabase::class);
 
-        Route::get('teams', [DashboardController::class, 'indexTeam'])
+        Route::get('teams', [TeamController::class, 'index'])
             ->name('dashboard.teams')
-            ->can('view', [User::class, Team::class]);
+            ->can('viewAny', Team::class);
     });
 
     Route::group(['prefix' => 'databases'], function () {
-        Route::post('create', [DatabaseController::class, 'createDatabase'])
+        Route::post('create', [UserDatabaseController::class, 'createDatabase'])
             ->name('database.create')
-            ->can('create', User::class);
+            ->can('create', UserDatabase::class);
 
-        Route::delete('delete/{database}', [DatabaseController::class, 'deleteDatabase'])
+        Route::delete('delete/{database}', [UserDatabaseController::class, 'deleteDatabase'])
             ->name('database.delete')
-            ->can('delete', [User::class, UserDatabase::class]);
+            ->can('delete', UserDatabase::class);
+        Route::post('restore', [UserDatabaseController::class, 'restoreDatabase'])
+            ->name('database.restore')
+            ->can('delete', UserDatabase::class);
     });
 
     Route::group(['prefix' => 'tokens'], function () {
         Route::post('create', [TokenController::class, 'createToken'])
             ->name('token.create');
-        Route::delete('delete/{tokenId}', [TokenController::class, 'deleteToken'])->name('token.delete');
+        Route::delete('delete/{tokenId}', [TokenController::class, 'deleteToken'])
+            ->name('token.delete');
     });
 
     Route::group(['prefix' => 'groups'], function () {
-        Route::post('create', [GroupController::class, 'createGroup'])
+        Route::post('create', [GroupDatabaseController::class, 'createGroup'])
             ->name('group.create');
-        Route::delete('delete/{groupId}', [GroupController::class, 'deleteGroup'])
+        Route::delete('delete/{groupId}', [GroupDatabaseController::class, 'deleteGroup'])
             ->name('group.delete');
-        Route::post('{group}/add-databases', [GroupController::class, 'addDatabasesToGroup'])
+        Route::post('{group}/add-databases', [GroupDatabaseController::class, 'addDatabasesToGroup'])
             ->name('group.add-databases');
-        Route::delete('{group}/delete-database/{database}', [GroupController::class, 'deleteDatabaseFromGroup'])
+        Route::delete('delete-database/{database}', [GroupDatabaseController::class, 'deleteDatabaseFromGroup'])
             ->name('group.delete-databases');
-        Route::post('{group}/tokens', [GroupController::class, 'createGroupToken'])
+        Route::post('{group}/tokens', [GroupDatabaseController::class, 'createGroupToken'])
             ->name('group.token.create');
-        Route::delete('{tokenId}/tokens', [GroupController::class, 'deleteGroupToken'])
+        Route::delete('{tokenId}/tokens', [GroupDatabaseController::class, 'deleteGroupToken'])
             ->name('group.token.delete');
     });
 
     Route::group(['prefix' => 'teams'], function () {
         Route::post('create', [TeamController::class, 'createTeam'])
             ->name('team.create')
-            ->can('create', 'user');
+            ->can('create', Team::class);
+
         Route::put('update/{teamId}', [TeamController::class, 'updateTeam'])
             ->name('team.update')
-            ->can('update', ['user', 'team']);
+            ->can('update', Team::class);
+
+        Route::put('/teams/{team}/users/{user}/role', [TeamController::class, 'updateTeamMemberRole'])
+            ->name('teams.members.update-role')
+            ->can('update', Team::class);
+
+        Route::delete('delete/{teamId}', [TeamController::class, 'deleteTeam'])
+            ->name('team.delete')
+            ->can('delete', Team::class);
+
+        Route::delete('{team}/users/{user}/remove', [TeamController::class, 'deleteTeamMember'])
+            ->name('teams.members.delete')
+            ->can('delete', Team::class);
+
         Route::post('{team}/invitations', [TeamController::class, 'invite'])
             ->name('teams.invitations.store')
-            ->can('create', 'user');
+            ->can('create', Team::class);
+
         Route::delete('invitations/{invitation}', [TeamController::class, 'revokeInvite'])
             ->name('teams.invitations.destroy')
-            ->can('delete', ['user', 'team']);
+            ->can('delete', Team::class);
     });
 });
 
-Route::get('invitations/{token}/accept', [TeamController::class, 'acceptInvite'])
-    ->name('invitations.accept');
+Route::group(['prefix' => 'invitations'], function () {
+    Route::get('{token}/accept', [TeamController::class, 'acceptInvite'])
+        ->name('invitations.accept')
+        ->middleware('invitationExpiration');
 
-Route::get('mailable/{teamId}', function ($teamId) {
-    $team = App\Models\Team::where('id', $teamId)->first();
-    $invitation = $team->invitations()->first();
-    return (new App\Notifications\TeamInvitation($team, $invitation))->toMail((object) [])->render();
+    Route::get('expired', fn() => Inertia::render('errors/invitation-expired'))
+        ->name('invitation.expired');
+});
+
+Route::get('mailable/{teamId}/{token}', function ($teamId, $token) {
+    $team = Team::with([
+        'invitations' => function ($query) use ($token) {
+            $query->where('token', $token);
+        }
+    ])->findOrFail($teamId);
+
+    $invitation = $team->invitations->first();
+
+    if (!$invitation || $invitation->team_id != $team->id) {
+        abort(404, 'Invitation not found');
+    }
+
+    return (new App\Notifications\TeamInvitation($team, $invitation))
+        ->toMail((object) [])
+        ->render();
 });
 
 require __DIR__ . '/settings.php';

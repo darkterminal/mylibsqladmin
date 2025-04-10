@@ -1,9 +1,5 @@
-import { AppTooltip } from "@/components/app-tooltip"
-import ButtonCopyFullAccessToken from "@/components/button-actions/action-copy-full-access-token"
-import ButtonCopyReadOnlyToken from "@/components/button-actions/action-copy-read-only-token"
 import ButtonDelete from "@/components/button-actions/action-delete"
-import ButtonOpenDatabaseStudio from "@/components/button-actions/action-open-database-studio"
-import { ModalCreateToken } from "@/components/modals/modal-create-token"
+import ButtonRestore from "@/components/button-actions/action-restore"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Column, DataTable, LaravelPagination } from "@/components/ui/data-table/data-table"
@@ -13,7 +9,7 @@ import { usePermission } from "@/lib/auth"
 import { databaseType, formatBytes, getQuery } from "@/lib/utils"
 import { BreadcrumbItem, Team } from "@/types"
 import { Head, router } from "@inertiajs/react"
-import { Cylinder, DatabaseIcon, File, GitBranch, Handshake, KeyIcon, LockIcon, Trash2Icon, Users } from "lucide-react"
+import { ArrowLeft, Cylinder, DatabaseIcon, File, GitBranch, Handshake, Users } from "lucide-react"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
 
@@ -197,30 +193,43 @@ function DatabaseActions({ database }: { database: Databases }) {
         })
     }, [])
 
+    const handleRestoreDatabase = useCallback((database: string) => {
+        toast('Are you sure you want to restore this database?', {
+            description: "This action cannot be undone.",
+            position: 'top-center',
+            action: (
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                        router.post(route('database.restore'), { name: database }, {
+                            preserveScroll: true,
+                            onSuccess: () => {
+                                toast.success('Database restore successfully');
+                            },
+                            onFinish: async () => {
+                                const teamId = localStorage.getItem('currentTeamId');
+
+                                if (teamId) {
+                                    await apiFetch(route('api.teams.databases', Number(teamId)));
+                                }
+
+                                router.visit(route('dashboard.databases'));
+                            }
+                        });
+                    }}
+                >
+                    Restore
+                </Button>
+            )
+        })
+    }, [])
+
     return (
         <div className="flex items-center gap-2">
-            <ButtonOpenDatabaseStudio databaseName={database.name} text="Studio" />
-            {database.token && (
+            {can('manage-databases') && (
                 <>
-                    <ButtonCopyFullAccessToken token={database.token.full_access_token} />
-                    <ButtonCopyReadOnlyToken token={database.token.read_only_token} />
-                </>
-            )}
-            {can('manage-database-tokens') && (
-                <>
-                    <ModalCreateToken
-                        mostUsedDatabases={[{
-                            database_id: database.id,
-                            database_name: database.name,
-                            is_schema: database.is_schema
-                        }]}
-                    >
-                        <AppTooltip text={database.tokenized ? "Revoke Token" : "Generate Token"}>
-                            <Button variant={database.tokenized ? "outline" : "default"} size="sm">
-                                {database.tokenized ? <LockIcon className="h-4 w-4" /> : <KeyIcon className="h-4 w-4" />}
-                            </Button>
-                        </AppTooltip>
-                    </ModalCreateToken>
+                    <ButtonRestore handleRestore={() => handleRestoreDatabase(database.name)} text="Restore Database" />
                     <ButtonDelete handleDelete={() => handleDeleteDatabase(database.name)} text="Delete Database" />
                 </>
             )}
@@ -229,13 +238,13 @@ function DatabaseActions({ database }: { database: Databases }) {
 }
 
 export default function DashboardDatabase({
-    listOfDatabases
+    listOfDatabaseArchives
 }: {
-    listOfDatabases: LaravelPagination<Databases>
+    listOfDatabaseArchives: LaravelPagination<Databases>
 }) {
     const { hasRole } = usePermission();
     const search = getQuery('search');
-    const [data, setData] = useState<LaravelPagination<Databases>>(listOfDatabases)
+    const [data, setData] = useState<LaravelPagination<Databases>>(listOfDatabaseArchives)
     const [isLoading, setIsLoading] = useState(false)
     const [searchQuery, setSearchQuery] = useState(search)
 
@@ -249,7 +258,7 @@ export default function DashboardDatabase({
         }
 
         setData({
-            ...listOfDatabases,
+            ...listOfDatabaseArchives,
             current_page: page,
         })
 
@@ -272,12 +281,12 @@ export default function DashboardDatabase({
                 <div className="flex items-center justify-between">
                     <div className="mb-6">
                         <h1 className="text-2xl font-bold">Databases</h1>
-                        <p className="text-muted-foreground text-sm">List all your databases</p>
+                        <p className="text-muted-foreground text-sm">List all your archived databases</p>
                     </div>
                     {hasRole('Super Admin') && (
-                        <Button variant={'default'} onClick={() => router.visit(route('dashboard.database-archived'))}>
-                            <Trash2Icon className="h-4 w-4" />
-                            Databases Archived
+                        <Button variant={'default'} onClick={() => router.visit(route('dashboard.databases'))}>
+                            <ArrowLeft className="h-4 w-4" />
+                            Back to Databases
                         </Button>
                     )}
                 </div>

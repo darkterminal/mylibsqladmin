@@ -8,15 +8,7 @@ export interface Auth {
 
 export interface Permissions {
     abilities: string[];
-    can: {
-        manageTeams: boolean;
-        createTeam: boolean;
-        manageGroupDatabases: boolean;
-        manageGroupDatabaseTokens: boolean;
-        manageDatabaseTokens: boolean;
-        manageTeamGroups: boolean;
-        accessTeamDatabases: boolean;
-    };
+    role: string;
 }
 
 export type PermissionsResponse = Permissions | null;
@@ -51,7 +43,6 @@ export interface Invitation {
 
 export interface SharedData {
     name: string;
-    quote: { message: string; author: string };
     auth: Auth;
     flash: FlashMessageProps;
     databases: LibSQLDatabases[];
@@ -266,6 +257,16 @@ export interface RecentActivity {
     time: string
 }
 
+export interface PendingInvitationMember {
+    id: number
+    name: string
+    email: string
+    inviter: string
+    expires_at: string
+    permission_level: string
+    sent_at: string
+}
+
 export interface Team {
     id: number
     name: string
@@ -273,12 +274,14 @@ export interface Team {
     members: number
     groups: Group[]
     team_members: Member[]
+    pending_invitations: PendingInvitationMember[]
     recentActivity: RecentActivity[]
 }
 
 export interface TeamCardProps {
     team: Team
     isCurrent?: boolean
+    totalTeams?: number
 }
 
 export type TeamForm = {

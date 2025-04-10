@@ -83,6 +83,7 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
                             key={team.id}
                             team={team}
                             isCurrent={String(team.id) === currentTeamId}
+                            totalTeams={teams.length}
                         />
                     ))}
                 </div>

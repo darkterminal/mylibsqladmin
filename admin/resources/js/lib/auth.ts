@@ -2,13 +2,46 @@ import { SharedData } from "@/types";
 import { usePage } from "@inertiajs/react";
 
 type PermissionAttributes =
-    'manage-teams' |
-    'create-teams' |
-    'manage-group-databases' |
-    'manage-group-database-tokens' |
+    'manage-databases' |
+    'view-databases' |
+    'create-databases' |
+    'update-databases' |
+    'delete-databases' |
     'manage-database-tokens' |
-    'manage-team-groups' |
-    'access-team-databases';
+    'view-database-tokens' |
+    'create-database-tokens' |
+    'update-database-tokens' |
+    'delete-database-tokens' |
+    'manage-teams' |
+    'view-teams' |
+    'create-teams' |
+    'update-teams' |
+    'delete-teams' |
+    'manage-groups' |
+    'view-groups' |
+    'create-groups' |
+    'update-groups' |
+    'delete-groups' |
+    'manage-group-tokens' |
+    'view-group-tokens' |
+    'create-group-tokens' |
+    'update-group-tokens' |
+    'delete-group-tokens' |
+    'manage-team-members' |
+    'view-team-members' |
+    'create-team-members' |
+    'update-team-members' |
+    'delete-team-members' |
+    'manage-users' |
+    'view-users' |
+    'create-users' |
+    'update-users' |
+    'delete-users' |
+    'manage-roles' |
+    'view-roles' |
+    'create-roles' |
+    'update-roles' |
+    'delete-roles';
 
 type RoleAttributes =
     'Super Admin' |

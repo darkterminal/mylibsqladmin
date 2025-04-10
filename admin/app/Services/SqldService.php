@@ -3,9 +3,12 @@
 namespace App\Services;
 
 use App\Models\GroupDatabase;
+use App\Models\Team;
 use App\Models\User;
 use App\Models\UserDatabase;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class SqldService
 {
@@ -73,6 +76,88 @@ class SqldService
 
     }
 
+    /**
+     * Archive a database
+     *
+     * @param string $database The name of the database to archive
+     * @return bool True if archiving was successful, false otherwise
+     */
+    public static function archiveDatabase(string $database): bool
+    {
+        $deletedCount = UserDatabase::where('database_name', $database)
+            ->where('user_id', auth()->user()->id)
+            ->delete();
+
+        if (!$deletedCount) {
+            logger()->error("No user database found: $database");
+            return false;
+        }
+
+        $host = self::useEndpoint('bridge');
+
+        try {
+            $result = Http::retry(5, 100)->withHeaders([
+                'Authorization' => 'realm=' . env('BRIDGE_HTTP_PASSWORD', 'libsql'),
+                'Content-Type' => 'application/json',
+            ])
+                ->post("$host/api/database/archive", [
+                    'name' => $database
+                ])
+                ->throw()
+                ->json();
+
+            // Check if result contains success flag
+            return $result['success'] ?? false;
+        } catch (RequestException $e) {
+            // Log the error for debugging
+            Log::error('Failed to archive database', [
+                'database' => $database,
+                'status' => $e->response->status(),
+                'error' => $e->response->json()['error'] ?? $e->getMessage()
+            ]);
+
+            return false;
+        }
+    }
+
+    public static function restoreDatabase(string $database): bool
+    {
+        $restored = UserDatabase::where('database_name', $database)
+            ->where('user_id', auth()->user()->id)
+            ->restore();
+
+        if (!$restored) {
+            logger()->error("No user database found: $database");
+            return false;
+        }
+
+        $host = self::useEndpoint('bridge');
+
+        try {
+            $result = Http::retry(5, 100)->withHeaders([
+                'Authorization' => 'realm=' . env('BRIDGE_HTTP_PASSWORD', 'libsql'),
+                'Content-Type' => 'application/json',
+            ])
+                ->post("$host/api/database/restore", [
+                    'name' => $database
+                ])
+                ->throw()
+                ->json();
+
+            // Check if result contains success flag
+            return $result['success'] ?? false;
+        } catch (RequestException $e) {
+            // Log the error for debugging
+            Log::error('Failed to restore database', [
+                'database' => $database,
+                'status' => $e->response->status(),
+                'error' => $e->response->json()['error'] ?? $e->getMessage()
+            ]);
+
+            return false;
+        }
+    }
+
     public static function createDatabase(string $database, mixed $isSchema, int $groupId, int $teamId): bool
     {
         $host = self::useEndpoint('db');
@@ -80,6 +165,11 @@ class SqldService
             $data['shared_schema'] = $isSchema;
         } else {
             $data['shared_schema_name'] = $isSchema;
+        }
+
+        // check if database name is contains word archived in the end of the name database_archived/database-archived/databasearchived
+        if (preg_match('/[._-]?archived$/i', $database)) {
+            return false;
         }
 
         $request = Http::withHeaders([
@@ -93,6 +183,7 @@ class SqldService
 
         $userDatabase = UserDatabase::create([
             'user_id' => auth()->user()->id,
+            'team_id' => $teamId,
             'database_name' => $database,
             'is_schema' => $isSchema
         ]);
@@ -116,20 +207,26 @@ class SqldService
 
     public static function deleteDatabase(string $database): bool
     {
-        $host = self::useEndpoint('db');
-        $request = Http::withHeaders([
-            'Content-Type' => 'application/json',
-        ])
-            ->delete("$host/v1/namespaces/$database");
-
-        if ($request->getStatusCode() !== 200) {
-            return false;
-        }
-
-        UserDatabase::where('database_name', $database)
+        $deletedCount = UserDatabase::where('database_name', $database)
             ->where('user_id', auth()->user()->id)
             ->delete();
 
+        if (!$deletedCount) {
+            logger()->error("No user database found: $database");
+            return false;
+        }
+
+        $host = self::useEndpoint('db');
+        $request = Http::withHeaders([
+            'Content-Type' => 'application/json',
+        ])->delete("$host/v1/namespaces/$database");
+
+        if ($request->getStatusCode() !== 200) {
+            logger()->error("SQLD deletion failed for: $database");
+            return false;
+        }
+
+        logger()->info("Deleted database: $database");
         return true;
     }
 

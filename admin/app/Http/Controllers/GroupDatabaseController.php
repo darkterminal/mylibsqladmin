@@ -7,13 +7,41 @@ use App\Models\GroupDatabaseToken;
 use App\Models\Team;
 use App\Models\UserDatabase;
 use App\Services\DatabaseTokenGenerator;
+use App\Services\SqldService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
 
-class GroupController extends Controller
+class GroupDatabaseController extends Controller
 {
+    public function index()
+    {
+        $user = auth()->user();
+        $teamId = session('team_databases')['team_id'] ?? null;
+
+        if ($user->hasRole('Super Admin')) {
+            $databaseGroups = GroupDatabase::databaseGroups($user->id, $teamId);
+        } elseif ($user->hasRole('Team Manager')) {
+            $databaseGroups = GroupDatabase::databaseGroups($user->id, $teamId);
+        } elseif ($user->hasPermission('access-team-databases')) {
+            $databaseGroups = GroupDatabase::databaseGroups($user->id, $teamId);
+        } else {
+            $databaseGroups = GroupDatabase::databaseGroups($user->id, null);
+        }
+
+        $databaseNotInGroup = UserDatabase::where('user_id', $user->id)
+            ->whereDoesntHave('groups')
+            ->get(['id', 'database_name', 'is_schema']);
+
+        return Inertia::render('dashboard-group', [
+            'databaseGroups' => $databaseGroups,
+            'databaseNotInGroup' => $databaseNotInGroup
+        ]);
+    }
+
     public function createGroupToken(GroupDatabase $group, Request $request)
     {
         $validated = $request->validate([
@@ -64,9 +92,11 @@ class GroupController extends Controller
                     'required',
                     'string',
                     'max:255',
-                    Rule::unique('group_databases')->where(function ($query) use ($request) {
-                        return $query->where('team_id', $request->team_id);
-                    })
+                    function ($attribute, $value, $fail) use ($request) {
+                        if (GroupDatabase::where('name', $value)->where('team_id', $request->team_id)->exists()) {
+                            $fail('Group name already exists.');
+                        }
+                    }
                 ],
                 'team_id' => [
                     'required',
@@ -80,9 +110,9 @@ class GroupController extends Controller
                 ]
             ]);
 
-            // Authorization check
+            // Authorization check - Fixed permission level name
             $team = Team::findOrFail($validated['team_id']);
-            if (!$team->hasAccess(auth()->user(), ['maintainer'])) {
+            if (!$team->hasAccess(auth()->user(), ['database-maintainer'])) {
                 abort(403, 'Unauthorized action');
             }
 
@@ -91,11 +121,14 @@ class GroupController extends Controller
                     'name' => $validated['name'],
                     'user_id' => auth()->id(),
                     'team_id' => $validated['team_id'],
+                    'created_by' => auth()->id() // Now properly saved
                 ]);
 
                 return $group->load(['team', 'user:id,name'])
                     ->loadCount('members');
             });
+
+            Team::setTeamDatabases(auth()->id(), $validated['team_id']);
 
             return response()->json([
                 'success' => true,
@@ -108,7 +141,6 @@ class GroupController extends Controller
                 'success' => false,
                 'errors' => $e->errors()
             ], 422);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -218,9 +250,11 @@ class GroupController extends Controller
         ]);
     }
 
-    public function deleteDatabaseFromGroup(GroupDatabase $group, UserDatabase $database)
+    public function deleteDatabaseFromGroup(UserDatabase $database)
     {
-        $group->members()->detach($database);
+        if (!SqldService::archiveDatabase($database->database_name)) {
+            return redirect()->back()->with(['error' => 'Database deletion failed']);
+        }
 
         return redirect()->back()->with([
             'success' => 'Database removed successfully'

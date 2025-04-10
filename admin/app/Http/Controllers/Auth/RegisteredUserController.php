@@ -54,11 +54,13 @@ class RegisteredUserController extends Controller
         $user->roles()->attach($role);
 
         if ($invitation) {
-            $invitation->team->members()->attach($user->id, [
-                'permission_level' => $invitation->permission_level
+            $user->teams()->attach($invitation->team_id, [
+                'permission_level' => $invitation->permission_level,
+                'created_at' => now(),
+                'updated_at' => now()
             ]);
             $invitation->delete();
-            session()->pull('valid_invitation');
+            session()->forget('valid_invitation');
         }
 
         event(new Registered($user));

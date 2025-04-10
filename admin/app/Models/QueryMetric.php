@@ -52,37 +52,45 @@ class QueryMetric extends Model
             ->get();
     }
 
-    public static function summariezed()
+    public static function summarized()
     {
-        $metricts = self::scopeLast24Hours();
-        $databaseMetrics = $metricts->collect()->map(function ($metric) {
-            $database = UserDatabase::find($metric->database_id);
-            return [
-                'id' => $metric->id,
-                'name' => $database->database_name,
-                'rows_read_count' => $metric->rows_read_count,
-                'rows_written_count' => $metric->rows_written_count,
-                'storage_bytes_used' => $metric->storage_bytes_used,
-                'query_count' => $metric->query_count,
-                'elapsed_ms' => $metric->elapsed_ms,
-                'write_requests_delegated' => $metric->write_requests_delegated,
-                'replication_index' => $metric->replication_index,
-                'embedded_replica_frames_replicated' => $metric->embedded_replica_frames_replicated,
-                'queries' => empty($metric->queries) ? [] : json_decode($metric->queries, true),
-                'top_queries' => $metric->topQueries()->orderBy('rows_read', 'desc')->get()->map(fn($query) => ([
-                    'rows_written' => $query->rows_written,
-                    'rows_read' => $query->rows_read,
-                    'query' => $query->query
-                ])),
-                'slowest_queries' => $metric->slowestQueries()->orderBy('elapsed_ms', 'desc')->get()->map(fn($query) => ([
-                    'rows_written' => $query->rows_written,
-                    'rows_read' => $query->rows_read,
-                    'query' => $query->query,
-                    'elapsed_ms' => $query->elapsed_ms
-                ])),
-                'created_at' => Carbon::parse($metric->created_at)->setTimezone(env('APP_TIMEZONE', 'UTC'))->format('H:i:s')
-            ];
-        })
+        return self::scopeLast24Hours()
+            ->map(function ($metric) {
+                $database = UserDatabase::find($metric->database_id);
+
+                if (!$database) {
+                    return null;
+                }
+
+                return [
+                    'id' => $metric->id,
+                    'name' => $database->database_name,
+                    'rows_read_count' => $metric->rows_read_count ?? 0,
+                    'rows_written_count' => $metric->rows_written_count ?? 0,
+                    'storage_bytes_used' => $metric->storage_bytes_used ?? 0,
+                    'query_count' => $metric->query_count ?? 0,
+                    'elapsed_ms' => $metric->elapsed_ms ?? 0,
+                    'write_requests_delegated' => $metric->write_requests_delegated ?? 0,
+                    'replication_index' => $metric->replication_index ?? 0,
+                    'embedded_replica_frames_replicated' => $metric->embedded_replica_frames_replicated ?? 0,
+                    'queries' => empty($metric->queries) ? [] : json_decode($metric->queries, true),
+                    'top_queries' => $metric->topQueries()->orderBy('rows_read', 'desc')->get()->map(fn($query) => [
+                        'rows_written' => $query->rows_written ?? 0,
+                        'rows_read' => $query->rows_read ?? 0,
+                        'query' => $query->query ?? ''
+                    ]),
+                    'slowest_queries' => $metric->slowestQueries()->orderBy('elapsed_ms', 'desc')->get()->map(fn($query) => [
+                        'rows_written' => $query->rows_written ?? 0,
+                        'rows_read' => $query->rows_read ?? 0,
+                        'query' => $query->query ?? '',
+                        'elapsed_ms' => $query->elapsed_ms ?? 0
+                    ]),
+                    'created_at' => Carbon::parse($metric->created_at)
+                        ->setTimezone(env('APP_TIMEZONE', 'UTC'))
+                        ->format('H:i:s')
+                ];
+            })
+            ->filter() // Remove null entries
             ->sortByDesc('created_at')
             ->unique(fn($item) => implode('|', [
                 $item['rows_read_count'],
@@ -92,8 +100,6 @@ class QueryMetric extends Model
             ]))
             ->values()
             ->toArray();
-
-        return $databaseMetrics;
     }
 
     public function scopeMinimalSummarized($query)

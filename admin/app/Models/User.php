@@ -38,6 +38,50 @@ class User extends Authenticatable
         ];
     }
 
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class)
+            ->withTimestamps()
+            ->withPivot('created_at');
+    }
+
+    public function hasRole(string|array $roles): bool
+    {
+        if (is_string($roles)) {
+            return $this->roles->contains('name', $roles);
+        }
+
+        return $this->roles->whereIn('name', $roles)->isNotEmpty();
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        return $this->roles()
+            ->whereHas('permissions', fn($query) => $query->where('name', $permission))
+            ->exists();
+    }
+
+    public function getAllPermissions(): array
+    {
+        return $this->loadMissing('roles.permissions')
+            ->roles
+            ->flatMap(fn($role) => $role->permissions)
+            ->pluck('name')
+            ->unique()
+            ->toArray();
+    }
+
+    public function assignRole(string $roleName): void
+    {
+        $role = Role::where('name', $roleName)->firstOrFail();
+        $this->roles()->syncWithoutDetaching($role);
+    }
+
+    public function getRoleAttribute()
+    {
+        return $this->roles->first()?->name;
+    }
+
     public function databases(): HasMany
     {
         return $this->hasMany(UserDatabase::class);
@@ -56,40 +100,6 @@ class User extends Authenticatable
     public function permissions()
     {
         return $this->roles->flatMap->permissions->pluck('name')->unique();
-    }
-
-    public function roles(): BelongsToMany
-    {
-        return $this->belongsToMany(Role::class)->withTimestamps();
-    }
-
-    public function hasRole($role): bool
-    {
-        if (is_string($role)) {
-            return $this->roles->contains('name', $role);
-        }
-
-        if ($role instanceof Role) {
-            return $this->roles->contains('id', $role->id);
-        }
-
-        return false;
-    }
-
-    public function hasPermission($permission): bool
-    {
-        if (is_string($permission)) {
-            return $this->roles->flatMap(fn($role) => $role->permissions)->contains('name', $permission);
-        }
-
-        return false;
-    }
-
-    public function assignRole($role): void
-    {
-        $this->roles()->syncWithoutDetaching(
-            Role::where('name', $role)->firstOrFail()
-        );
     }
 
     public function ownsDatabase(UserDatabase $database)
@@ -135,11 +145,6 @@ class User extends Authenticatable
             ->unique()
             ->values()
             ->toArray();
-    }
-
-    public function getAllPermissions()
-    {
-        return $this->hasPermissionViaRoles();
     }
 
     protected function hasPermissionViaRoles()

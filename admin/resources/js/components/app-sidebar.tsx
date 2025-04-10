@@ -34,34 +34,50 @@ const mainNavItems: NavItem[] = [
         title: 'Databases',
         url: '/dashboard/databases',
         icon: DatabaseIcon,
-        isAllowed: ({ can, hasRole }) =>
-            // Allow Super Admin or users with team database access
-            hasRole('Super Admin') || can('access-team-databases'),
+        isAllowed: ({ can }) =>
+            can('view-databases') || can('manage-databases'),
     },
     {
         title: 'Tokens',
         url: '/dashboard/tokens',
         icon: Fingerprint,
-        isAllowed: ({ can, hasRole }) =>
-            // Allow personal token management (Members) OR group token admins (Database Maintainers)
-            hasRole('Super Admin') || can('manage-database-tokens') || can('manage-group-database-tokens'),
+        isAllowed: ({ can }) =>
+            can('manage-database-tokens') || can('manage-group-tokens'),
     },
     {
         title: 'Groups',
         url: '/dashboard/groups',
         icon: UsersRound,
-        isAllowed: ({ can, hasRole }) =>
-            // Allow team/group managers or Super Admin
-            hasRole('Super Admin') || can('manage-team-groups'),
+        isAllowed: ({ can }) =>
+            can('manage-groups') || can('view-groups'),
     },
     {
         title: 'Teams',
         url: '/dashboard/teams',
         icon: Handshake,
         isAllowed: ({ can, hasRole }) =>
-            // Restrict to Super Admin or Team Managers
-            hasRole('Super Admin') || can('manage-teams'),
-    }
+            // Allow view-teams for basic access, manage-teams for full control
+            can('view-teams') || (hasRole('Super Admin') && can('manage-teams')),
+    },
+    // {
+    //     title: 'Team Members',
+    //     url: '/dashboard/team-members',
+    //     icon: UserCog,
+    //     isAllowed: ({ can }) =>
+    //         can('manage-team-members') || can('view-team-members'),
+    // },
+    // {
+    //     title: 'User Management',
+    //     url: '/dashboard/users',
+    //     icon: Users,
+    //     isAllowed: ({ hasRole }) => hasRole('Super Admin'),
+    // },
+    // {
+    //     title: 'Roles & Permissions',
+    //     url: '/dashboard/roles',
+    //     icon: ShieldCheck,
+    //     isAllowed: ({ can }) => can('manage-roles'),
+    // }
 ];
 
 const footerNavItems: NavItem[] = [

@@ -10,12 +10,18 @@ class Invitation extends Model
     use HasFactory;
 
     protected $fillable = [
+        'name',
         'email',
         'token',
         'team_id',
         'inviter_id',
         'permission_level',
-        'expires_at'
+        'expires_at',
+        'created_by'
+    ];
+
+    protected $casts = [
+        'expires_at' => 'datetime',
     ];
 
     public function team()

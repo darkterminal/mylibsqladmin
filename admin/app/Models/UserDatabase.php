@@ -13,6 +13,7 @@ class UserDatabase extends Model
 
     protected $fillable = [
         'user_id',
+        'team_id',
         'database_name',
         'is_schema',
     ];

@@ -13,11 +13,14 @@ return new class extends Migration {
         Schema::create('invitations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('team_id')->constrained()->cascadeOnDelete();
+            $table->string('name');
             $table->string('email');
             $table->string('token', 64)->unique();
             $table->foreignId('inviter_id')->constrained('users')->cascadeOnDelete();
-            $table->string('permission_level')->default('member'); // Keep existing permission levels
+            $table->string('permission_level')->default('member');
             $table->timestamp('expires_at');
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
             $table->timestamps();
 
             $table->unique(['team_id', 'email']);
@@ -29,6 +32,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('invitation');
+        Schema::dropIfExists('invitations');
     }
 };

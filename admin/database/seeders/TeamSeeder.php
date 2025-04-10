@@ -18,10 +18,10 @@ class TeamSeeder extends Seeder
 
             // Get existing users
             $users = [
-                'superadmin' => User::where('username', 'darkterminal')->first(),
-                'manager' => User::where('username', 'royalkina')->first(),
+                'super-admin' => User::where('username', 'darkterminal')->first(),
+                'team-manager' => User::where('username', 'royalkina')->first(),
+                'database-maintainer' => User::where('username', 'janedoe')->first(),
                 'member' => User::where('username', 'jdoe')->first(),
-                'maintainer' => User::where('username', 'janedoe')->first(),
             ];
 
             // Create core teams
@@ -30,9 +30,9 @@ class TeamSeeder extends Seeder
                     'name' => 'Engineering Team',
                     'description' => 'Core software development team',
                     'members' => [
-                        ['user' => 'superadmin', 'role' => 'super-admin'],
-                        ['user' => 'manager', 'role' => 'team-manager'],
-                        ['user' => 'maintainer', 'role' => 'database-maintainer'],
+                        ['user' => 'super-admin', 'role' => 'super-admin'],
+                        ['user' => 'team-manager', 'role' => 'team-manager'],
+                        ['user' => 'database-maintainer', 'role' => 'database-maintainer'],
                         ['user' => 'member', 'role' => 'member']
                     ]
                 ],
@@ -40,8 +40,8 @@ class TeamSeeder extends Seeder
                     'name' => 'Product Team',
                     'description' => 'Product management and strategy',
                     'members' => [
-                        ['user' => 'superadmin', 'role' => 'admin'],
-                        ['user' => 'manager', 'role' => 'maintainer'],
+                        ['user' => 'super-admin', 'role' => 'super-admin'],
+                        ['user' => 'team-manager', 'role' => 'database-maintainer'],
                         ['user' => 'member', 'role' => 'member']
                     ]
                 ]

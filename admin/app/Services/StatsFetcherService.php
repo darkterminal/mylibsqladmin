@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\QueryMetric;
 use App\Models\SlowestQuery;
 use App\Models\TopQuery;
+use App\Models\UserDatabase;
 use Illuminate\Support\Facades\Http;
 
 class StatsFetcherService
@@ -12,6 +13,12 @@ class StatsFetcherService
     public static function run(?string $databaseName = null): string|array
     {
         if ($databaseName) {
+
+            if (UserDatabase::where('database_name', $databaseName)->doesntExist()) {
+                logger("Database not found: {$databaseName}");
+                return "Database not found";
+            }
+
             return self::broadcastToDatabase($databaseName);
         } else {
             return self::broadcastStatsChanged();

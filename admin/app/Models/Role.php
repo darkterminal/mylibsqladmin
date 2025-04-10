@@ -20,7 +20,7 @@ class Role extends Model
         $roles = [
             'super-admin' => 'Super Admin',
             'team-manager' => 'Team Manager',
-            'database-maintener' => 'Database Maintener',
+            'database-maintainer' => 'Database Maintainer',
             'member' => 'Member'
         ];
 
@@ -29,13 +29,29 @@ class Role extends Model
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class)->withTimestamps();
+        return $this->belongsToMany(User::class)
+            ->withTimestamps();
     }
 
     public function permissions(): BelongsToMany
     {
         return $this->belongsToMany(Permission::class)
-            ->withTimestamps()
-            ->using(PermissionRole::class);
+            ->withTimestamps();
+    }
+
+    public static function superAdmin(): Role
+    {
+        return static::firstOrCreate([
+            'name' => 'Super Admin',
+            'description' => 'Full system access'
+        ]);
+    }
+
+    public static function teamManager(): Role
+    {
+        return static::firstOrCreate([
+            'name' => 'Team Manager',
+            'description' => 'Manages team resources'
+        ]);
     }
 }

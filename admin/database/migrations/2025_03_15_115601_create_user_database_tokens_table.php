@@ -20,8 +20,12 @@ return new class extends Migration {
             $table->string('full_access_token')->unique();
             $table->string('read_only_token')->unique();
             $table->integer('expiration_day');
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index(['user_id', 'database_id']);
         });
     }
 

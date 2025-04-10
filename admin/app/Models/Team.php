@@ -25,7 +25,8 @@ class Team extends Model
 
     public function invitations()
     {
-        return $this->hasMany(Invitation::class);
+        return $this->hasMany(Invitation::class)
+            ->with('inviter');
     }
 
     public function groups()
@@ -56,7 +57,7 @@ class Team extends Model
         $levels = [
             'super-admin' => 1,
             'team-manager' => 2,
-            'database-maintener' => 3,
+            'database-maintainer' => 3,
             'member' => 4
         ];
 

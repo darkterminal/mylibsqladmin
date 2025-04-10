@@ -13,22 +13,27 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useInitials } from "@/hooks/use-initials"
-import { Member, MemberForm } from "@/types"
+import { Member, MemberForm, PendingInvitationMember } from "@/types"
 import { Plus, Trash2 } from "lucide-react"
 import { ReactNode, useState } from "react"
+import { Badge } from "../ui/badge"
 
 export function ModalManageMembers({
     members,
+    pendingInvitation,
     trigger,
     onAddMember,
     onRemoveMember,
     onUpdateRole,
+    teamName,
 }: {
     members: Member[]
+    pendingInvitation: PendingInvitationMember[]
     trigger: ReactNode
     onAddMember: (member: MemberForm) => void
     onRemoveMember: (memberId: number) => void
     onUpdateRole: (memberId: number, role: string) => void
+    teamName?: string
 }) {
     const getInitials = useInitials()
     const [isOpen, setIsOpen] = useState(false)
@@ -48,7 +53,7 @@ export function ModalManageMembers({
             <DialogTrigger asChild>{trigger}</DialogTrigger>
             <DialogContent className="sm:max-w-1/2">
                 <DialogHeader>
-                    <DialogTitle>Manage Team Members</DialogTitle>
+                    <DialogTitle>Manage {teamName ? `(${teamName})` : ""} Team Members</DialogTitle>
                     <DialogDescription>Add or remove team members</DialogDescription>
                 </DialogHeader>
 
@@ -139,6 +144,38 @@ export function ModalManageMembers({
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
                                 )}
+                            </div>
+                        </div>
+                    ))}
+                    {pendingInvitation.map((member) => (
+                        <div key={member.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
+                            <div className="flex items-center gap-2">
+                                <Avatar className="flex items-center justify-center text-primary-foreground bg-primary">
+                                    <span className="text-xs">{getInitials(member.name)}</span>
+                                </Avatar>
+                                <div>
+                                    <p className="font-medium">{member.name}</p>
+                                    <p className="text-sm text-muted-foreground">{member.email}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Badge variant="outline">Pending Invitation</Badge>
+                                <Badge variant="outline">Expires {member.expires_at}</Badge>
+                                <Select
+                                    value={member.permission_level}
+                                    onValueChange={(value) => onUpdateRole(member.id, value)}
+                                    disabled={true}
+                                >
+                                    <SelectTrigger className="w-[200px]">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="super-admin">Super Admin</SelectItem>
+                                        <SelectItem value="team-manager">Team Manager</SelectItem>
+                                        <SelectItem value="member">Member</SelectItem>
+                                        <SelectItem value="database-maintainer">Database Maintener</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                     ))}

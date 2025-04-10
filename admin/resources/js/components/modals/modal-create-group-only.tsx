@@ -12,21 +12,29 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ReactNode, useState } from "react"
 
+export interface CreateGroupOnlyForm {
+    groupName: string
+    teamId: number | undefined
+}
+
 export function ModalCreateGroupOnly({
     trigger,
     onSave,
 }: {
     trigger: ReactNode
-    onSave: (groupName: string) => void
+    onSave: (groupForm: CreateGroupOnlyForm) => void
 }) {
     const [isOpen, setIsOpen] = useState(false)
-    const [groupName, setGroupName] = useState("")
+    const [groupForm, setGroupForm] = useState<CreateGroupOnlyForm>({
+        groupName: "",
+        teamId: undefined
+    })
 
     const handleSubmit = () => {
-        if (!groupName.trim()) return
-        onSave(groupName)
+        if (!groupForm.groupName.trim()) return
+        onSave(groupForm)
         setIsOpen(false)
-        setGroupName("")
+        setGroupForm({ groupName: "", teamId: undefined })
     }
 
     return (
@@ -43,8 +51,8 @@ export function ModalCreateGroupOnly({
                         <Label htmlFor="name" className="text-right">Name</Label>
                         <Input
                             id="name"
-                            value={groupName}
-                            onChange={(e) => setGroupName(e.target.value)}
+                            value={groupForm.groupName}
+                            onChange={(e) => setGroupForm({ ...groupForm, groupName: e.target.value })}
                             className="col-span-3"
                             placeholder="Group name"
                         />
@@ -53,7 +61,7 @@ export function ModalCreateGroupOnly({
 
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                    <Button onClick={handleSubmit} disabled={!groupName.trim()}>Create</Button>
+                    <Button onClick={handleSubmit} disabled={!groupForm.groupName.trim()}>Create</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

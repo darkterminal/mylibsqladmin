@@ -24,6 +24,8 @@ return new class extends Migration {
             $table->float('elapsed_ms');
             $table->text('queries')->nullable();
             $table->timestamps();
+
+            $table->index('database_id');
         });
 
         Schema::create('top_queries', function (Blueprint $table) {

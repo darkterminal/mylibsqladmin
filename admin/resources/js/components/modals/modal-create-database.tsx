@@ -18,7 +18,7 @@ export type CreateDatabaseProps = {
     childDatabase: string
     isSchema: boolean | string
     useExisting: boolean
-    groupName: string,
+    groupId: string, // Changed from groupName to groupId
     teamId?: number | null
 }
 
@@ -52,30 +52,36 @@ export function ModalCreateDatabase({
         childDatabase: "",
         isSchema: false,
         useExisting: useExistingDatabase,
-        groupName: currentGroup?.name || "",
+        groupId: currentGroup?.id.toString() || "",
         teamId: currentTeam?.id
     });
     const [activeTeamId, setActiveTeamId] = useState<string | null>(null)
     const [processing, setProcessing] = useState(false)
 
     const getGroupOptions = (): ComboboxOption[] => {
-        if (currentTeam?.groups) {
-            return currentTeam.groups
-                .map(group => ({
-                    label: group.name,
-                    value: group.id.toString()
-                }))
-                .sort((a, b) => Number(b.value) - Number(a.value));
+        let options: ComboboxOption[] = currentTeam?.groups
+            ? currentTeam.groups.map(g => ({
+                label: g.name,
+                value: g.id.toString()
+            }))
+            : [...groups];
+
+        if (currentGroup && !options.some(o => o.value === currentGroup.id.toString())) {
+            options.push({
+                label: currentGroup.name,
+                value: currentGroup.id.toString()
+            });
         }
-        return groups;
-    }
+
+        return options.sort((a, b) => Number(b.value) - Number(a.value));
+    };
 
     const [availableGroups, setAvailableGroups] = useState<ComboboxOption[]>(getGroupOptions())
 
     // Update availableGroups when teams/groups change
     useEffect(() => {
         setAvailableGroups(getGroupOptions());
-    }, [currentTeam, groups]);
+    }, [currentTeam, groups, currentGroup]);
 
     // Sync team-related data
     useEffect(() => {
@@ -90,15 +96,15 @@ export function ModalCreateDatabase({
         }
     }, [currentTeam]);
 
-    // Sync group name
+    // Sync group ID when currentGroup changes
     useEffect(() => {
-        if (currentGroup?.name) {
+        if (currentGroup?.id) {
             setFormData(prev => ({
                 ...prev,
-                groupName: currentGroup.name,
+                groupId: currentGroup.id.toString(),
             }));
         }
-    }, [currentGroup?.name]);
+    }, [currentGroup?.id]);
 
     const sharedDatabases = existingDatabases.filter((db) => db.is_schema)
 
@@ -123,7 +129,7 @@ export function ModalCreateDatabase({
                 childDatabase: "",
                 isSchema: false,
                 useExisting: false,
-                groupName: "",
+                groupId: currentGroup?.id?.toString() || "",
                 teamId: currentTeam?.id
             })
         } catch (error) {
@@ -161,7 +167,7 @@ export function ModalCreateDatabase({
                 const newGroupId = await onCreateGroup(name)
                 const newGroup: ComboboxOption = { value: newGroupId, label: name }
                 setAvailableGroups((prev) => [...prev, newGroup])
-                setFormData({ ...formData, groupName: newGroupId })
+                setFormData(prev => ({ ...prev, groupId: newGroupId }))
             } catch (error) {
                 console.error("Error creating group:", error)
             }
@@ -198,14 +204,16 @@ export function ModalCreateDatabase({
 
             <div className="space-y-4">
                 <div className="space-y-2">
-                    <Label htmlFor="groupName">Group</Label>
+                    <Label htmlFor="groupId">Group</Label>
                     <Combobox
                         options={availableGroups}
-                        value={formData.groupName}
-                        onValueChange={(value) => setFormData(prev => ({
-                            ...prev,
-                            groupName: value
-                        }))}
+                        value={formData.groupId}
+                        onValueChange={(value) => {
+                            setFormData(prev => ({
+                                ...prev,
+                                groupId: value
+                            }))
+                        }}
                         placeholder="Select a group"
                         emptyMessage="No groups found"
                         createNewOptionLabel="Create new group"

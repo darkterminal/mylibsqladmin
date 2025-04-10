@@ -63,7 +63,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
         const submittedData = {
             database: formData.useExisting ? formData.childDatabase : formData.database,
             isSchema: formData.useExisting ? formData.database : formData.isSchema,
-            groupId: Number(formData.groupName),
+            groupId: Number(formData.groupId),
             teamId: Number(teamId),
         };
 
@@ -95,7 +95,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
 
                 {/* Right Section */}
                 <div className="flex flex-shrink-0 items-center gap-2">
-                    {can('manage-group-databases') && (
+                    {can('manage-databases') && (
                         <ModalCreateDatabase
                             existingDatabases={databases}
                             onSubmit={handleDatabaseSubmit}

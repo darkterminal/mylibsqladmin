@@ -42,14 +42,11 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
-
         $currentTeamDatabases = session('team_databases') ?? [];
 
         return [
             ...parent::share($request),
             'name' => config('app.name'),
-            'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => function () use ($request) {
                     if (!$user = $request->user()) {
@@ -57,14 +54,12 @@ class HandleInertiaRequests extends Middleware
                     }
 
                     if ($user->teams()->doesntExist()) {
-                        $team = Team::firstOrCreate(
-                            ["name" => "{$user->username} space"],
-                            ['description' => 'Personal workspace']
-                        );
-
-                        $user->teams()->syncWithoutDetaching([
-                            $team->id => ['permission_level' => 'admin']
+                        $team = Team::firstOrCreate([
+                            "name" => "{$user->username} space",
+                            'description' => 'Personal workspace'
                         ]);
+
+                        $team->members()->attach($user->id, ['permission_level' => 'super-admin']);
                     }
 
                     return $user->append('permission_names')
@@ -73,15 +68,7 @@ class HandleInertiaRequests extends Middleware
                 },
                 'permissions' => fn() => $request->user() ? [
                     'abilities' => $request->user()->getAllPermissions(),
-                    'can' => [
-                        'manageTeams' => $request->user()->can('manage-teams'),
-                        'createTeam' => $request->user()->can('create-teams'),
-                        'manageGroupDatabases' => $request->user()->can('manage-group-databases'),
-                        'manageGroupDatabaseTokens' => $request->user()->can('manage-group-database-tokens'),
-                        'manageDatabaseTokens' => $request->user()->can('manage-database-tokens'),
-                        'manageTeamGroups' => $request->user()->can('manage-team-groups'),
-                        'accessTeamDatabases' => $request->user()->can('access-team-databases'),
-                    ]
+                    'role' => $request->user()->roles()->get()->pluck('name')
                 ] : null,
             ],
             'flash' => [

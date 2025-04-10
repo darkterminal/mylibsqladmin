@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 
 export type TeamBase = {
     name: string;
@@ -68,7 +68,8 @@ export function ModalCreateTeam<T extends TeamBase>({
         setError(null);
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
         const validationError = validate?.({
             name: name.trim(),
             description: descriptionText.trim(),
@@ -103,54 +104,56 @@ export function ModalCreateTeam<T extends TeamBase>({
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
 
-                <div className="flex flex-col gap-4 py-4">
-                    <div className="flex flex-col items-start space-y-4">
-                        <Label htmlFor="team-name" className="text-right">
-                            {nameLabel}
-                        </Label>
-                        <Input
-                            id="team-name"
-                            value={name}
-                            onChange={(e) => {
-                                setName(e.target.value);
-                                setError(null);
-                            }}
-                            className="col-span-3"
-                            placeholder={namePlaceholder}
-                        />
-                    </div>
-
-                    <div className="flex flex-col items-start space-y-4">
-                        <Label htmlFor="team-description" className="text-right">
-                            {descriptionLabel}
-                        </Label>
-                        <Textarea
-                            id="team-description"
-                            value={descriptionText}
-                            onChange={(e) => setDescription(e.target.value)}
-                            className="col-span-3"
-                            placeholder={descriptionPlaceholder}
-                        />
-                    </div>
-
-                    {error && (
-                        <div className="text-red-500 text-sm col-span-4 text-center">
-                            {error}
+                <form autoComplete="off" onSubmit={(e) => handleSubmit(e)}>
+                    <div className="flex flex-col gap-4 py-4">
+                        <div className="flex flex-col items-start space-y-4">
+                            <Label htmlFor="team-name" className="text-right">
+                                {nameLabel}
+                            </Label>
+                            <Input
+                                id="team-name"
+                                value={name}
+                                onChange={(e) => {
+                                    setName(e.target.value);
+                                    setError(null);
+                                }}
+                                className="col-span-3"
+                                placeholder={namePlaceholder}
+                            />
                         </div>
-                    )}
-                </div>
 
-                <DialogFooter>
-                    <Button
-                        variant="outline"
-                        onClick={() => handleOpenChange(false)}
-                    >
-                        {cancelButtonLabel}
-                    </Button>
-                    <Button onClick={handleSubmit}>
-                        {saveButtonLabel}
-                    </Button>
-                </DialogFooter>
+                        <div className="flex flex-col items-start space-y-4">
+                            <Label htmlFor="team-description" className="text-right">
+                                {descriptionLabel}
+                            </Label>
+                            <Textarea
+                                id="team-description"
+                                value={descriptionText}
+                                onChange={(e) => setDescription(e.target.value)}
+                                className="col-span-3"
+                                placeholder={descriptionPlaceholder}
+                            />
+                        </div>
+
+                        {error && (
+                            <div className="text-red-500 text-sm col-span-4 text-center">
+                                {error}
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => handleOpenChange(false)}
+                        >
+                            {cancelButtonLabel}
+                        </Button>
+                        <Button type="submit">
+                            {saveButtonLabel}
+                        </Button>
+                    </DialogFooter>
+                </form>
             </DialogContent>
         </Dialog>
     );

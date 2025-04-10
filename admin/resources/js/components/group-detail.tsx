@@ -92,7 +92,7 @@ export default function GroupDetail({
         const submittedData = {
             database: formData.useExisting ? formData.childDatabase : formData.database,
             isSchema: formData.useExisting ? formData.database : formData.isSchema,
-            groupId: Number(formData.groupName),
+            groupId: Number(formData.groupId),
             teamId: Number(teamId),
         };
 
@@ -108,7 +108,7 @@ export default function GroupDetail({
         }
     }
 
-    const handleDeleteDatabase = useCallback((groupId: number, databaseId: number) => {
+    const handleDeleteDatabase = useCallback((databaseId: number) => {
         toast('Are you sure you want to delete this database from this group?', {
             description: "This action cannot be undone.",
             position: 'top-center',
@@ -117,7 +117,7 @@ export default function GroupDetail({
                     variant="destructive"
                     size="sm"
                     onClick={() => {
-                        router.delete(route('group.delete-databases', { group: groupId, database: databaseId }), {
+                        router.delete(route('group.delete-databases', { database: databaseId }), {
                             preserveScroll: true,
                             onSuccess: () => {
                                 toast.success('Database deleted successfully');
@@ -143,22 +143,27 @@ export default function GroupDetail({
             <div className="h-full flex items-center justify-center border rounded-md p-8 text-center">
                 <div>
                     <h3 className="font-medium mb-2">There is no database in this group</h3>
-                    <ModalCreateDatabase
-                        existingDatabases={databases}
-                        onSubmit={handleDatabaseSubmit}
-                        groups={groups}
-                        currentGroup={group}
-                    >
-                        <AppTooltip text='Create new database'>
-                            <Button variant={'outline'} size={'default'}>
-                                <CirclePlusIcon className='h-4 w-4' /> Add New Database
-                            </Button>
-                        </AppTooltip>
-                    </ModalCreateDatabase>
+                    <div className="flex gap-3">
+                        <ModalCreateDatabase
+                            existingDatabases={databases}
+                            onSubmit={handleDatabaseSubmit}
+                            groups={groups}
+                            currentGroup={group}
+                        >
+                            <AppTooltip text='Create new database'>
+                                <Button variant={'outline'} size={'default'}>
+                                    <CirclePlusIcon className='h-4 w-4' /> Add New Database
+                                </Button>
+                            </AppTooltip>
+                        </ModalCreateDatabase>
+                        <ButtonDelete text="Delete Group" handleDelete={deleteGroup} />
+                    </div>
                 </div>
             </div>
         );
     }
+
+    const tokenExpirationDate = calculateExpirationDate(group.group_token.created_at, group.group_token.expiration_day);
 
     return (
         <Card>
@@ -174,17 +179,17 @@ export default function GroupDetail({
                             {group.members_count} {group.members_count === 1 ? "database" : "databases"} in this group
                             {group.has_token && (
                                 <span className="ml-2">
-                                    {calculateExpirationDate(group.group_token.created_at, group.group_token.expiration_day) === 'expired' ? <Badge variant="destructive">Expired</Badge> : <Badge variant={'outline'}>Active</Badge>}
+                                    {tokenExpirationDate === 'expired' ? <Badge variant="destructive">Expired</Badge> : <Badge variant={'outline'}>Token Active until {tokenExpirationDate}</Badge>}
                                 </span>
                             )}
                         </CardDescription>
                     </div>
                     <div className="flex gap-2">
-                        {(group.has_token && calculateExpirationDate(group.group_token.created_at, group.group_token.expiration_day) !== 'expired') && (
+                        {(group.has_token && tokenExpirationDate !== 'expired') && (
                             <ButtonActionGroupToken group_token={group.group_token} />
                         )}
                         <ModalCreateGroupToken groupId={group.id} onSuccess={handleOnSuccess}>
-                            <AppTooltip text="Create Group Token">
+                            <AppTooltip text={group.has_token ? "Revoke Group Token" : "Create Group Token"}>
                                 <Button variant="default">
                                     <KeyIcon className="h-4 w-4" />
                                 </Button>
@@ -220,7 +225,7 @@ export default function GroupDetail({
                                         <Badge variant="outline" className="ml-auto border-green-400 dark:border-green-600 text-green-400 dark:text-green-600">
                                             Active
                                         </Badge>
-                                        <ButtonDelete handleDelete={() => handleDeleteDatabase(group.id, database.id)} text="Delete Database" />
+                                        <ButtonDelete handleDelete={() => handleDeleteDatabase(database.id)} text="Delete Database" />
                                         {token ? (
                                             <>
                                                 <ButtonCopyReadOnlyToken token={token} />

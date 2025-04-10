@@ -3,32 +3,32 @@
 namespace App\Policies;
 
 use App\Models\User;
-use App\Models\GroupDatabaseToken;
+use Illuminate\Auth\Access\Response;
 
-class GroupDatabaseTokenPolicy
+class UserPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasPermission('manage-group-tokens') ||
-            $user->hasPermission('view-group-tokens');
+        return $user->hasPermission('manage-users') ||
+            $user->hasPermission('view-users');
     }
 
     public function create(User $user): bool
     {
-        return $user->hasPermission('manage-group-tokens') ||
-            $user->hasPermission('create-group-tokens');
+        return $user->hasPermission('manage-users') ||
+            $user->hasPermission('create-users');
     }
 
     public function update(User $user): bool
     {
-        return $user->hasPermission('manage-group-tokens') ||
-            $user->hasPermission('update-group-tokens');
+        return $user->hasPermission('manage-users') ||
+            $user->hasPermission('update-users');
     }
 
     public function delete(User $user): bool
     {
-        return $user->hasPermission('manage-group-tokens') ||
-            $user->hasPermission('delete-group-tokens');
+        return $user->hasPermission('manage-users') ||
+            $user->hasPermission('delete-users');
     }
 
     /**

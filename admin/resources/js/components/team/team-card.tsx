@@ -5,9 +5,10 @@ import { MemberForm, SharedData, TeamCardProps, TeamForm } from "@/types";
 import { router, usePage } from "@inertiajs/react";
 import { Activity, CheckCircle, CirclePlusIcon, FolderClosed, MoreHorizontal, Users } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { AppTooltip } from "../app-tooltip";
 import { CreateDatabaseProps, ModalCreateDatabase } from "../modals/modal-create-database";
-import { ModalCreateGroupOnly } from "../modals/modal-create-group-only";
+import { CreateGroupOnlyForm, ModalCreateGroupOnly } from "../modals/modal-create-group-only";
 import { ModalEditTeam } from "../modals/modal-edit-team";
 import { ModalManageMembers } from "../modals/modal-manage-members";
 import { Avatar } from "../ui/avatar";
@@ -20,7 +21,7 @@ import { ScrollArea } from "../ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { GroupTree } from "./group-tree";
 
-export default function TeamCard({ team, isCurrent }: TeamCardProps) {
+export default function TeamCard({ team, isCurrent, totalTeams: totalTeams }: TeamCardProps) {
     const getInitials = useInitials();
     const { can } = usePermission();
 
@@ -61,13 +62,27 @@ export default function TeamCard({ team, isCurrent }: TeamCardProps) {
         const submittedData = {
             database: formData.useExisting ? formData.childDatabase : formData.database,
             isSchema: formData.useExisting ? formData.database : formData.isSchema,
-            groupId: Number(formData.groupName),
+            groupId: Number(formData.groupId),
             teamId: Number(teamId),
         };
 
-        router.post(route('database.create'), submittedData, {
-            onSuccess: async () => await apiFetch(route('api.teams.databases', Number(teamId))),
-            onFinish: () => router.visit(window.location.href)
+        const response = await apiFetch(route('database.create'), {
+            method: 'POST',
+            body: JSON.stringify(submittedData),
+        });
+
+        if (!response.ok) {
+            toast.error('Failed to create database');
+        }
+
+        const refreshSession = await apiFetch(route('api.teams.databases', Number(teamId)));
+
+        if (!refreshSession.ok) {
+            toast.error('Failed to refresh session');
+        }
+
+        router.visit(window.location.href, {
+            preserveScroll: true
         });
     }
 
@@ -96,19 +111,35 @@ export default function TeamCard({ team, isCurrent }: TeamCardProps) {
         }
     }
 
-    const handleCreateGroupSubmit = async (name: string) => {
+    const handleCreateGroupSubmit = async (groupOnlyForm: CreateGroupOnlyForm) => {
         try {
-            const teamId = localStorage.getItem('currentTeamId');
             const response = await apiFetch(route('api.group.create-only'), {
                 method: 'POST',
-                body: JSON.stringify({ name, team_id: teamId }),
+                body: JSON.stringify({ name: groupOnlyForm.groupName, team_id: Number(groupOnlyForm.teamId) }),
             });
 
+            // Parse response regardless of status
+            const responseData = await response.json();
+
             if (!response.ok) {
-                throw new Error('Failed to create group');
+                // Handle validation errors (422)
+                if (response.status === 422) {
+                    throw {
+                        message: 'Validation failed',
+                        errors: responseData.errors,
+                        status: response.status
+                    };
+                }
+
+                // Handle other errors
+                throw {
+                    message: responseData.message || 'Request failed',
+                    status: response.status
+                };
             }
 
-            const refreshSession = await apiFetch(route('api.teams.databases', Number(teamId)));
+            // Handle success
+            const refreshSession = await apiFetch(route('api.teams.databases', Number(groupOnlyForm.teamId)));
 
             if (!refreshSession.ok) {
                 throw new Error('Failed to refresh session');
@@ -117,10 +148,68 @@ export default function TeamCard({ team, isCurrent }: TeamCardProps) {
             router.visit(window.location.href, {
                 preserveScroll: true,
             });
-        } catch (error) {
+
+            return responseData;
+
+        } catch (error: { message: string, status: number } | any) {
             console.error("Error creating group:", error);
+            toast.error('Failed to create group: ' + error.message);
+
+            // Throw structured error for UI handling
+            if (error instanceof Error) {
+                throw {
+                    message: error.message,
+                    status: 500
+                };
+            }
+
+            // Preserve backend error structure
             throw error;
         }
+    };
+
+    const handleUpdateRole = async (userId: number, role: string) => {
+        router.put(route('teams.members.update-role', {
+            team: team.id,
+            user: userId
+        }), { role }, {
+            onSuccess: () => {
+                router.visit(window.location.href, {
+                    preserveScroll: true,
+                });
+            }
+        });
+    }
+
+    const handleDeleteTeam = async (teamId: number) => {
+        const response = await apiFetch(route('team.delete', teamId), {
+            method: 'DELETE',
+        });
+
+        if (response.ok) {
+            router.visit(window.location.href, {
+                preserveScroll: true,
+            });
+        }
+
+        toast.error('Failed to delete team');
+    }
+
+    const handleRemoveMember = async (userId: number, teamId: number) => {
+        const response = await apiFetch(route('teams.members.delete', {
+            team: teamId,
+            user: userId
+        }), {
+            method: 'DELETE',
+        })
+
+        if (response.ok) {
+            router.visit(window.location.href, {
+                preserveScroll: true,
+            });
+        }
+
+        toast.error('Failed to remove member');
     }
 
     return (
@@ -178,15 +267,17 @@ export default function TeamCard({ team, isCurrent }: TeamCardProps) {
                                     </DropdownMenuItem>
                                     <DropdownMenuItem asChild>
                                         <ModalManageMembers
+                                            teamName={team.name}
                                             trigger={
                                                 <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
                                                     Manage members
                                                 </Button>
                                             }
                                             members={team.team_members}
+                                            pendingInvitation={team.pending_invitations}
                                             onAddMember={(member) => handleAddMember(member)}
-                                            onRemoveMember={(memberId) => console.log(memberId)}
-                                            onUpdateRole={(memberId, role) => console.log(memberId, role)}
+                                            onRemoveMember={(memberId) => handleRemoveMember(memberId, team.id)}
+                                            onUpdateRole={(memberId, role) => handleUpdateRole(memberId, role)}
                                         />
                                     </DropdownMenuItem>
                                     <DropdownMenuItem asChild>
@@ -196,11 +287,24 @@ export default function TeamCard({ team, isCurrent }: TeamCardProps) {
                                                     Add group
                                                 </Button>
                                             }
-                                            onSave={(groupName) => handleCreateGroupSubmit(groupName)}
+                                            onSave={(group) => {
+                                                group.teamId = team.id;
+                                                handleCreateGroupSubmit(group)
+                                            }}
                                         />
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem className="text-destructive">Delete team</DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Button
+                                            variant="destructive"
+                                            size={"sm"}
+                                            className="flex w-full justify-start"
+                                            disabled={totalTeams === 1}
+                                            onClick={() => handleDeleteTeam(team.id)}
+                                        >
+                                            Delete team
+                                        </Button>
+                                    </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
