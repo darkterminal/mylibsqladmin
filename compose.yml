@@ -63,6 +63,7 @@ services:
       db:
         condition: service_started
     restart: always
+    user: root
     networks:
       - app-network
 

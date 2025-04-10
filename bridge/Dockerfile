@@ -10,19 +10,18 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
     chmod +x /usr/local/bin/composer
 
 WORKDIR /app
-
 COPY . .
 
-# Cleanup database directories
-RUN find data/libsql/data.sqld/dbs/ -mindepth 1 -maxdepth 1 -type d ! -name 'default' -exec rm -rf {} +
+# Create a startup script
+RUN echo '#!/bin/sh' > /entrypoint.sh && \
+    echo 'mkdir -p /app/data/libsql/data.sqld/dbs' >> /entrypoint.sh && \
+    echo 'chown -R www-data:www-data /app/data' >> /entrypoint.sh && \
+    echo 'chmod -R 777 /app/data' >> /entrypoint.sh && \
+    echo 'exec "$@"' >> /entrypoint.sh && \
+    chmod +x /entrypoint.sh
 
-# Set permissions
-RUN chown -R www-data:www-data /app
-
-USER www-data
-
+USER root
 EXPOSE 4500
-
 HEALTHCHECK --interval=30s --timeout=3s CMD curl -f http://localhost:4500/health || exit 1
-
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["php", "-S", "0.0.0.0:4500", "index.php"]

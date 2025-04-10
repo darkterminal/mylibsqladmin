@@ -97,17 +97,4 @@ class DashboardController extends Controller
             'userDatabaseTokens' => $userDatabaseTokens
         ]);
     }
-
-    private function determineDatabaseType($isSchema)
-    {
-        if (is_numeric($isSchema) && (int) $isSchema === 1) {
-            return 'schema';
-        }
-
-        if (is_numeric($isSchema) && (int) $isSchema === 0) {
-            return 'standalone';
-        }
-
-        return 'child';
-    }
 }
