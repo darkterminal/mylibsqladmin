@@ -19,6 +19,7 @@ import {
     Folder,
     Handshake,
     LayoutGrid,
+    Users,
     UsersRound
 } from 'lucide-react';
 import AppLogo from './app-logo';
@@ -66,12 +67,12 @@ const mainNavItems: NavItem[] = [
     //     isAllowed: ({ can }) =>
     //         can('manage-team-members') || can('view-team-members'),
     // },
-    // {
-    //     title: 'User Management',
-    //     url: '/dashboard/users',
-    //     icon: Users,
-    //     isAllowed: ({ hasRole }) => hasRole('Super Admin'),
-    // },
+    {
+        title: 'User Management',
+        url: '/dashboard/users',
+        icon: Users,
+        isAllowed: ({ hasRole }) => hasRole('Super Admin'),
+    },
     // {
     //     title: 'Roles & Permissions',
     //     url: '/dashboard/roles',
