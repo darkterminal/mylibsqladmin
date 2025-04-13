@@ -48,12 +48,15 @@ class ActivityLog extends Model
         return Carbon::parse($this->created_at)->diffForHumans();
     }
 
-    public static function determineAction(string $query): string
+    public static function determineAction(string $query, int $databaseId): string
     {
         $normalized = strtoupper(trim($query));
         $tokens = preg_split('/\s+/', $normalized);
         $actionKey = null;
         $table = null;
+        $query = str_replace(['MAIN.', 'MAIN'], '', strtoupper(trim($query)));
+
+        logger("Query: $query");
 
         // Detect action and extract table name
         if (count($tokens) >= 2) {
@@ -113,8 +116,8 @@ class ActivityLog extends Model
         if (!$baseDescription)
             return null;
 
-        return $table
-            ? sprintf("%s %s", $baseDescription, $table)
+        return strtolower($table)
+            ? sprintf("%s [%s] table in database [%s]", $baseDescription, strtolower($table), UserDatabase::find($databaseId)->database_name)
             : $baseDescription;
     }
 }
