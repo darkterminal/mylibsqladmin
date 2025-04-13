@@ -222,14 +222,24 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams }: Te
                                 <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
                             )}
                             {team.name}
-                            <Badge variant="outline" className="ml-2">
-                                <Users className="h-3 w-3 mr-1" />
-                                {team.members}
-                            </Badge>
+                            <AppTooltip text="Team members">
+                                <Badge variant="outline" className="ml-2">
+                                    <Users className="h-3 w-3 mr-1" />
+                                    {team.members}
+                                </Badge>
+                            </AppTooltip>
+                            {team.pending_invitations.length > 0 && (can('manage-teams') || can('manage-team-members')) && (
+                                <AppTooltip text='Pending invitation'>
+                                    <Badge variant="outline" className="ml-2 outline-yellow-500 dark:outline-white bg-yellow-500 text-white dark:bg-transparent dark:text-yellow-500">
+                                        <Users className="h-3 w-3 mr-1" />
+                                        {team.pending_invitations.length}
+                                    </Badge>
+                                </AppTooltip>
+                            )}
                         </CardTitle>
                         <CardDescription>{team.description}</CardDescription>
                     </div>
-                    {can('manage-teams') && (
+                    {can('manage-teams') || can('manage-team-members') && (
                         <div className="flex gap-2">
                             <ModalCreateDatabase
                                 existingDatabases={databases}
