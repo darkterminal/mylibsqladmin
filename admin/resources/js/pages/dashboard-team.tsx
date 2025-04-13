@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import AppLayout from "@/layouts/app-layout"
 import { usePermission } from "@/lib/auth"
-import { BreadcrumbItem, Team } from "@/types"
-import { Head } from "@inertiajs/react"
+import { BreadcrumbItem, Team, TeamForm } from "@/types"
+import { Head, router } from "@inertiajs/react"
 import { Search, Users } from "lucide-react"
 import { useEffect, useState } from "react"
 
@@ -26,6 +26,16 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
     const { can } = usePermission();
     const [searchQuery, setSearchQuery] = useState<string>("")
     const [currentTeamId, setCurrentTeamId] = useState<string | null>(null)
+
+    const handleOnSave = (team: TeamForm) => {
+        router.post(route('team.create'), team, {
+            onSuccess: () => {
+                router.visit(window.location.href, {
+                    preserveScroll: true
+                })
+            }
+        })
+    }
 
     useEffect(() => {
         setCurrentTeamId(localStorage.getItem('currentTeamId'))
@@ -70,7 +80,7 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
                                         New Team
                                     </Button>
                                 }
-                                onSave={(team) => console.log(team)}
+                                onSave={handleOnSave}
                                 validate={(team) => team.name.length < 3 ? "Name must be at least 3 characters" : null}
                             />
                         )}
