@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\ActivityType;
 use App\Models\GroupDatabase;
 use App\Models\GroupDatabaseToken;
 use App\Models\Team;
@@ -57,19 +58,31 @@ class GroupDatabaseController extends Controller
             true
         );
 
-        DB::transaction(function () use ($group, $validated, $tokenGenerator) {
-            return $group->tokens()->updateOrCreate(
-                [
-                    'group_id' => $validated['group_id'],
-                ],
-                [
-                    'name' => $validated['name'],
-                    'full_access_token' => $tokenGenerator['full_access_token'],
-                    'read_only_token' => $tokenGenerator['read_only_token'],
-                    'expiration_day' => $validated['expiration']
-                ]
-            );
-        });
+        DB::transaction(fn() => $group->tokens()->updateOrCreate(
+            [
+                'group_id' => $validated['group_id'],
+            ],
+            [
+                'name' => $validated['name'],
+                'full_access_token' => $tokenGenerator['full_access_token'],
+                'read_only_token' => $tokenGenerator['read_only_token'],
+                'expiration_day' => $validated['expiration']
+            ]
+        ));
+
+        $location = get_ip_location($request->ip());
+
+        log_user_activity(
+            auth()->user(),
+            ActivityType::GROUP_DATABASE_TOKEN_CREATE,
+            "Group token create from {$request->ip()}",
+            [
+                'ip' => $request->ip(),
+                'device' => $request->userAgent(),
+                'country' => $location['country'],
+                'city' => $location['city'],
+            ]
+        );
 
         return redirect()->back()->with([
             'success' => 'Group token created successfully'
@@ -78,9 +91,32 @@ class GroupDatabaseController extends Controller
 
     public function deleteGroupToken($tokenId)
     {
-        GroupDatabaseToken::where('id', $tokenId)->delete();
+        $token = GroupDatabaseToken::where('id', $tokenId)->first();
+
+        if (!$token) {
+            return redirect()->back()->with([
+                'error' => 'Group token not found',
+            ]);
+        }
+
+        $token->delete();
+
+        $location = get_ip_location(request()->ip());
+
+        log_user_activity(
+            auth()->user(),
+            ActivityType::GROUP_DATABASE_TOKEN_DELETE,
+            "Group token delete from " . request()->ip(),
+            [
+                'ip' => request()->ip(),
+                'device' => request()->userAgent(),
+                'country' => $location['country'],
+                'city' => $location['city'],
+            ]
+        );
+
         return redirect()->back()->with([
-            'success' => 'Group token deleted successfully'
+            'success' => 'Group token deleted successfully',
         ]);
     }
 
@@ -129,6 +165,20 @@ class GroupDatabaseController extends Controller
             });
 
             Team::setTeamDatabases(auth()->id(), $validated['team_id']);
+
+            $location = get_ip_location(request()->ip());
+
+            log_user_activity(
+                auth()->user(),
+                ActivityType::GROUP_DATABASE_CREATE,
+                "Group " . $validated['name'] . " create from " . request()->ip(),
+                [
+                    'ip' => request()->ip(),
+                    'device' => request()->userAgent(),
+                    'country' => $location['country'],
+                    'city' => $location['city'],
+                ]
+            );
 
             return response()->json([
                 'success' => true,
@@ -189,6 +239,22 @@ class GroupDatabaseController extends Controller
             ->whereDoesntHave('groups')
             ->get(['id', 'database_name']);
 
+        Team::setTeamDatabases(auth()->id(), $validated['team_id']);
+
+        $location = get_ip_location(request()->ip());
+
+        log_user_activity(
+            auth()->user(),
+            ActivityType::GROUP_DATABASE_CREATE,
+            "Group " . $validated['name'] . " create from " . request()->ip(),
+            [
+                'ip' => request()->ip(),
+                'device' => request()->userAgent(),
+                'country' => $location['country'],
+                'city' => $location['city'],
+            ]
+        );
+
         return redirect()->back()->with([
             'success' => 'Group created successfully',
             'databaseGroups' => $databaseGroups,
@@ -200,19 +266,36 @@ class GroupDatabaseController extends Controller
     {
         $group = GroupDatabase::with(['members', 'tokens'])
             ->where('user_id', auth()->id())
-            ->findOrFail($groupId);
+            ->where('id', $groupId)
+            ->firstOrFail();
 
         DB::transaction(function () use ($group) {
-            $group->members()->detach();
+            $group->members()->sync([]);
             $group->tokens()->delete();
             $group->delete();
         });
+
+        Team::setTeamDatabases(auth()->id(), $group->team_id);
 
         $databaseGroups = GroupDatabase::databaseGroups(auth()->id(), $group->team_id);
 
         $databaseNotInGroup = UserDatabase::where('user_id', auth()->id())
             ->whereDoesntHave('groups')
             ->get(['id', 'database_name']);
+
+        $location = get_ip_location(request()->ip());
+
+        log_user_activity(
+            auth()->user(),
+            ActivityType::GROUP_DATABASE_DELETE,
+            "Group " . $group->name . " delete from " . request()->ip(),
+            [
+                'ip' => request()->ip(),
+                'device' => request()->userAgent(),
+                'country' => $location['country'],
+                'city' => $location['city'],
+            ]
+        );
 
         return redirect()->back()->with([
             'success' => 'Group deleted successfully',
@@ -245,6 +328,22 @@ class GroupDatabaseController extends Controller
             $group->members()->syncWithoutDetaching($validated['databases']);
         });
 
+        Team::setTeamDatabases(auth()->id(), $group->team_id);
+
+        $location = get_ip_location(request()->ip());
+
+        log_user_activity(
+            auth()->user(),
+            ActivityType::GROUP_DATABASE_UPDATE,
+            "Group {$group->name} update from " . request()->ip(),
+            [
+                'ip' => request()->ip(),
+                'device' => request()->userAgent(),
+                'country' => $location['country'],
+                'city' => $location['city'],
+            ]
+        );
+
         return redirect()->back()->with([
             'success' => 'Databases added successfully'
         ]);
@@ -255,6 +354,20 @@ class GroupDatabaseController extends Controller
         if (!SqldService::archiveDatabase($database->database_name)) {
             return redirect()->back()->with(['error' => 'Database deletion failed']);
         }
+
+        $location = get_ip_location(request()->ip());
+
+        log_user_activity(
+            auth()->user(),
+            ActivityType::GROUP_DATABASE_UPDATE,
+            "Group update from " . request()->ip(),
+            [
+                'ip' => request()->ip(),
+                'device' => request()->userAgent(),
+                'country' => $location['country'],
+                'city' => $location['city'],
+            ]
+        );
 
         return redirect()->back()->with([
             'success' => 'Database removed successfully'
