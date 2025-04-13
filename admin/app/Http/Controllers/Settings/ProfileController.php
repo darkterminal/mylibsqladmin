@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\ActivityType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -34,6 +35,20 @@ class ProfileController extends Controller
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;
         }
+
+        $location = get_ip_location($request->ip());
+
+        log_user_activity(
+            Auth::user(),
+            ActivityType::PROFILE_UPDATE,
+            "Profile update from {$request->ip()}",
+            [
+                'ip' => $request->ip(),
+                'device' => $request->userAgent(),
+                'country' => $location['country'],
+                'city' => $location['city'],
+            ]
+        );
 
         $request->user()->save();
 
