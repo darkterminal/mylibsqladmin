@@ -4,8 +4,6 @@ namespace App\Listeners;
 
 use App\Events\TriggerDatabaseStatsChangeEvent;
 use App\Services\StatsFetcherService;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 
 class RecordDatabaseStatsChangeListener
 {
@@ -22,7 +20,7 @@ class RecordDatabaseStatsChangeListener
      */
     public function handle(TriggerDatabaseStatsChangeEvent $event): void
     {
-        logger("Stats changed for {$event->databaseName}");
+        // logger("Stats changed for {$event->databaseName}");
         StatsFetcherService::run($event->databaseName);
     }
 }
