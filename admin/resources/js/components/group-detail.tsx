@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { triggerEvent } from "@/hooks/use-custom-event"
 import { apiFetch } from "@/lib/api"
-import { calculateExpirationDate, getQuery } from "@/lib/utils"
+import { calculateExpirationDate } from "@/lib/utils"
 import { DatabaseInGroupProps, GroupDatabaseProps, SharedData } from "@/types"
 import { router, usePage } from "@inertiajs/react"
 import { CirclePlusIcon, DatabaseIcon, KeyIcon, PlusCircleIcon, Server } from "lucide-react"
@@ -30,7 +30,6 @@ export default function GroupDetail({
     availableDatabases: DatabaseInGroupProps[]
 }) {
     const { databases, groups: databaseGroups } = usePage<SharedData>().props;
-    const database = getQuery('database', 'No database selected');
     const groupedDatabases = (databaseGroups || [])
         .map?.(group => ({
             label: group.name,
@@ -163,7 +162,7 @@ export default function GroupDetail({
         );
     }
 
-    const tokenExpirationDate = calculateExpirationDate(group.group_token.created_at, group.group_token.expiration_day);
+    const tokenExpirationDate = group.has_token ? calculateExpirationDate(group.group_token.created_at, group.group_token.expiration_day) : false;
 
     return (
         <Card>
