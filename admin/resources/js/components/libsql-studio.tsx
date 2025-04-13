@@ -14,30 +14,25 @@ export function LibsqlStudio({ databaseName, clientUrl, authToken }: LibSQLStudi
         window.matchMedia('(prefers-color-scheme: dark)').matches
     );
 
-    // Get initial theme from localStorage or system preference
     const [appearance, setAppearance] = useState<'light' | 'dark' | 'system'>(() => {
         const localAppearance = localStorage.getItem("appearance");
         return localAppearance ? localAppearance as 'light' | 'dark' | 'system' : 'system';
     });
 
-    // Calculate effective theme without modifying appearance state
     const effectiveTheme = appearance === 'system'
         ? (isSystemDark ? 'dark' : 'light')
         : appearance;
 
-    // Update theme attribute and localStorage
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', effectiveTheme);
         localStorage.setItem("appearance", appearance);
     }, [appearance, effectiveTheme]);
 
-    // Handle system theme changes
     useEffect(() => {
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
         const handler = (e: MediaQueryListEvent) => {
             setIsSystemDark(e.matches);
-            // Only update if we're in system mode
             if (appearance === 'system') {
                 document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
             }
@@ -47,7 +42,6 @@ export function LibsqlStudio({ databaseName, clientUrl, authToken }: LibSQLStudi
         return () => mediaQuery.removeEventListener('change', handler);
     }, [appearance]);
 
-    // Handle custom appearance changes
     useEffect(() => {
         const handleAppearanceChange = (event: CustomEvent<AppearanceStateChangeProps>) => {
             setAppearance(event.detail.appearance);
@@ -59,7 +53,6 @@ export function LibsqlStudio({ databaseName, clientUrl, authToken }: LibSQLStudi
         };
     }, []);
 
-    // Rest of your component remains the same...
     const client = useMemo(() => {
         if (!clientUrl) return null;
         return createClient({
@@ -135,7 +128,7 @@ export function LibsqlStudio({ databaseName, clientUrl, authToken }: LibSQLStudi
 
     return (
         <iframe
-            className="iframe-screen-borderless"
+            className="iframe-screen-borderless focus:outline-none"
             ref={iframeRef}
             src={`https://libsqlstudio.com/embed/sqlite?name=${databaseName}&theme=${appearance}`}
         />
