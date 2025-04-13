@@ -18,7 +18,7 @@ class User extends Authenticatable
         'username',
         'email',
         'password',
-        'role'
+        'is_active',
     ];
 
     protected $hidden = [
@@ -35,7 +35,13 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
+    }
+
+    public function activityLogs()
+    {
+        return $this->hasMany(UserActivityLog::class);
     }
 
     public function roles(): BelongsToMany
@@ -161,5 +167,108 @@ class User extends Authenticatable
         return $this->belongsToMany(Team::class)
             ->withPivot('permission_level')
             ->withTimestamps();
+    }
+
+    public static function allUsers()
+    {
+        return User::select(['id', 'name', 'username', 'email', 'is_active', 'created_at', 'updated_at', 'deleted_at'])
+            ->with([
+                'teams' => fn($query) => $query->select('teams.id', 'name', 'description')
+                    ->withPivot('permission_level'),
+                'roles' => fn($query) => $query->select('roles.id', 'name')
+                    ->withPivot('created_at'),
+            ])
+            ->orderBy('id')
+            ->paginate(10)
+            ->through(fn($user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'is_active' => $user->is_active,
+                'created_at' => $user->created_at,
+                'updated_at' => $user->updated_at,
+                'deleted_at' => $user->deleted_at,
+                'teams' => $user->teams->map(fn($team) => [
+                    'id' => $team->id,
+                    'name' => $team->name,
+                    'description' => $team->description,
+                    'permission_level' => Role::getRoleName($team->pivot->permission_level),
+                ]),
+                'roles' => $user->roles,
+            ]);
+    }
+
+    public static function allUserArchives()
+    {
+        return User::onlyTrashed()
+            ->select(['id', 'name', 'username', 'email', 'is_active', 'created_at', 'updated_at', 'deleted_at'])
+            ->with([
+                'teams' => fn($query) => $query->select('teams.id', 'name', 'description')
+                    ->withPivot('permission_level'),
+                'roles' => fn($query) => $query->select('roles.id', 'name')
+                    ->withPivot('created_at'),
+            ])
+            ->orderBy('id')
+            ->paginate(10)
+            ->through(fn($user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'is_active' => $user->is_active,
+                'created_at' => $user->created_at,
+                'updated_at' => $user->updated_at,
+                'deleted_at' => $user->deleted_at,
+                'teams' => $user->teams->map(fn($team) => [
+                    'id' => $team->id,
+                    'name' => $team->name,
+                    'description' => $team->description,
+                    'permission_level' => Role::getRoleName($team->pivot->permission_level),
+                ]),
+                'roles' => $user->roles,
+            ]);
+    }
+
+    public static function detail(User $user)
+    {
+        $user->load([
+            'teams' => fn($query) => $query->select('teams.id', 'name', 'description')->withPivot('permission_level'),
+            'roles' => fn($query) => $query->select('roles.id', 'name')->withPivot('created_at'),
+        ]);
+
+        $formattedUser = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'username' => $user->username,
+            'email' => $user->email,
+            'is_active' => $user->is_active,
+            'created_at' => $user->created_at,
+            'updated_at' => $user->updated_at,
+            'deleted_at' => $user->deleted_at,
+            'teams' => $user->teams->map(fn($team) => [
+                'id' => $team->id,
+                'name' => $team->name,
+                'description' => $team->description,
+                'permission_level' => Role::getRoleName($team->pivot->permission_level),
+            ]),
+            'roles' => $user->roles->map(fn($role) => [
+                'id' => $role->id,
+                'name' => $role->name,
+                'created_at' => $role->pivot->created_at,
+            ]),
+        ];
+
+        return $formattedUser;
+    }
+
+    public function deactivate(): void
+    {
+        $this->is_active = false;
+        $this->save();
+    }
+
+    public function activate(): void
+    {
+        $this->is_active = true;
+        $this->save();
     }
 }
