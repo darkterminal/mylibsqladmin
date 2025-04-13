@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\ActivityType;
 use App\Models\Team;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
@@ -51,6 +52,26 @@ class LoginRequest extends FormRequest
         }
 
         Team::setTeamDatabases(Auth::user()->id, $this->input('currentTeamId'));
+
+        $location = get_ip_location($this->ip());
+
+        log_user_activity(
+            Auth::user(),
+            ActivityType::LOGIN,
+            "Login from {$this->ip()}",
+            [
+                'ip' => $this->ip(),
+                'device' => $this->userAgent(),
+                'country' => $location['country'],
+                'city' => $location['city'],
+                'region' => $location['region'],
+                'coordinates' => [
+                    'lat' => $location['coordinates']['lat'],
+                    'lon' => $location['coordinates']['lon'],
+                ],
+                'isp' => $location['isp'],
+            ]
+        );
 
         RateLimiter::clear($this->throttleKey());
     }
