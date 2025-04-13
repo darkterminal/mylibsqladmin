@@ -81,7 +81,7 @@ export function ModalCreateDatabase({
     // Update availableGroups when teams/groups change
     useEffect(() => {
         setAvailableGroups(getGroupOptions());
-    }, [currentTeam, groups, currentGroup]);
+    }, []);
 
     // Sync team-related data
     useEffect(() => {
