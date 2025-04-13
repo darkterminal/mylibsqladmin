@@ -7,6 +7,7 @@ use App\Events\TeamDatabasesRequested;
 use App\Jobs\SendTeamInvitation;
 use App\Models\ActivityLog;
 use App\Models\Invitation;
+use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -119,7 +120,7 @@ class TeamController extends Controller
             ]);
 
             $team->members()->attach(auth()->id(), [
-                'permission_level' => 'super-admin'
+                'permission_level' => Role::getRoleKey(auth()->user()->getRoleAttribute())
             ]);
 
             TeamDatabasesRequested::dispatch(auth()->id(), $team->id);
