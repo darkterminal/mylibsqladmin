@@ -236,14 +236,19 @@ class SqldService
         $databases = self::getDatabases();
 
         foreach ($databases as $db) {
-            if ($db['database_name'] === $database) {
+            if ($db['database_name'] !== $database) {
                 Http::withHeaders([
                     'Content-Type' => 'application/json',
                 ])
                     ->delete("$host/v1/namespaces/" . $db['database_name']);
 
-                UserDatabase::where('database_name', $database)
-                    ->where('user_id', auth()->user()->id)
+                $userDatabase = UserDatabase::where('database_name', $database);
+
+                if (php_sapi_name() === 'cli') {
+                    $userDatabase->delete();
+                }
+
+                $userDatabase->orWhere('user_id', auth()->user()->id)
                     ->delete();
             }
         }
