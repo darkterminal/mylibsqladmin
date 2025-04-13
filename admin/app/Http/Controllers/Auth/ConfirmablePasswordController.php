@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\ActivityType;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,14 +26,30 @@ class ConfirmablePasswordController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        if (! Auth::guard('web')->validate([
-            'email' => $request->user()->email,
-            'password' => $request->password,
-        ])) {
+        if (
+            !Auth::guard('web')->validate([
+                'email' => $request->user()->email,
+                'password' => $request->password,
+            ])
+        ) {
             throw ValidationException::withMessages([
                 'password' => __('auth.password'),
             ]);
         }
+
+        $location = get_ip_location($request->ip());
+
+        log_user_activity(
+            Auth::user(),
+            ActivityType::PASSWORD_RESET_REQUEST,
+            "Login from {$request->ip()}",
+            [
+                'ip' => $request->ip(),
+                'device' => $request->userAgent(),
+                'country' => $location['country'],
+                'city' => $location['city'],
+            ]
+        );
 
         $request->session()->put('auth.password_confirmed_at', time());
 
