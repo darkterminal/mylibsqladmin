@@ -109,7 +109,7 @@ export default function DashboardGroup({
                                 <Users2Icon className="mr-1 h-4 w-4" /> New group
                             </Button>
                         }
-                        onSave={(groupName) => handleCreateGroup(groupName)}
+                        onSave={(group) => handleCreateGroup(group.groupName)}
                     />
                 </div>
 
