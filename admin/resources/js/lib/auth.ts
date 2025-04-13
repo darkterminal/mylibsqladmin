@@ -1,7 +1,7 @@
 import { SharedData } from "@/types";
 import { usePage } from "@inertiajs/react";
 
-type PermissionAttributes =
+export type PermissionAttributes =
     'manage-databases' |
     'view-databases' |
     'create-databases' |
@@ -43,7 +43,7 @@ type PermissionAttributes =
     'update-roles' |
     'delete-roles';
 
-type RoleAttributes =
+export type RoleAttributes =
     'Super Admin' |
     'Team Manager' |
     'Database Maintainer' |
