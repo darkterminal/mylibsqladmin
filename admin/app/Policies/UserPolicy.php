@@ -3,11 +3,16 @@
 namespace App\Policies;
 
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class UserPolicy
 {
     public function viewAny(User $user): bool
+    {
+        return $user->hasPermission('manage-users') ||
+            $user->hasPermission('view-users');
+    }
+
+    public function view(User $user): bool
     {
         return $user->hasPermission('manage-users') ||
             $user->hasPermission('view-users');
