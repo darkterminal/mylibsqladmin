@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\ActivityType;
 use App\Http\Controllers\Controller;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
@@ -33,6 +35,20 @@ class PasswordController extends Controller
             'current_password' => ['required', 'current_password'],
             'password' => ['required', Password::defaults(), 'confirmed'],
         ]);
+
+        $location = get_ip_location($request->ip());
+
+        log_user_activity(
+            Auth::user(),
+            ActivityType::PASSWORD_UPDATE,
+            "Password change from {$request->ip()}",
+            [
+                'ip' => $request->ip(),
+                'device' => $request->userAgent(),
+                'country' => $location['country'],
+                'city' => $location['city'],
+            ]
+        );
 
         $request->user()->update([
             'password' => Hash::make($validated['password']),
