@@ -61,6 +61,7 @@ export interface FlashMessageProps {
 export interface User {
     id: number;
     name: string;
+    username: string;
     email: string;
     role: string;
     permissions: string[];
@@ -301,3 +302,68 @@ export type PaginatedResults<T> = {
         active: boolean;
     }[];
 };
+
+interface Coordinates {
+    lat: number | null;
+    lon: number | null;
+}
+
+interface Metadata {
+    ip: string;
+    device: string;
+    country: string;
+    city: string;
+    region?: string;
+    coordinates?: Coordinates;
+    isp?: string;
+}
+
+export enum ActivityType {
+    DATABASE_STUDIO_ACTIVITY = 'database_studio_activity',
+    LOGIN = "login",
+    LOGOUT = "logout",
+    PROFILE_UPDATE = "profile_update",
+    PASSWORD_UPDATE = "password_update",
+    PASSWORD_RESET = "password_reset",
+    PASSWORD_RESET_REQUEST = "password_reset_request",
+    DATABASE_CREATE = "database_create",
+    DATABASE_DELETE = "database_delete",
+    DATABASE_UPDATE = "database_update",
+    DATABASE_TOKEN_CREATE = "database_token_create",
+    DATABASE_TOKEN_DELETE = "database_token_delete",
+    DATABASE_TOKEN_UPDATE = "database_token_update",
+    GROUP_DATABASE_CREATE = "group_database_create",
+    GROUP_DATABASE_DELETE = "group_database_delete",
+    GROUP_DATABASE_UPDATE = "group_database_update",
+    GROUP_DATABASE_TOKEN_CREATE = "group_database_token_create",
+    GROUP_DATABASE_TOKEN_DELETE = "group_database_token_delete",
+    GROUP_DATABASE_TOKEN_UPDATE = "group_database_token_update",
+    TEAM_CREATE = "team_create",
+    TEAM_DELETE = "team_delete",
+    TEAM_UPDATE = "team_update",
+    TEAM_MEMBER_CREATE = "team_member_create",
+    TEAM_MEMBER_DELETE = "team_member_delete",
+    TEAM_MEMBER_UPDATE = "team_member_update",
+    USER_CREATE = "user_create",
+    USER_DELETE = "user_delete",
+    USER_UPDATE = "user_update",
+    USER_RESTORE = "user_restore",
+    USER_DEACTIVATE = "user_deactivate",
+    USER_REACTIVATE = "user_reactivate",
+    USER_FORCE_DELETE = "user_force_delete",
+    ROLE_CREATE = "role_create",
+    ROLE_DELETE = "role_delete",
+    ROLE_UPDATE = "role_update",
+}
+
+export interface ActivityLog {
+    type: ActivityType;
+    user_id: number;
+    updated_at: string;
+    metadata: Metadata;
+    id: number;
+    description: string;
+    timestamp: string;
+    created_at: string;
+    user: User;
+}
