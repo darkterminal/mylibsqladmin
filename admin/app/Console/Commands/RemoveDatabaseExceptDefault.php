@@ -26,6 +26,7 @@ class RemoveDatabaseExceptDefault extends Command
      */
     public function handle()
     {
+        $this->info('Removing database except default');
         SqldService::deleteDatabaseExcept('default');
     }
 }
