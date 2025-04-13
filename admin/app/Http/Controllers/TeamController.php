@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\ActivityType;
 use App\Events\TeamDatabasesRequested;
 use App\Jobs\SendTeamInvitation;
 use App\Models\ActivityLog;
@@ -123,6 +124,20 @@ class TeamController extends Controller
 
             TeamDatabasesRequested::dispatch(auth()->id(), $team->id);
 
+            $location = get_ip_location($request->ip());
+
+            log_user_activity(
+                auth()->user(),
+                ActivityType::TEAM_CREATE,
+                "Team {$team->name} created from {$request->ip()}",
+                [
+                    'ip' => $request->ip(),
+                    'device' => $request->userAgent(),
+                    'country' => $location['country'],
+                    'city' => $location['city'],
+                ]
+            );
+
             return redirect()->back()->with('success', 'Team created successfully');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
@@ -142,6 +157,22 @@ class TeamController extends Controller
             $team->description = $validated['description'];
             $team->save();
 
+            Team::setTeamDatabases(auth()->id(), 'null');
+
+            $location = get_ip_location($request->ip());
+
+            log_user_activity(
+                auth()->user(),
+                ActivityType::TEAM_UPDATE,
+                "Team {$team->name} updated from {$request->ip()}",
+                [
+                    'ip' => $request->ip(),
+                    'device' => $request->userAgent(),
+                    'country' => $location['country'],
+                    'city' => $location['city'],
+                ]
+            );
+
             return response()->json([
                 'success' => true,
                 'message' => 'Team updated successfully'
@@ -158,9 +189,24 @@ class TeamController extends Controller
     {
         try {
             $team = Team::findOrFail($teamId);
+            $teamName = $team->name;
             $team->delete();
 
             Team::setTeamDatabases(auth()->id(), 'null');
+
+            $location = get_ip_location($request->ip());
+
+            log_user_activity(
+                auth()->user(),
+                ActivityType::TEAM_DELETE,
+                "Team {$teamName} deleted from {$request->ip()}",
+                [
+                    'ip' => $request->ip(),
+                    'device' => $request->userAgent(),
+                    'country' => $location['country'],
+                    'city' => $location['city'],
+                ]
+            );
 
             return response()->json([
                 'success' => true,
@@ -178,6 +224,22 @@ class TeamController extends Controller
     {
         try {
             $team->members()->detach($user->id);
+
+            Team::setTeamDatabases(auth()->id(), 'null');
+
+            $location = get_ip_location($request->ip());
+
+            log_user_activity(
+                auth()->user(),
+                ActivityType::TEAM_MEMBER_DELETE,
+                "Team member {$user->name} deleted from {$request->ip()}",
+                [
+                    'ip' => $request->ip(),
+                    'device' => $request->userAgent(),
+                    'country' => $location['country'],
+                    'city' => $location['city'],
+                ]
+            );
 
             return response()->json([
                 'success' => true,
@@ -223,6 +285,22 @@ class TeamController extends Controller
             $request->user_id => ['permission_level' => $request->permission_level]
         ]);
 
+        Team::setTeamDatabases(auth()->id(), 'null');
+
+        $location = get_ip_location($request->ip());
+
+        log_user_activity(
+            auth()->user(),
+            ActivityType::TEAM_MEMBER_CREATE,
+            "Team member added to {$team->name} from " . $request->ip(),
+            [
+                'ip' => $request->ip(),
+                'device' => $request->userAgent(),
+                'country' => $location['country'],
+                'city' => $location['city'],
+            ]
+        );
+
         return redirect()->back()->with('success', 'Member added successfully');
     }
 
@@ -245,6 +323,20 @@ class TeamController extends Controller
 
         // Send notification
         SendTeamInvitation::dispatch($invitation);
+
+        $location = get_ip_location($request->ip());
+
+        log_user_activity(
+            auth()->user(),
+            ActivityType::TEAM_MEMBER_CREATE,
+            "Team member {$request->name} invited to {$team->name} from " . $request->ip(),
+            [
+                'ip' => $request->ip(),
+                'device' => $request->userAgent(),
+                'country' => $location['country'],
+                'city' => $location['city'],
+            ]
+        );
 
         return response()->json([
             'success' => true,
@@ -291,6 +383,22 @@ class TeamController extends Controller
             ]
         ]);
 
+        Team::setTeamDatabases($user->id, $invitation->team_id);
+
+        $location = get_ip_location(request()->ip());
+
+        log_user_activity(
+            $user,
+            ActivityType::TEAM_MEMBER_CREATE,
+            "Joined team {$invitation->team->name} from " . request()->ip(),
+            [
+                'ip' => request()->ip(),
+                'device' => request()->userAgent(),
+                'country' => $location['country'],
+                'city' => $location['city'],
+            ]
+        );
+
         ActivityLog::create([
             'team_id' => $invitation->team_id,
             'user_id' => $user->id,
@@ -316,6 +424,20 @@ class TeamController extends Controller
 
             // Refresh team data in session
             Team::setTeamDatabases($user->id, $team->id);
+
+            $location = get_ip_location(request()->ip());
+
+            log_user_activity(
+                auth()->user(),
+                ActivityType::TEAM_MEMBER_UPDATE,
+                "Team member {$user->name} role updated from " . request()->ip(),
+                [
+                    'ip' => request()->ip(),
+                    'device' => request()->userAgent(),
+                    'country' => $location['country'],
+                    'city' => $location['city'],
+                ]
+            );
 
             return redirect()->back()->with('success', 'Role updated successfully.');
         } catch (\Exception $e) {
