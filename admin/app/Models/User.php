@@ -131,7 +131,7 @@ class User extends Authenticatable
     {
         return $this->teams()
             ->where('team_id', $team->id)
-            ->where('permission_level', 'admin')
+            ->where('permission_level', 'super-admin')
             ->exists();
     }
 
