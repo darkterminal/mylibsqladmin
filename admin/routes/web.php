@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserDatabaseController;
 use App\Http\Controllers\GroupDatabaseController;
 use App\Http\Controllers\TeamController;
@@ -28,7 +29,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('dashboard.database-archived')
             ->can('viewAny', UserDatabase::class);
 
-        Route::get('tokens', [DashboardController::class, 'indexToken'])
+        Route::get('tokens', [TokenController::class, 'index'])
             ->name('dashboard.tokens')
             ->can('viewAny', UserDatabaseToken::class);
 
@@ -39,6 +40,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('teams', [TeamController::class, 'index'])
             ->name('dashboard.teams')
             ->can('viewAny', Team::class);
+
+        Route::get('users', [UserController::class, 'index'])
+            ->name('dashboard.users')
+            ->can('viewAny', User::class);
     });
 
     Route::group(['prefix' => 'databases'], function () {
@@ -49,6 +54,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('delete/{database}', [UserDatabaseController::class, 'deleteDatabase'])
             ->name('database.delete')
             ->can('delete', UserDatabase::class);
+
         Route::post('restore', [UserDatabaseController::class, 'restoreDatabase'])
             ->name('database.restore')
             ->can('delete', UserDatabase::class);
@@ -104,6 +110,58 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('invitations/{invitation}', [TeamController::class, 'revokeInvite'])
             ->name('teams.invitations.destroy')
             ->can('delete', Team::class);
+    });
+
+    Route::group(['prefix' => 'users'], function () {
+        Route::get('{user}/detail', [UserController::class, 'show'])
+            ->name('user.show')
+            ->can('view', User::class);
+
+        Route::get('create', [UserController::class, 'create'])
+            ->name('user.create')
+            ->can('create', User::class);
+
+        Route::post('create', [UserController::class, 'store'])
+            ->name('user.create')
+            ->can('create', User::class);
+
+        Route::get('{user}/edit', [UserController::class, 'edit'])
+            ->name('user.edit')
+            ->can('update', User::class);
+
+        Route::put('{user}/update', [UserController::class, 'update'])
+            ->name('user.update')
+            ->can('update', User::class);
+
+        Route::delete('{user}/delete', [UserController::class, 'destroy'])
+            ->name('user.delete')
+            ->can('delete', User::class);
+
+        Route::get('archive', [UserController::class, 'archive'])
+            ->name('user.archive')
+            ->can('delete', User::class);
+
+        Route::put('{user}/restore', [UserController::class, 'restoreUser'])
+            ->name('user.restore')
+            ->withTrashed()
+            ->can('restore', User::class);
+
+        Route::delete('{user}/force-delete', [UserController::class, 'forceDelete'])
+            ->name('user.force-delete')
+            ->withTrashed()
+            ->can('forceDelete', User::class);
+
+        Route::put('{user}/deactivate', [UserController::class, 'deactivate'])
+            ->name('user.deactivate')
+            ->can('update', User::class);
+
+        Route::put('{user}/activate', [UserController::class, 'activate'])
+            ->name('user.reactivate')
+            ->can('update', User::class);
+
+        Route::get('{user}/activities', [UserController::class, 'activities'])
+            ->name('user.activities')
+            ->can('view', User::class);
     });
 });
 
