@@ -2,13 +2,80 @@
 
 namespace App\Http\Controllers;
 
+use App\ActivityType;
 use App\Models\GroupDatabase;
+use App\Models\UserDatabase;
 use App\Models\UserDatabaseToken;
 use App\Services\DatabaseTokenGenerator;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class TokenController extends Controller
 {
+    public function index()
+    {
+        $userId = auth()->id();
+        $teamId = session('team_databases.team_id');
+
+        // Get tokenized database IDs in a single query (team-filtered)
+        $tokenizedDatabaseIds = UserDatabaseToken::where('user_id', $userId)
+            ->whereHas('database.groups.team', fn($q) => $q->where('id', $teamId))
+            ->pluck('database_id')
+            ->toArray();
+
+        // Get most used databases with token status (team-filtered)
+        $mostUsedDatabases = UserDatabase::mostUsedDatabases();
+        $databases = collect($mostUsedDatabases)->map(function ($database) use ($tokenizedDatabaseIds, $teamId) {
+            // Filter groups to current team
+            $databaseGroups = collect($database['groups'] ?? [])->filter(fn($g) => ($g['team_id'] ?? null) == $teamId);
+
+            return [
+                ...$database,
+                'groups' => $databaseGroups,
+                'database_name' => "{$database['database_name']} - (" .
+                    (in_array($database['database_id'], $tokenizedDatabaseIds) ? 'tokenized' : 'not-tokenized') . ")",
+                'is_tokenized' => in_array($database['database_id'], $tokenizedDatabaseIds)
+            ];
+        });
+
+        // Main tokens query with team filtering
+        $userDatabaseTokens = UserDatabaseToken::with([
+            'database.groups' => fn($q) => $q->whereHas('team', fn($q) => $q->where('id', $teamId)),
+            'user:id,name'
+        ])
+            ->whereHas('database.groups.team', fn($q) => $q->where('id', $teamId))
+            ->when(!auth()->user()->hasRole('Super Admin'), fn($q) => $q->where('user_id', $userId))
+            ->paginate(10)
+            ->through(function ($token) {
+                $expirationDate = now()->addDays($token->expiration_day);
+
+                // Get team from filtered groups
+                $team = $token->database->groups->first()?->team;
+
+                return [
+                    ...$token->toArray(),
+                    'expiration_day' => now()->isAfter($expirationDate)
+                        ? "Expired"
+                        : $expirationDate->format('Y-m-d'),
+                    'groups' => $token->database->groups->map(fn($group) => [
+                        'id' => $group->id,
+                        'name' => $group->name,
+                        'team' => $team ? [
+                            'id' => $team->id,
+                            'name' => $team->name
+                        ] : null
+                    ]),
+                    'team' => $team
+                ];
+            });
+
+        return Inertia::render('dashboard-token', [
+            'mostUsedDatabases' => $databases,
+            'isAllTokenized' => $databases->every('is_tokenized'),
+            'userDatabaseTokens' => $userDatabaseTokens
+        ]);
+    }
+
     public function createToken(Request $request)
     {
         $validated = $request->validate([
@@ -50,6 +117,20 @@ class TokenController extends Controller
                 $formData
             );
 
+            $location = get_ip_location($request->ip());
+
+            log_user_activity(
+                auth()->user(),
+                ActivityType::DATABASE_TOKEN_CREATE,
+                "Token created from " . $request->ip(),
+                [
+                    'ip' => $request->ip(),
+                    'device' => $request->userAgent(),
+                    'country' => $location['country'],
+                    'city' => $location['city'],
+                ]
+            );
+
             return redirect()->back()->with([
                 'success' => 'Token created/updated successfully',
                 'newToken' => UserDatabaseToken::latest()->first(),
@@ -63,6 +144,21 @@ class TokenController extends Controller
     public function deleteToken(int $tokenId)
     {
         UserDatabaseToken::where('id', $tokenId)->delete();
+
+        $location = get_ip_location(request()->ip());
+
+        log_user_activity(
+            auth()->user(),
+            ActivityType::DATABASE_TOKEN_DELETE,
+            "Token deleted from " . request()->ip(),
+            [
+                'ip' => request()->ip(),
+                'device' => request()->userAgent(),
+                'country' => $location['country'],
+                'city' => $location['city'],
+            ]
+        );
+
         return redirect()->back()->with([
             'success' => 'Token deleted successfully',
             'userDatabaseTokens' => UserDatabaseToken::where('user_id', auth()->id())->get()
