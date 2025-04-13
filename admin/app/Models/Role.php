@@ -27,6 +27,19 @@ class Role extends Model
         return $roles[$name] ?? $name;
     }
 
+    public static function getRoleKey(string $displayName): string
+    {
+        $roles = [
+            'Super Admin' => 'super-admin',
+            'Team Manager' => 'team-manager',
+            'Database Maintainer' => 'database-maintainer',
+            'Member' => 'member'
+        ];
+
+        return $roles[$displayName] ?? $displayName;
+    }
+
+
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)
