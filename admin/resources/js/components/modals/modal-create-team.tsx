@@ -11,7 +11,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { FormEvent, useState } from "react";
+import { TeamForm } from "@/types";
+import { useForm } from '@inertiajs/react';
+import { useState } from "react";
 
 export type TeamBase = {
     name: string;
@@ -22,8 +24,6 @@ type Props<T extends TeamBase> = {
     // Required props
     onSave: (team: T) => void;
     trigger: React.ReactNode;
-
-    // Optional props with defaults
     title?: string;
     description?: React.ReactNode;
     initialName?: string;
@@ -53,9 +53,10 @@ export function ModalCreateTeam<T extends TeamBase>({
     validate,
 }: Props<T>) {
     const [isOpen, setIsOpen] = useState(false);
-    const [name, setName] = useState(initialName);
-    const [descriptionText, setDescription] = useState(initialDescription);
-    const [error, setError] = useState<string | null>(null);
+    const { data, setData, reset, post, processing, errors } = useForm<TeamForm>({
+        name: initialName,
+        description: initialDescription,
+    });
 
     const handleOpenChange = (open: boolean) => {
         if (!open) resetForm();
@@ -63,31 +64,30 @@ export function ModalCreateTeam<T extends TeamBase>({
     };
 
     const resetForm = () => {
-        setName(initialName);
-        setDescription(initialDescription);
-        setError(null);
+        reset();
     };
 
-    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         const validationError = validate?.({
-            name: name.trim(),
-            description: descriptionText.trim(),
+            name: data.name.trim(),
+            description: data.description.trim(),
         }) ?? null;
 
         if (validationError) {
-            setError(validationError);
+            errors.name = validationError;
             return;
         }
 
-        if (!name.trim()) {
-            setError("Team name is required");
+        if (!data.name.trim()) {
+            errors.name = "Team name is required";
             return;
         }
 
         onSave({
-            name: name.trim(),
-            description: descriptionText.trim(),
+            name: data.name.trim(),
+            description: data.description.trim(),
         } as T);
 
         resetForm();
@@ -104,7 +104,7 @@ export function ModalCreateTeam<T extends TeamBase>({
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
 
-                <form autoComplete="off" onSubmit={(e) => handleSubmit(e)}>
+                <form autoComplete="off" onSubmit={handleSubmit}>
                     <div className="flex flex-col gap-4 py-4">
                         <div className="flex flex-col items-start space-y-4">
                             <Label htmlFor="team-name" className="text-right">
@@ -112,14 +112,14 @@ export function ModalCreateTeam<T extends TeamBase>({
                             </Label>
                             <Input
                                 id="team-name"
-                                value={name}
-                                onChange={(e) => {
-                                    setName(e.target.value);
-                                    setError(null);
-                                }}
+                                value={data.name}
+                                onChange={(e) => setData('name', e.target.value)}
                                 className="col-span-3"
                                 placeholder={namePlaceholder}
                             />
+                            {errors.name && (
+                                <p className="text-sm text-red-500">{errors.name}</p>
+                            )}
                         </div>
 
                         <div className="flex flex-col items-start space-y-4">
@@ -128,29 +128,24 @@ export function ModalCreateTeam<T extends TeamBase>({
                             </Label>
                             <Textarea
                                 id="team-description"
-                                value={descriptionText}
-                                onChange={(e) => setDescription(e.target.value)}
+                                value={data.description}
+                                onChange={(e) => setData('description', e.target.value)}
                                 className="col-span-3"
                                 placeholder={descriptionPlaceholder}
                             />
                         </div>
-
-                        {error && (
-                            <div className="text-red-500 text-sm col-span-4 text-center">
-                                {error}
-                            </div>
-                        )}
                     </div>
 
                     <DialogFooter>
                         <Button
                             variant="outline"
                             onClick={() => handleOpenChange(false)}
+                            disabled={processing}
                         >
                             {cancelButtonLabel}
                         </Button>
-                        <Button type="submit">
-                            {saveButtonLabel}
+                        <Button type="submit" disabled={processing}>
+                            {processing ? 'Creating...' : saveButtonLabel}
                         </Button>
                     </DialogFooter>
                 </form>
