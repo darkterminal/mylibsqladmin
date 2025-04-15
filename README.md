@@ -23,8 +23,17 @@ In the age of data-driven applications, the demand for lightweight, scalable, an
 - **Enhanced libSQL Integration:** - Leverage serverless and server-based functionalities, fine-grained access control, and native branching features.
 - **Cross-Platform Compatibility:** - Access your database securely from anywhere using any modern web browser.
 
----
+## What Does MylibSQLAdmin Offer?
+
+- **Simple Database Statistics** - Get quick insights into your database performance with easy-to-understand stats.
+- **Database Management** - Create, edit, and manage your databases with intuitive tools.
+- **Token Management** - Secure and control access to your system using token-based authentication.
+- **Group Management** - Organize users into groups for better structure and permission handling.
+- **Team Management** - Collaborate efficiently by managing teams and their access levels.
+- **User Management** - Easily handle user accounts, roles, and activity logs.
+- **Member Invitation Management** - Invite new members and track their onboarding status with ease.
 
 ## Support this Project
+
 - via <a href="https://github.com/sponsors/darkterminal">GitHub Sponsor</a> (Global)
 - via <a href="https://saweria.co/darkterminal" target="_blank">Saweria</a> (Indonesian)
