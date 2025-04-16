@@ -5,6 +5,7 @@ import AppLayout from '@/layouts/app-layout';
 import { apiFetch } from '@/lib/api';
 import { getQuery } from '@/lib/utils';
 import {
+    Configs,
     SharedData,
     type BreadcrumbItem,
     type DatabaseStatsChangeProps,
@@ -22,6 +23,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function DatabaseStudio() {
     const { props } = usePage<SharedData>();
+    const { sqldHost, sqldPort } = props.configs as Configs;
+
     const userDatabases = props.databases as LibSQLDatabases[];
 
     const [clientUrl, setClientUrl] = useState<string | null>("http://localhost:8080");
@@ -63,7 +66,7 @@ export default function DatabaseStudio() {
     useEffect(() => {
         if (parent) {
             setDatabaseName(parent);
-            setClientUrl(`http://${parent}.localhost:8080`);
+            setClientUrl(`https://${parent}.${sqldHost}:${sqldPort}`);
         }
     }, [parent]);
 

@@ -41,12 +41,18 @@ export interface Invitation {
     expires_at: string;
 }
 
+export interface Configs {
+    sqldHost?: string;
+    sqldPort?: number | string;
+}
+
 export interface SharedData {
     name: string;
     auth: Auth;
     flash: FlashMessageProps;
     databases: LibSQLDatabases[];
     groups: GroupDatabaseProps[];
+    configs?: Configs;
     invitation?: Invitation;
     [key: string]: unknown;
 }
