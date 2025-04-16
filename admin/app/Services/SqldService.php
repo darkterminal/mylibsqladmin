@@ -18,7 +18,7 @@ class SqldService
     {
         switch ($service) {
             case 'db':
-                return 'http://' . config('mylibsqladmin.libsql.host') . ':' . config('mylibsqladmin.libsql.port');
+                return 'http://' . config('mylibsqladmin.libsql.api.host') . ':' . config('mylibsqladmin.libsql.api.port');
             case 'bridge':
                 return 'http://' . config('mylibsqladmin.bridge.host') . ':' . config('mylibsqladmin.bridge.port');
             default:
