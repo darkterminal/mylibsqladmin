@@ -150,9 +150,9 @@ class SubdomainValidationController extends Controller
     {
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'realm=' . config('services.bridge.password', 'libsql'),
+                'Authorization' => 'realm=' . config('mylibsqladmin.bridge.password'),
                 'Content-Type' => 'application/json',
-            ])->timeout(3)->get('http://bridge:4500/api/databases');
+            ])->timeout(3)->get('http://' . config('mylibsqladmin.bridge.host') . ':' . config('mylibsqladmin.bridge.port') . '/api/databases');
 
             return $response->successful()
                 && in_array($subdomain, array_column($response->json(), 'name'));
