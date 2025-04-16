@@ -242,7 +242,7 @@ class SqldService
         }
     }
 
-    private static function createBaseRequest(): PendingRequest
+    public static function createBaseRequest(): PendingRequest
     {
         if (!empty(config('mylibsqladmin.libsql.username'))  && !empty(config('mylibsqladmin.libsql.password'))) {
             $request = Http::withBasicAuth(config('mylibsqladmin.libsql.username'), config('mylibsqladmin.libsql.password'))
