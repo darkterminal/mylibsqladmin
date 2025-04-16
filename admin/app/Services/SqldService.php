@@ -6,28 +6,21 @@ use App\Models\GroupDatabase;
 use App\Models\Team;
 use App\Models\User;
 use App\Models\UserDatabase;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class SqldService
 {
-    private static function isRunningInDocker(): bool
-    {
-        return file_exists('/.dockerenv') ||
-            (is_readable('/proc/self/cgroup') &&
-                strpos(file_get_contents('/proc/self/cgroup'), 'docker') !== false);
-    }
 
     public static function useEndpoint(string $service): string|false
     {
-        $isDocker = self::isRunningInDocker();
-
         switch ($service) {
             case 'db':
-                return $isDocker ? 'http://db:8081' : 'http://localhost:8081';
+                return 'http://' . config('mylibsqladmin.libsql.host') . ':' . config('mylibsqladmin.libsql.port');
             case 'bridge':
-                return $isDocker ? 'http://bridge:4500' : 'http://localhost:4500';
+                return 'http://' . config('mylibsqladmin.bridge.host') . ':' . config('mylibsqladmin.bridge.port');
             default:
                 throw new \BadMethodCallException("Unknown endpoint", 1);
         }
@@ -37,7 +30,7 @@ class SqldService
     {
         $host = self::useEndpoint('bridge');
         $databases = Http::retry(5, 100)->withHeaders([
-            'Authorization' => 'realm=' . env('BRIDGE_HTTP_PASSWORD', 'libsql'),
+            'Authorization' => 'realm=' . config('mylibsqladmin.bridge.password'),
             'Content-Type' => 'application/json',
         ])
             ->get("$host/api/databases")
@@ -73,7 +66,6 @@ class SqldService
         }
 
         return UserDatabase::where('user_id', $userId)->get()->toArray();
-
     }
 
     /**
@@ -97,7 +89,7 @@ class SqldService
 
         try {
             $result = Http::retry(5, 100)->withHeaders([
-                'Authorization' => 'realm=' . env('BRIDGE_HTTP_PASSWORD', 'libsql'),
+                'Authorization' => 'realm=' . config('mylibsqladmin.bridge.password'),
                 'Content-Type' => 'application/json',
             ])
                 ->post("$host/api/database/archive", [
@@ -135,7 +127,7 @@ class SqldService
 
         try {
             $result = Http::retry(5, 100)->withHeaders([
-                'Authorization' => 'realm=' . env('BRIDGE_HTTP_PASSWORD', 'libsql'),
+                'Authorization' => 'realm=' . config('mylibsqladmin.bridge.password'),
                 'Content-Type' => 'application/json',
             ])
                 ->post("$host/api/database/restore", [
@@ -160,7 +152,6 @@ class SqldService
 
     public static function createDatabase(string $database, mixed $isSchema, int $groupId, int $teamId): bool
     {
-        $host = self::useEndpoint('db');
         if (is_bool($isSchema)) {
             $data['shared_schema'] = $isSchema;
         } else {
@@ -172,10 +163,9 @@ class SqldService
             return false;
         }
 
-        $request = Http::withHeaders([
-            'Content-Type' => 'application/json',
-        ])
-            ->post("$host/v1/namespaces/$database/create", $data);
+        $host = self::useEndpoint('db');
+        $request = self::createBaseRequest();
+        $request->post("$host/v1/namespaces/$database/create", $data);
 
         if ($request->failed()) {
             return false;
@@ -193,9 +183,9 @@ class SqldService
         }
 
         $group = GroupDatabase::findOrFail($groupId);
-        $groupDatabase = $group->members()->create([
+        $groupDatabase = $group->members()->attach(auth()->user()->id, [
             'group_id' => $groupId,
-            'team_id' => $teamId
+            'database_id' => $userDatabase->id,
         ]);
 
         if (!$groupDatabase) {
@@ -217,9 +207,8 @@ class SqldService
         }
 
         $host = self::useEndpoint('db');
-        $request = Http::withHeaders([
-            'Content-Type' => 'application/json',
-        ])->delete("$host/v1/namespaces/$database");
+        $request = self::createBaseRequest();
+        $request->delete("$host/v1/namespaces/$database");
 
         if ($request->getStatusCode() !== 200) {
             logger()->error("SQLD deletion failed for: $database");
@@ -237,10 +226,9 @@ class SqldService
 
         foreach ($databases as $db) {
             if ($db['database_name'] !== $database) {
-                Http::withHeaders([
-                    'Content-Type' => 'application/json',
-                ])
-                    ->delete("$host/v1/namespaces/" . $db['database_name']);
+
+                $request = self::createBaseRequest();
+                $request->delete("$host/v1/namespaces/" . $db['database_name']);
 
                 $userDatabase = UserDatabase::where('database_name', $database);
 
@@ -252,5 +240,18 @@ class SqldService
                     ->delete();
             }
         }
+    }
+
+    private static function createBaseRequest(): PendingRequest
+    {
+        if (!empty(config('mylibsqladmin.libsql.username'))  && !empty(config('mylibsqladmin.libsql.password'))) {
+            $request = Http::withBasicAuth(config('mylibsqladmin.libsql.username'), config('mylibsqladmin.libsql.password'))
+                ->accept('application/json');
+        } else {
+            $request = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ]);
+        }
+        return $request;
     }
 }

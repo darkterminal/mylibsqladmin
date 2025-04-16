@@ -18,10 +18,10 @@ use Lcobucci\JWT\Token\UnsupportedHeaderFound;
 Route::middleware('auth')->group(function () {
     Route::get('/api/databases', function () {
         $response = Http::withHeaders([
-            'Authorization' => 'realm=' . env('BRIDGE_HTTP_PASSWORD', 'libsql'),
+            'Authorization' => 'realm=' . config('mylibsqladmin.bridge.password'),
             'Content-Type' => 'application/json',
         ])
-            ->get('http://bridge:4500/api/databases');
+            ->get('http://' . config('mylibsqladmin.bridge.host') . ':' . config('mylibsqladmin.bridge.port') . '/api/databases');
 
         if ($response->successful()) {
             return response()->json([
