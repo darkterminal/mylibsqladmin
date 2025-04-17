@@ -74,7 +74,7 @@ class UserDatabase extends Model
                 'is_schema' => $db->is_schema,
                 'query_metrics_sum_query_count' => $db->query_metrics_sum_query_count,
                 'query_metrics_count' => $db->query_count,
-                'created_at' => $db->created_at->format('Y-m-d H:i:s'),
+                'created_at' => $db->created_at ? $db->created_at->format('Y-m-d H:i:s') : '',
             ];
         })->toArray();
     }
