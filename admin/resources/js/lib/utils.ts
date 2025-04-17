@@ -31,10 +31,10 @@ export function formatBytes(bytes: number, decimals = 2) {
 }
 
 export function groupDatabases(databases: LibSQLDatabases[]) {
-    const standalone = databases.filter(db => Boolean(db.is_schema) === false);
+    const standalone = databases.filter(db => Boolean(Number(db.is_schema)) === false);
     const parents = databases.filter(db => Boolean(Number(db.is_schema)) === true);
     const childrenMap = databases.reduce((map, db) => {
-        if (Boolean(db.is_schema) !== true || Boolean(db.is_schema) !== false) {
+        if (Boolean(Number(db.is_schema)) !== true || Boolean(Number(db.is_schema)) !== false) {
             const parentName = db.is_schema;
             map.set(parentName.toString(), [...(map.get(parentName.toString()) || []), db]);
         }
@@ -45,7 +45,7 @@ export function groupDatabases(databases: LibSQLDatabases[]) {
 }
 
 export function databaseType(schema: string) {
-    if (Boolean(schema) === false) {
+    if (Boolean(Number(schema)) === false) {
         return 'standalone';
     }
 
