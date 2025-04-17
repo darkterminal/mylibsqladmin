@@ -23,6 +23,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function DatabaseStudio() {
     const { props } = usePage<SharedData>();
+    const scheme = window.location.protocol.replace(':', '');
     const { sqldHost, sqldPort } = props.configs as Configs;
 
     const userDatabases = props.databases as LibSQLDatabases[];
@@ -66,7 +67,7 @@ export default function DatabaseStudio() {
     useEffect(() => {
         if (parent) {
             setDatabaseName(parent);
-            setClientUrl(`https://${parent}.${sqldHost}:${sqldPort}`);
+            setClientUrl(`${scheme}://${parent}.${sqldHost}:${sqldPort}`);
         }
     }, [parent]);
 
