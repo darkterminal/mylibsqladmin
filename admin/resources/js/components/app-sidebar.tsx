@@ -16,8 +16,9 @@ import {
     BookOpen,
     DatabaseIcon,
     Fingerprint,
-    Folder,
+    Github,
     Handshake,
+    HeartHandshake,
     LayoutGrid,
     Users,
     UsersRound
@@ -27,69 +28,60 @@ import AppLogo from './app-logo';
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        url: '/dashboard',
+        url: route('dashboard'),
         icon: LayoutGrid,
         isAllowed: true, // Always visible
     },
     {
         title: 'Databases',
-        url: '/dashboard/databases',
+        url: route('dashboard.databases'),
         icon: DatabaseIcon,
         isAllowed: ({ can }) =>
             can('view-databases') || can('manage-databases'),
     },
     {
         title: 'Tokens',
-        url: '/dashboard/tokens',
+        url: route('dashboard.tokens'),
         icon: Fingerprint,
         isAllowed: ({ can }) =>
             can('manage-database-tokens') || can('manage-group-tokens'),
     },
     {
         title: 'Groups',
-        url: '/dashboard/groups',
+        url: route('dashboard.groups'),
         icon: UsersRound,
         isAllowed: ({ can }) =>
             can('manage-groups') || can('view-groups'),
     },
     {
         title: 'Teams',
-        url: '/dashboard/teams',
+        url: route('dashboard.teams'),
         icon: Handshake,
         isAllowed: ({ can, hasRole }) =>
-            // Allow view-teams for basic access, manage-teams for full control
-            can('view-teams') || (hasRole('Super Admin') && can('manage-teams')),
+            can('view-teams') || (hasRole('Super Admin') || can('manage-teams')),
     },
-    // {
-    //     title: 'Team Members',
-    //     url: '/dashboard/team-members',
-    //     icon: UserCog,
-    //     isAllowed: ({ can }) =>
-    //         can('manage-team-members') || can('view-team-members'),
-    // },
     {
         title: 'User Management',
         url: '/dashboard/users',
         icon: Users,
         isAllowed: ({ hasRole }) => hasRole('Super Admin'),
     },
-    // {
-    //     title: 'Roles & Permissions',
-    //     url: '/dashboard/roles',
-    //     icon: ShieldCheck,
-    //     isAllowed: ({ can }) => can('manage-roles'),
-    // }
 ];
 
 const footerNavItems: NavItem[] = [
     {
+        title: 'Sponsor / Donate',
+        url: 'https://github.com/sponsors/darkterminal',
+        icon: HeartHandshake,
+    },
+    {
         title: 'Repository',
-        url: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
+        url: 'https://github.com/darkterminal/mylibsqladmin',
+        icon: Github,
     },
     {
         title: 'Documentation',
-        url: 'https://laravel.com/docs/starter-kits',
+        url: 'https://github.com/darkterminal/mylibsqladmin',
         icon: BookOpen,
     },
 ];

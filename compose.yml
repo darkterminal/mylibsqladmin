@@ -95,16 +95,13 @@ services:
       - "0.0.0.0:5001"
       - "--admin-listen-addr"
       - "0.0.0.0:8081"
+      - "--heartbeat-url"
+      - "http://localhost:8000/health"
       - "--enable-namespaces"
       - "--no-welcome"
     user: "1000:1000"
     volumes:
       - ./bridge/data/libsql:/var/lib/sqld
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
     restart: always
     networks:
       - app-network

@@ -10,3 +10,5 @@ Route::middleware('auth')->group(function () {
     })->name('trigger.stats-changed');
     Route::post('/activities', [ActivityLogController::class, 'store'])->name('activities.store');
 });
+
+Route::post('/health', fn() => response()->json(['status' => 'ok']));
