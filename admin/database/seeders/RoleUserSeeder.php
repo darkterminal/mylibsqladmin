@@ -249,6 +249,7 @@ class RoleUserSeeder extends Seeder
                     'view-database-tokens',
                     // Can view team details
                     'view-teams',
+                    'update-teams',
                     // Can manage groups within their team
                     'manage-groups',
                     'view-groups',

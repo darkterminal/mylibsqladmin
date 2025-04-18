@@ -239,21 +239,23 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams }: Te
                         </CardTitle>
                         <CardDescription>{team.description}</CardDescription>
                     </div>
-                    {can('manage-teams') || can('manage-team-members') && (
+                    {(can('manage-teams') || can('manage-team-members') || can('view-team-members')) && (
                         <div className="flex gap-2">
-                            <ModalCreateDatabase
-                                existingDatabases={databases}
-                                onSubmit={handleDatabaseSubmit}
-                                groups={groups}
-                                onCreateGroup={handleCreateGroup}
-                                currentTeam={team}
-                            >
-                                <AppTooltip text='Create new database'>
-                                    <Button variant={'outline'} size='icon' className="h-8 w-8">
-                                        <CirclePlusIcon className='h-4 w-4' />
-                                    </Button>
-                                </AppTooltip>
-                            </ModalCreateDatabase>
+                            {can('create-databases') && (
+                                <ModalCreateDatabase
+                                    existingDatabases={databases}
+                                    onSubmit={handleDatabaseSubmit}
+                                    groups={groups}
+                                    onCreateGroup={handleCreateGroup}
+                                    currentTeam={team}
+                                >
+                                    <AppTooltip text='Create new database'>
+                                        <Button variant={'outline'} size='icon' className="h-8 w-8">
+                                            <CirclePlusIcon className='h-4 w-4' />
+                                        </Button>
+                                    </AppTooltip>
+                                </ModalCreateDatabase>
+                            )}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -264,57 +266,67 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams }: Te
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem asChild>
-                                        <ModalEditTeam
-                                            trigger={
-                                                <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
-                                                    Edit team
+                                    {can('update-teams') && (
+                                        <DropdownMenuItem asChild>
+                                            <ModalEditTeam
+                                                trigger={
+                                                    <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
+                                                        Edit team
+                                                    </Button>
+                                                }
+                                                onSave={(team) => handleEditTeamOnSave(team)}
+                                                initValues={team}
+                                            />
+                                        </DropdownMenuItem>
+                                    )}
+                                    {(can('view-team-members') || can('manage-team-members')) && (
+                                        <DropdownMenuItem asChild>
+                                            <ModalManageMembers
+                                                teamName={team.name}
+                                                trigger={
+                                                    <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
+                                                        Manage members
+                                                    </Button>
+                                                }
+                                                members={team.team_members}
+                                                pendingInvitation={team.pending_invitations}
+                                                onAddMember={(member) => handleAddMember(member)}
+                                                onRemoveMember={(memberId) => handleRemoveMember(memberId, team.id)}
+                                                onUpdateRole={(memberId, role) => handleUpdateRole(memberId, role)}
+                                            />
+                                        </DropdownMenuItem>
+                                    )}
+                                    {can('create-groups') && (
+                                        <DropdownMenuItem asChild>
+                                            <ModalCreateGroupOnly
+                                                trigger={
+                                                    <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
+                                                        Add group
+                                                    </Button>
+                                                }
+                                                onSave={(group) => {
+                                                    group.teamId = team.id;
+                                                    handleCreateGroupSubmit(group)
+                                                }}
+                                            />
+                                        </DropdownMenuItem>
+                                    )}
+                                    {can('delete-teams') && (
+                                        <>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem asChild>
+                                                <Button
+                                                    variant="destructive"
+                                                    size={"sm"}
+                                                    className="flex w-full justify-start"
+                                                    disabled={totalTeams === 1}
+                                                    onClick={() => handleDeleteTeam(team.id)}
+                                                >
+                                                    Delete team
                                                 </Button>
-                                            }
-                                            onSave={(team) => handleEditTeamOnSave(team)}
-                                            initValues={team}
-                                        />
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                        <ModalManageMembers
-                                            teamName={team.name}
-                                            trigger={
-                                                <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
-                                                    Manage members
-                                                </Button>
-                                            }
-                                            members={team.team_members}
-                                            pendingInvitation={team.pending_invitations}
-                                            onAddMember={(member) => handleAddMember(member)}
-                                            onRemoveMember={(memberId) => handleRemoveMember(memberId, team.id)}
-                                            onUpdateRole={(memberId, role) => handleUpdateRole(memberId, role)}
-                                        />
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                        <ModalCreateGroupOnly
-                                            trigger={
-                                                <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
-                                                    Add group
-                                                </Button>
-                                            }
-                                            onSave={(group) => {
-                                                group.teamId = team.id;
-                                                handleCreateGroupSubmit(group)
-                                            }}
-                                        />
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem asChild>
-                                        <Button
-                                            variant="destructive"
-                                            size={"sm"}
-                                            className="flex w-full justify-start"
-                                            disabled={totalTeams === 1}
-                                            onClick={() => handleDeleteTeam(team.id)}
-                                        >
-                                            Delete team
-                                        </Button>
-                                    </DropdownMenuItem>
+                                            </DropdownMenuItem>
+                                        </>
+                                    )}
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>

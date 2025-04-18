@@ -250,9 +250,7 @@ export interface TeamDatabase {
     lastActivity: string
 }
 
-export interface Group {
-    id: number
-    name: string
+export interface Group extends GroupOnly {
     databases: TeamDatabase[]
 }
 
@@ -274,15 +272,28 @@ export interface PendingInvitationMember {
     sent_at: string
 }
 
-export interface Team {
-    id: number
-    name: string
-    description: string
+export interface Team extends TeamOnly {
     members: number
     groups: Group[]
     team_members: Member[]
     pending_invitations: PendingInvitationMember[]
     recentActivity: RecentActivity[]
+}
+
+export interface TeamOnly {
+    id: number
+    name: string
+    description: string
+}
+
+export interface GroupOnly {
+    id: number
+    name: string
+}
+
+export interface TeamMembers extends TeamOnly {
+    members: Member[]
+    pending_invitations: PendingInvitationMember[]
 }
 
 export interface TeamCardProps {
