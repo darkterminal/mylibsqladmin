@@ -158,11 +158,6 @@ class SqldService
             $data['shared_schema_name'] = $isSchema;
         }
 
-        // check if database name is contains word archived in the end of the name database_archived/database-archived/databasearchived
-        if (preg_match('/[._-]?archived$/i', $database)) {
-            return false;
-        }
-
         $host = self::useEndpoint('db');
         $request = self::createBaseRequest();
         $request->post("$host/v1/namespaces/$database/create", $data);
@@ -183,14 +178,10 @@ class SqldService
         }
 
         $group = GroupDatabase::findOrFail($groupId);
-        $groupDatabase = $group->members()->attach(auth()->user()->id, [
+        $group->members()->attach(auth()->user()->id, [
             'group_id' => $groupId,
             'database_id' => $userDatabase->id,
         ]);
-
-        if (!$groupDatabase) {
-            return false;
-        }
 
         return true;
     }
@@ -244,7 +235,7 @@ class SqldService
 
     public static function createBaseRequest(): PendingRequest
     {
-        if (!empty(config('mylibsqladmin.libsql.username'))  && !empty(config('mylibsqladmin.libsql.password'))) {
+        if (!empty(config('mylibsqladmin.libsql.username')) && !empty(config('mylibsqladmin.libsql.password'))) {
             $request = Http::withBasicAuth(config('mylibsqladmin.libsql.username'), config('mylibsqladmin.libsql.password'))
                 ->accept('application/json');
         } else {
