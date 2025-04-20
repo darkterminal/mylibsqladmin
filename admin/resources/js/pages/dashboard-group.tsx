@@ -5,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCustomEvent } from "@/hooks/use-custom-event";
 import AppLayout from "@/layouts/app-layout";
 import { apiFetch } from "@/lib/api";
+import { usePermission } from "@/lib/auth";
 import {
     UserDatabaseTokenProps,
     type BreadcrumbItem,
@@ -33,6 +34,7 @@ export default function DashboardGroup({
     databaseGroups: GroupDatabaseProps[],
     databaseNotInGroup: DatabaseInGroupProps[]
 }) {
+    const { can } = usePermission();
     const [groups, setGroups] = useState<GroupDatabaseProps[]>(databaseGroups);
     const [selectedGroup, setSelectedGroup] = useState<GroupDatabaseProps | null>(null);
 
@@ -103,14 +105,16 @@ export default function DashboardGroup({
 
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-semibold">Groups</h2>
-                    <ModalCreateGroupOnly
-                        trigger={
-                            <Button variant="default">
-                                <Users2Icon className="mr-1 h-4 w-4" /> New group
-                            </Button>
-                        }
-                        onSave={(group) => handleCreateGroup(group.groupName)}
-                    />
+                    {can('create-groups') && (
+                        <ModalCreateGroupOnly
+                            trigger={
+                                <Button variant="default">
+                                    <Users2Icon className="mr-1 h-4 w-4" /> New group
+                                </Button>
+                            }
+                            onSave={(group) => handleCreateGroup(group.groupName)}
+                        />
+                    )}
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-6">

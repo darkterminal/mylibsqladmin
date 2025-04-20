@@ -154,7 +154,6 @@ class SubdomainValidationController extends Controller
             $allDatabases = SqldService::getDatabases(local: false);
             $names = Arr::pluck($allDatabases, 'name');
             return in_array($subdomain, $names);
-
         } catch (\Exception $e) {
             logger()->error('Bridge service error: ' . $e->getMessage());
             return false;

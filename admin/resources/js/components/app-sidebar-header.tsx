@@ -95,7 +95,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
 
                 {/* Right Section */}
                 <div className="flex flex-shrink-0 items-center gap-2">
-                    {can('manage-databases') && (
+                    {(can('manage-databases') || can('create-databases')) && (
                         <ModalCreateDatabase
                             existingDatabases={databases}
                             onSubmit={handleDatabaseSubmit}

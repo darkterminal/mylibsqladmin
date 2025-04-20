@@ -168,14 +168,11 @@ class SqldService
         }
 
         $group = GroupDatabase::findOrFail($groupId);
-        $groupDatabase = $group->members()->attach(auth()->user()->id, [
+      
+        $group->members()->attach(auth()->user()->id, [
             'group_id' => $groupId,
             'database_id' => $userDatabase->id,
         ]);
-
-        if (!$groupDatabase) {
-            return false;
-        }
 
         return true;
     }
@@ -229,7 +226,7 @@ class SqldService
 
     public static function createBaseRequest(): PendingRequest
     {
-        if (!empty(config('mylibsqladmin.libsql.username'))  && !empty(config('mylibsqladmin.libsql.password'))) {
+        if (!empty(config('mylibsqladmin.libsql.username')) && !empty(config('mylibsqladmin.libsql.password'))) {
             $request = Http::withBasicAuth(config('mylibsqladmin.libsql.username'), config('mylibsqladmin.libsql.password'))
                 ->accept('application/json');
         } else {

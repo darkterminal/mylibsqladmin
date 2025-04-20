@@ -30,6 +30,7 @@ Route::middleware('auth')->group(function () {
                 ];
             }, $localDbs);
 
+
             return response()->json([
                 'databases' => $transformed
             ]);

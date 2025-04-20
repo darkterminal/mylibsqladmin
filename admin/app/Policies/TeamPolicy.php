@@ -3,13 +3,12 @@ namespace App\Policies;
 
 use App\Models\Team;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class TeamPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasPermission('manage-teams') ||
+        return $user->hasPermission('manage-teams') || $user->hasPermission('manage-team-members') ||
             $user->hasPermission('view-teams');
     }
 

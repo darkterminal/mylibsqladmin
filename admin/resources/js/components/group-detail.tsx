@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { triggerEvent } from "@/hooks/use-custom-event"
 import { apiFetch } from "@/lib/api"
+import { usePermission } from "@/lib/auth"
 import { calculateExpirationDate } from "@/lib/utils"
 import { DatabaseInGroupProps, GroupDatabaseProps, SharedData } from "@/types"
 import { router, usePage } from "@inertiajs/react"
@@ -29,6 +30,7 @@ export default function GroupDetail({
     group: GroupDatabaseProps | null
     availableDatabases: DatabaseInGroupProps[]
 }) {
+    const { can } = usePermission();
     const { databases, groups: databaseGroups } = usePage<SharedData>().props;
     const groupedDatabases = (databaseGroups || [])
         .map?.(group => ({
@@ -155,7 +157,7 @@ export default function GroupDetail({
                                 </Button>
                             </AppTooltip>
                         </ModalCreateDatabase>
-                        <ButtonDelete text="Delete Group" handleDelete={deleteGroup} />
+                        {can('delete-groups') && <ButtonDelete text="Delete Group" handleDelete={deleteGroup} />}
                     </div>
                 </div>
             </div>
@@ -169,7 +171,7 @@ export default function GroupDetail({
             <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <ButtonDelete handleDelete={deleteGroup} />
+                        {can('delete-groups') && <ButtonDelete text="Delete Group" handleDelete={deleteGroup} />}
                         <CardTitle className="text-xl flex items-center">
                             <Server className="h-5 w-5 text-muted-foreground mr-2" />
                             <span>{group.name}</span>
@@ -194,13 +196,15 @@ export default function GroupDetail({
                                 </Button>
                             </AppTooltip>
                         </ModalCreateGroupToken>
-                        <ModalAddDatabaseToGroup groupId={group.id} databases={availableDatabases}>
-                            <AppTooltip text="Add Database to Group">
-                                <Button variant="default">
-                                    <PlusCircleIcon className="h-4 w-4" />
-                                </Button>
-                            </AppTooltip>
-                        </ModalAddDatabaseToGroup>
+                        {can('manage-groups') && (
+                            <ModalAddDatabaseToGroup groupId={group.id} databases={availableDatabases}>
+                                <AppTooltip text="Add Database to Group">
+                                    <Button variant="default">
+                                        <PlusCircleIcon className="h-4 w-4" />
+                                    </Button>
+                                </AppTooltip>
+                            </ModalAddDatabaseToGroup>
+                        )}
                     </div>
                 </div>
             </CardHeader>
@@ -224,7 +228,7 @@ export default function GroupDetail({
                                         <Badge variant="outline" className="ml-auto border-green-400 dark:border-green-600 text-green-400 dark:text-green-600">
                                             Active
                                         </Badge>
-                                        <ButtonDelete handleDelete={() => handleDeleteDatabase(database.id)} text="Delete Database" />
+                                        {can('delete-databases') && <ButtonDelete handleDelete={() => handleDeleteDatabase(database.id)} text="Delete Database" />}
                                         {token ? (
                                             <>
                                                 <ButtonCopyReadOnlyToken token={token} />
