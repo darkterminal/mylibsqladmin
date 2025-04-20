@@ -23,7 +23,6 @@ class SqldService
                 return 'http://' . config('mylibsqladmin.bridge.host') . ':' . config('mylibsqladmin.bridge.port');
             default:
                 throw new \BadMethodCallException("Unknown endpoint", 1);
-                self::getDatabases(local: false);
         }
     }
 
@@ -34,37 +33,43 @@ class SqldService
         }
 
         if ($local == false) {
-
             $host = self::useEndpoint('db');
+            $request = self::createBaseRequest();
 
-            $allMetrics = Http::retry(5, 100)->withHeaders([
-                'Content-Type' => 'application/json',
-            ])
+            $allMetrics = $request->retry(5, 100)
                 ->get("$host/metrics");
 
             if ($allMetrics->successful()) {
                 // Regular expression to match namespace="value"
                 preg_match_all('/namespace="([^"]+)"/', $allMetrics->body(), $matches);
 
-                $dbRows = [];
+                $allDatabases = [];
                 foreach ($matches[1] as $match) {
                     $active = (preg_match('/-archived$/', $match)) ? 'inactive' : 'active';
-                    $dbRows[] = ['name' => $match, 'active' => $active, 'path' => $match];
+                    $allDatabases[] = ['name' => $match, 'status' => $active, 'path' => $match];
                 }
-                return $dbRows;
             } else {
-                return [];
+                $allDatabases = [];
             }
         } else {
-            $allDatabases = UserDatabase::whereNotIn('database_name', ['default'])->collect()->toArray();
+            $allDatabases = UserDatabase::whereNotIn('database_name', ['default'])->get()->collect()->toArray();
         }
 
+        $userId = auth()->user()->id;
+
         if (php_sapi_name() !== 'cli') {
-            $userId = auth()->user()->id;
             foreach ($allDatabases as $database) {
+                $updateDb =  [
+                    'user_id' => $userId,
+                    'database_name' => $database['name'] ?? $database['database_name']
+                ];
+
+                if ($database['status'] == 'inactive') {
+                    $updateDb['deleted_at'] = now()->format('Y-m-d H:i:s');
+                }
                 UserDatabase::updateOrInsert(
-                    ['user_id' => $userId, 'database_name' => $database['name']],
-                    ['user_id' => $userId, 'database_name' => $database['name']]
+                    ['user_id' => $userId, 'database_name' => $database['name'] ?? $database['database_name']],
+                    $updateDb
                 );
             }
         }
@@ -92,11 +97,8 @@ class SqldService
         $host = self::useEndpoint('db');
 
         try {
-            $result = Http::retry(5, 100)->withHeaders(
-                [
-                    'Content-Type' => 'application/json',
-                ]
-            )
+            $request = self::createBaseRequest();
+            $result = $request->retry(5, 100)
                 ->post("$host/v1/namespaces/$database/fork/$database-archived")
                 ->throw()
                 ->json();
@@ -125,11 +127,9 @@ class SqldService
         $host = self::useEndpoint('db');
 
         try {
-            $result = Http::retry(5, 100)->withHeaders(
-                [
-                    'Content-Type' => 'application/json',
-                ]
-            )
+            $request = self::createBaseRequest();
+
+            $result = $request->retry(5, 100)
                 ->post("$host/v1/namespaces/$database-archived/fork/$database")
                 ->throw()
                 ->json();
