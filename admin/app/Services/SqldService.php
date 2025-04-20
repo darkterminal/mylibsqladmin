@@ -34,16 +34,27 @@ class SqldService
         }
 
         if ($local == false) {
-            $host = self::useEndpoint('bridge');
-            $allDatabases = Http::retry(5, 100)->withHeaders([
-                'Authorization' => 'realm=' . config('mylibsqladmin.bridge.password'),
+
+            $host = self::useEndpoint('db');
+
+            $allMetrics = Http::retry(5, 100)->withHeaders([
                 'Content-Type' => 'application/json',
             ])
-                ->get("$host/api/databases")
-                ->collect()
-                ->filter(fn($db) => $db['name'] !== 'default')
-                ->values()
-                ->toArray();
+                ->get("$host/metrics");
+
+            if ($allMetrics->successful()) {
+                // Regular expression to match namespace="value"
+                preg_match_all('/namespace="([^"]+)"/', $allMetrics->body(), $matches);
+
+                $dbRows = [];
+                foreach ($matches[1] as $match) {
+                    $active = (preg_match('/-archived$/', $match)) ? 'inactive' : 'active';
+                    $dbRows[] = ['name' => $match, 'active' => $active, 'path' => $match];
+                }
+                return $dbRows;
+            } else {
+                return [];
+            }
         } else {
             $allDatabases = UserDatabase::whereNotIn('database_name', ['default'])->collect()->toArray();
         }
@@ -168,7 +179,7 @@ class SqldService
         }
 
         $group = GroupDatabase::findOrFail($groupId);
-      
+
         $group->members()->attach(auth()->user()->id, [
             'group_id' => $groupId,
             'database_id' => $userDatabase->id,
@@ -226,8 +237,8 @@ class SqldService
 
     public static function createBaseRequest(): PendingRequest
     {
-        if (!empty(config('mylibsqladmin.libsql.username')) && !empty(config('mylibsqladmin.libsql.password'))) {
-            $request = Http::withBasicAuth(config('mylibsqladmin.libsql.username'), config('mylibsqladmin.libsql.password'))
+        if (!empty(config('mylibsqladmin.libsql.api.username')) && !empty(config('mylibsqladmin.libsql.api.password'))) {
+            $request = Http::withBasicAuth(config('mylibsqladmin.libsql.api.username'), config('mylibsqladmin.libsql.api.password'))
                 ->accept('application/json');
         } else {
             $request = Http::withHeaders([
