@@ -86,7 +86,7 @@ class SqldService
                     'Content-Type' => 'application/json',
                 ]
             )
-                ->post("$host/v1/namespaces/$database/fork/$database-archive")
+                ->post("$host/v1/namespaces/$database/fork/$database-archived")
                 ->throw()
                 ->json();
             return $result->status() == 200 ? true : false;
@@ -119,7 +119,7 @@ class SqldService
                     'Content-Type' => 'application/json',
                 ]
             )
-                ->post("$host/v1/namespaces/$database-archive/fork/$database")
+                ->post("$host/v1/namespaces/$database-archived/fork/$database")
                 ->throw()
                 ->json();
             return $result->status() == 200 ? true : false;
