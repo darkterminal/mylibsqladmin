@@ -7,7 +7,6 @@ use App\Models\GroupDatabase;
 use App\Models\UserDatabase;
 use App\Models\UserDatabaseToken;
 use App\Services\SqldService;
-use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
