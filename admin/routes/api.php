@@ -25,7 +25,7 @@ Route::middleware('auth')->group(function () {
             $transformed = array_map(function ($db) {
                 return [
                     'name' => $db['database_name'],
-                    'status' => $db['is_schema'] == "1" ? 'active' : 'inactive',
+                    'status' => $db['is_archived'] == "1" ? 'active' : 'inactive',
                     'path' => $db['database_name'],
                 ];
             }, $localDbs);
