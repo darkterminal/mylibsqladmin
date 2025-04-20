@@ -6,9 +6,12 @@ use App\Http\Controllers\TeamController;
 use App\Models\GroupDatabase;
 use App\Models\UserDatabase;
 use App\Models\UserDatabaseToken;
+use App\Services\SqldService;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Lcobucci\JWT\Encoding\CannotDecodeContent;
 use Lcobucci\JWT\Encoding\JoseEncoder;
 use Lcobucci\JWT\Token\InvalidTokenStructure;
@@ -17,23 +20,28 @@ use Lcobucci\JWT\Token\UnsupportedHeaderFound;
 
 Route::middleware('auth')->group(function () {
     Route::get('/api/databases', function () {
-        $response = Http::withHeaders([
-            'Authorization' => 'realm=' . config('mylibsqladmin.bridge.password'),
-            'Content-Type' => 'application/json',
-        ])
-            ->get('http://' . config('mylibsqladmin.bridge.host') . ':' . config('mylibsqladmin.bridge.port') . '/api/databases');
+        try {
+            $localDbs = SqldService::getDatabases(local: false);
 
-        if ($response->successful()) {
+            $transformed = array_map(function ($db) {
+                return [
+                    'name' => $db['database_name'],
+                    'status' => $db['is_schema'] == "1" ? 'active' : 'inactive',
+                    'path' => $db['database_name'],
+                ];
+            }, $localDbs);
+
             return response()->json([
-                'databases' => $response->json()
+                'databases' => $transformed
             ]);
+        } catch (Exception $e) {
+            Log::error('Error in API /api/databases: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to fetch databases',
+            ], 500);
         }
-
-        return response()->json([
-            'error' => 'Failed to fetch databases',
-            'details' => $response->body()
-        ], $response->status());
     });
+
 
     Route::post('/api/group/create-only', [GroupDatabaseController::class, 'createGroupOnly'])->name('api.group.create-only');
     Route::get('/api/teams/{teamId}/databases', [TeamController::class, 'getDatabases'])->name('api.teams.databases');

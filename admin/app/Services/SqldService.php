@@ -23,41 +23,34 @@ class SqldService
                 return 'http://' . config('mylibsqladmin.bridge.host') . ':' . config('mylibsqladmin.bridge.port');
             default:
                 throw new \BadMethodCallException("Unknown endpoint", 1);
+                self::getDatabases(local: false);
         }
     }
 
-    public static function getDatabases(): array
+    public static function getDatabases(bool $local = true): array
     {
-        $host = self::useEndpoint('bridge');
-        $databases = Http::retry(5, 100)->withHeaders([
-            'Authorization' => 'realm=' . config('mylibsqladmin.bridge.password'),
-            'Content-Type' => 'application/json',
-        ])
-            ->get("$host/api/databases")
-            ->collect()
-            ->toArray();
-
-        if (php_sapi_name() === 'cli') {
-            $allDatabases = [];
-            foreach ($databases as $database) {
-                if ($database['name'] !== 'default') {
-                    $userDatabase = UserDatabase::where('database_name', $database['name'])->first();
-                    if ($userDatabase) {
-                        $allDatabases[] = $userDatabase->toArray();
-                    }
-                }
-            }
-            return $allDatabases;
-        }
-
-        if (!auth()->check()) {
+        if (!auth()->check() && php_sapi_name() !== 'cli') {
             return [];
         }
 
-        $userId = auth()->user()->id;
+        if ($local == false) {
+            $host = self::useEndpoint('bridge');
+            $allDatabases = Http::retry(5, 100)->withHeaders([
+                'Authorization' => 'realm=' . config('mylibsqladmin.bridge.password'),
+                'Content-Type' => 'application/json',
+            ])
+                ->get("$host/api/databases")
+                ->collect()
+                ->filter(fn($db) => $db['name'] !== 'default')
+                ->values()
+                ->toArray();
+        } else {
+            $allDatabases = UserDatabase::whereNotIn('database_name', ['default'])->collect()->toArray();
+        }
 
-        foreach ($databases as $database) {
-            if ($database['name'] !== 'default') {
+        if (php_sapi_name() !== 'cli') {
+            $userId = auth()->user()->id;
+            foreach ($allDatabases as $database) {
                 UserDatabase::updateOrInsert(
                     ['user_id' => $userId, 'database_name' => $database['name']],
                     ['user_id' => $userId, 'database_name' => $database['name']]
