@@ -15,6 +15,8 @@ use Lcobucci\JWT\Token\Parser;
 use Lcobucci\JWT\Token\UnsupportedHeaderFound;
 use App\Models\GroupDatabase;
 use App\Models\UserDatabaseToken;
+use App\Services\SqldService;
+use Illuminate\Support\Arr;
 use Lcobucci\JWT\UnencryptedToken;
 
 class SubdomainValidationController extends Controller
@@ -149,13 +151,10 @@ class SubdomainValidationController extends Controller
     private function validateSubdomainWithBridge(string $subdomain): bool
     {
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'realm=' . config('mylibsqladmin.bridge.password'),
-                'Content-Type' => 'application/json',
-            ])->timeout(3)->get('http://' . config('mylibsqladmin.bridge.host') . ':' . config('mylibsqladmin.bridge.port') . '/api/databases');
+            $allDatabases = SqldService::getDatabases(local: false);
+            $names = Arr::pluck($allDatabases, 'name');
+            return in_array($subdomain, $names);
 
-            return $response->successful()
-                && in_array($subdomain, array_column($response->json(), 'name'));
         } catch (\Exception $e) {
             logger()->error('Bridge service error: ' . $e->getMessage());
             return false;

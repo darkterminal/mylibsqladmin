@@ -78,21 +78,18 @@ class SqldService
             return false;
         }
 
-        $host = self::useEndpoint('bridge');
+        $host = self::useEndpoint('db');
 
         try {
-            $result = Http::retry(5, 100)->withHeaders([
-                'Authorization' => 'realm=' . config('mylibsqladmin.bridge.password'),
-                'Content-Type' => 'application/json',
-            ])
-                ->post("$host/api/database/archive", [
-                    'name' => $database
-                ])
+            $result = Http::retry(5, 100)->withHeaders(
+                [
+                    'Content-Type' => 'application/json',
+                ]
+            )
+                ->post("$host/v1/namespaces/$database/fork/$database-archive")
                 ->throw()
                 ->json();
-
-            // Check if result contains success flag
-            return $result['success'] ?? false;
+            return $result->status() == 200 ? true : false;
         } catch (RequestException $e) {
             // Log the error for debugging
             Log::error('Failed to archive database', [
@@ -100,8 +97,6 @@ class SqldService
                 'status' => $e->response->status(),
                 'error' => $e->response->json()['error'] ?? $e->getMessage()
             ]);
-
-            return false;
         }
     }
 
@@ -116,21 +111,18 @@ class SqldService
             return false;
         }
 
-        $host = self::useEndpoint('bridge');
+        $host = self::useEndpoint('db');
 
         try {
-            $result = Http::retry(5, 100)->withHeaders([
-                'Authorization' => 'realm=' . config('mylibsqladmin.bridge.password'),
-                'Content-Type' => 'application/json',
-            ])
-                ->post("$host/api/database/restore", [
-                    'name' => $database
-                ])
+            $result = Http::retry(5, 100)->withHeaders(
+                [
+                    'Content-Type' => 'application/json',
+                ]
+            )
+                ->post("$host/v1/namespaces/$database-archive/fork/$database")
                 ->throw()
                 ->json();
-
-            // Check if result contains success flag
-            return $result['success'] ?? false;
+            return $result->status() == 200 ? true : false;
         } catch (RequestException $e) {
             // Log the error for debugging
             Log::error('Failed to restore database', [
