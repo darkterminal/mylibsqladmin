@@ -3,21 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Events\TriggerDatabaseStatsChangeEvent;
-use DateTimeZone;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
-use Lcobucci\JWT\Encoding\CannotDecodeContent;
 use Lcobucci\JWT\Encoding\JoseEncoder;
-use Lcobucci\JWT\Token;
-use Lcobucci\JWT\Token\InvalidTokenStructure;
-use Lcobucci\JWT\Token\Parser;
-use Lcobucci\JWT\Token\UnsupportedHeaderFound;
-use App\Models\GroupDatabase;
-use App\Models\UserDatabaseToken;
-use App\Services\SqldService;
-use Illuminate\Support\Arr;
 use Lcobucci\JWT\UnencryptedToken;
+use App\Models\GroupDatabaseToken;
+use App\Models\UserDatabaseToken;
+use Lcobucci\JWT\Token\Parser;
+use App\Models\GroupDatabase;
+use App\Services\SqldService;
+use App\Models\UserDatabase;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Arr;
+use DateTimeZone;
 
 class SubdomainValidationController extends Controller
 {
@@ -72,7 +69,11 @@ class SubdomainValidationController extends Controller
 
     private function subdomainHasAssociatedTokens(string $subdomain): bool
     {
-        return GroupDatabase::whereHas('members', fn($q) => $q->where('database_name', $subdomain))->exists()
+        if (!UserDatabase::where('database_name', $subdomain)->exists()) {
+            return true;
+        }
+
+        return GroupDatabaseToken::whereHas('group', fn($q) => $q->whereHas('members', fn($q) => $q->where('database_name', $subdomain)))->exists()
             || UserDatabaseToken::whereHas('database', fn($q) => $q->where('database_name', $subdomain))->exists();
     }
 

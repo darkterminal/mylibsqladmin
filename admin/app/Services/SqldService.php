@@ -3,8 +3,6 @@
 namespace App\Services;
 
 use App\Models\GroupDatabase;
-use App\Models\Team;
-use App\Models\User;
 use App\Models\UserDatabase;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
