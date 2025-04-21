@@ -16,6 +16,7 @@ class UserDatabase extends Model
         'team_id',
         'database_name',
         'is_schema',
+        'created_by',
     ];
 
     public function user()
