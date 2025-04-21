@@ -32,34 +32,37 @@ class SqldService
             return [];
         }
 
-        if ($local == false) {
-            $host = self::useEndpoint('db');
-            $request = self::createBaseRequest();
+        switch ($local) {
+            case false:
+                $host = self::useEndpoint('db');
+                $request = self::createBaseRequest();
 
-            $allMetrics = $request->retry(5, 100)
-                ->get("$host/metrics");
+                $allMetrics = $request->retry(5, 100)
+                    ->get("$host/metrics");
 
-            if ($allMetrics->successful()) {
-                // Regular expression to match namespace="value"
-                preg_match_all('/namespace="([^"]+)"/', $allMetrics->body(), $matches);
+                if ($allMetrics->successful()) {
+                    // Regular expression to match namespace="value"
+                    preg_match_all('/namespace="([^"]+)"/', $allMetrics->body(), $matches);
 
-                $allDatabases = [];
-                foreach ($matches[1] as $match) {
-                    $active = (preg_match('/-archived$/', $match)) ? 'inactive' : 'active';
-                    $allDatabases[] = ['name' => $match, 'status' => $active, 'path' => $match];
+                    $allDatabases = [];
+                    foreach ($matches[1] as $match) {
+                        $active = (preg_match('/-archived$/', $match)) ? 'inactive' : 'active';
+                        $allDatabases[] = ['name' => $match, 'status' => $active, 'path' => $match];
+                    }
+                } else {
+                    $allDatabases = [];
                 }
-            } else {
-                $allDatabases = [];
-            }
-        } else {
-            $allDatabases = UserDatabase::whereNotIn('database_name', ['default'])->get()->collect()->toArray();
+                break;
+            case true:
+                $allDatabases = UserDatabase::whereNotIn('database_name', ['default'])->get()->collect()->toArray();
+                break;
         }
 
         $userId = auth()->user()->id;
 
         if (php_sapi_name() !== 'cli') {
             foreach ($allDatabases as $database) {
-                $updateDb =  [
+                $updateDb = [
                     'user_id' => $userId,
                     'database_name' => $database['name'] ?? $database['database_name']
                 ];
@@ -110,6 +113,8 @@ class SqldService
                 'status' => $e->response->status(),
                 'error' => $e->response->json()['error'] ?? $e->getMessage()
             ]);
+
+            return false;
         }
     }
 
@@ -171,7 +176,8 @@ class SqldService
             'user_id' => auth()->user()->id,
             'team_id' => $teamId,
             'database_name' => $database,
-            'is_schema' => $isSchema
+            'is_schema' => $isSchema,
+            'created_by' => auth()->user()->id
         ]);
 
         if (!$userDatabase) {
