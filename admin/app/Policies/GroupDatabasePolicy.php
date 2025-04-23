@@ -2,9 +2,7 @@
 
 namespace App\Policies;
 
-use App\Models\GroupDatabase;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class GroupDatabasePolicy
 {

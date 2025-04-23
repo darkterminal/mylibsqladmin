@@ -3,8 +3,6 @@
 namespace App\Policies;
 
 use App\Models\User;
-use App\Models\UserDatabase;
-use Illuminate\Auth\Access\Response;
 
 class UserDatabasePolicy
 {
