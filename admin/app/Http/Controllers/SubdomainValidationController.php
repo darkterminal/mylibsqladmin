@@ -152,7 +152,7 @@ class SubdomainValidationController extends Controller
     private function validateSubdomainWithBridge(string $subdomain): bool
     {
         try {
-            $allDatabases = SqldService::getDatabases(local: false);
+            $allDatabases = SqldService::getDatabases(config('mylibsqladmin.local_instance'));
             $names = Arr::pluck($allDatabases, 'name');
             return in_array($subdomain, $names);
         } catch (\Exception $e) {
