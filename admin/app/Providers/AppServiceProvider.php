@@ -15,12 +15,5 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         date_default_timezone_set(config('app.timezone'));
-
-        Inertia::share([
-            'configs' => [
-                'sqldHost' => config('mylibsqladmin.libsql.connection.host'),
-                'sqldPort' => config('mylibsqladmin.libsql.connection.port'),
-            ]
-        ]);
     }
 }
