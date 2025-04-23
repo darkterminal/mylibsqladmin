@@ -3,19 +3,9 @@
 use App\Http\Controllers\GroupDatabaseController;
 use App\Http\Controllers\SubdomainValidationController;
 use App\Http\Controllers\TeamController;
-use App\Models\GroupDatabase;
-use App\Models\UserDatabase;
-use App\Models\UserDatabaseToken;
 use App\Services\SqldService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Lcobucci\JWT\Encoding\CannotDecodeContent;
-use Lcobucci\JWT\Encoding\JoseEncoder;
-use Lcobucci\JWT\Token\InvalidTokenStructure;
-use Lcobucci\JWT\Token\Parser;
-use Lcobucci\JWT\Token\UnsupportedHeaderFound;
 
 Route::middleware('auth')->group(function () {
     Route::get('/api/databases', function () {
