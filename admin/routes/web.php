@@ -58,6 +58,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('restore', [UserDatabaseController::class, 'restoreDatabase'])
             ->name('database.restore')
             ->can('delete', UserDatabase::class);
+
+        Route::delete('force-delete/{database}', [UserDatabaseController::class, 'forceDeleteDatabase'])
+            ->name('database.force-delete')
+            ->can('delete', UserDatabase::class);
     });
 
     Route::group(['prefix' => 'tokens'], function () {
