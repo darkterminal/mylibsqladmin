@@ -11,7 +11,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $databases = session('team_databases')['databases'] ?? SqldService::getDatabases();
+        $databases = session('team_databases')['databases'] ?? SqldService::getDatabases(config('mylibsqladmin.local_instance'));
         $mostUsedDatabases = UserDatabase::mostUsedDatabases();
         $databaseMetrics = QueryMetric::summarized();
 

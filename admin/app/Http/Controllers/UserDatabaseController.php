@@ -190,7 +190,7 @@ class UserDatabaseController extends Controller
                 $validated['teamId']
             );
 
-            $databases = session('team_databases')['databases'] ?? SqldService::getDatabases();
+            $databases = session('team_databases')['databases'] ?? SqldService::getDatabases(config('mylibsqladmin.local_instance'));
             $mostUsedDatabases = UserDatabase::mostUsedDatabases();
             $databaseMetrics = QueryMetric::summarized();
 
@@ -217,7 +217,7 @@ class UserDatabaseController extends Controller
         }
 
         return redirect()->back()->with([
-            'databases' => SqldService::getDatabases(),
+            'databases' => SqldService::getDatabases(config('mylibsqladmin.local_instance')),
             'mostUsedDatabases' => UserDatabase::mostUsedDatabases(),
             'databaseMetrics' => QueryMetric::summarized()
         ]);
@@ -231,7 +231,20 @@ class UserDatabaseController extends Controller
         }
 
         return redirect()->back()->with([
-            'databases' => SqldService::getDatabases(),
+            'databases' => SqldService::getDatabases(config('mylibsqladmin.local_instance')),
+            'mostUsedDatabases' => UserDatabase::mostUsedDatabases(),
+            'databaseMetrics' => QueryMetric::summarized()
+        ]);
+    }
+
+    public function forceDeleteDatabase(string $database)
+    {
+        if (!SqldService::deleteDatabase($database)) {
+            return redirect()->back()->with(['error' => 'Database force deletion failed']);
+        }
+
+        return redirect()->back()->with([
+            'databases' => SqldService::getDatabases(config('mylibsqladmin.local_instance')),
             'mostUsedDatabases' => UserDatabase::mostUsedDatabases(),
             'databaseMetrics' => QueryMetric::summarized()
         ]);

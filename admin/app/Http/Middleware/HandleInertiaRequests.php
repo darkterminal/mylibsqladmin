@@ -2,12 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\GroupDatabase;
-use App\Models\QueryMetric;
 use App\Models\Team;
-use App\Models\UserDatabase;
-use App\Services\SqldService;
-use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Tighten\Ziggy\Ziggy;
@@ -87,6 +82,10 @@ class HandleInertiaRequests extends Middleware
             'databases' => fn() => $currentTeamDatabases['databases'] ?? [],
             'groups' => fn() => $currentTeamDatabases['groups'] ?? [],
             'invitation' => fn() => session('valid_invitation') ?? null,
+            'configs' => [
+                'sqldHost' => config('mylibsqladmin.libsql.connection.host'),
+                'sqldPort' => config('mylibsqladmin.libsql.connection.port'),
+            ]
         ];
     }
 }

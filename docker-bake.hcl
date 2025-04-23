@@ -1,5 +1,5 @@
 group "default" {
-  targets = ["web", "web_prod", "bridge", "proxy", "db"]
+  targets = ["web", "web_prod", "proxy", "db"]
 }
 
 target "web" {
@@ -20,12 +20,6 @@ target "web_prod" {
     ENV_FILE = ".env.production"  # Corrected path to match compose.yml
   }
   tags = ["mylibsqladmin-web:production"]
-}
-
-target "bridge" {
-  context    = "./bridge"
-  dockerfile = "Dockerfile"
-  tags       = ["mylibsqladmin-bridge:latest"]
 }
 
 target "proxy" {

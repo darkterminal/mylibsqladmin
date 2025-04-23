@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class UserDatabase extends Model
@@ -16,6 +15,7 @@ class UserDatabase extends Model
         'team_id',
         'database_name',
         'is_schema',
+        'created_by',
     ];
 
     public function user()

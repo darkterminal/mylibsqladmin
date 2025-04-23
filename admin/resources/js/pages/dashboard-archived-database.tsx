@@ -170,7 +170,7 @@ function DatabaseActions({ database }: { database: Databases }) {
                     variant="destructive"
                     size="sm"
                     onClick={() => {
-                        router.delete(route('database.delete', { database }), {
+                        router.delete(route('database.force-delete', { database }), {
                             preserveScroll: true,
                             onSuccess: () => {
                                 toast.success('Database deleted successfully');

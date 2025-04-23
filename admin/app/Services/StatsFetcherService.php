@@ -6,7 +6,6 @@ use App\Models\QueryMetric;
 use App\Models\SlowestQuery;
 use App\Models\TopQuery;
 use App\Models\UserDatabase;
-use Illuminate\Support\Facades\Http;
 
 class StatsFetcherService
 {
@@ -27,7 +26,7 @@ class StatsFetcherService
 
     protected static function broadcastStatsChanged(): string
     {
-        $databases = SqldService::getDatabases();
+        $databases = SqldService::getDatabases(config('mylibsqladmin.local_instance'));
         foreach ($databases as $database) {
 
             $host = SqldService::useEndpoint('db');
@@ -86,7 +85,7 @@ class StatsFetcherService
 
     protected static function broadcastToDatabase(string $databaseName): array
     {
-        $databases = SqldService::getDatabases();
+        $databases = SqldService::getDatabases(config('mylibsqladmin.local_instance'));
         $database = collect($databases)->where('database_name', $databaseName)->first();
 
         $host = SqldService::useEndpoint('db');

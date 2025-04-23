@@ -3,19 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Events\TriggerDatabaseStatsChangeEvent;
-use DateTimeZone;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
-use Lcobucci\JWT\Encoding\CannotDecodeContent;
 use Lcobucci\JWT\Encoding\JoseEncoder;
-use Lcobucci\JWT\Token;
-use Lcobucci\JWT\Token\InvalidTokenStructure;
-use Lcobucci\JWT\Token\Parser;
-use Lcobucci\JWT\Token\UnsupportedHeaderFound;
-use App\Models\GroupDatabase;
-use App\Models\UserDatabaseToken;
 use Lcobucci\JWT\UnencryptedToken;
+use App\Models\GroupDatabaseToken;
+use App\Models\UserDatabaseToken;
+use Lcobucci\JWT\Token\Parser;
+use App\Models\GroupDatabase;
+use App\Services\SqldService;
+use App\Models\UserDatabase;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Arr;
+use DateTimeZone;
 
 class SubdomainValidationController extends Controller
 {
@@ -70,7 +69,11 @@ class SubdomainValidationController extends Controller
 
     private function subdomainHasAssociatedTokens(string $subdomain): bool
     {
-        return GroupDatabase::whereHas('members', fn($q) => $q->where('database_name', $subdomain))->exists()
+        if (!UserDatabase::where('database_name', $subdomain)->exists()) {
+            return true;
+        }
+
+        return GroupDatabaseToken::whereHas('group', fn($q) => $q->whereHas('members', fn($q) => $q->where('database_name', $subdomain)))->exists()
             || UserDatabaseToken::whereHas('database', fn($q) => $q->where('database_name', $subdomain))->exists();
     }
 
@@ -149,13 +152,9 @@ class SubdomainValidationController extends Controller
     private function validateSubdomainWithBridge(string $subdomain): bool
     {
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'realm=' . config('mylibsqladmin.bridge.password'),
-                'Content-Type' => 'application/json',
-            ])->timeout(3)->get('http://' . config('mylibsqladmin.bridge.host') . ':' . config('mylibsqladmin.bridge.port') . '/api/databases');
-
-            return $response->successful()
-                && in_array($subdomain, array_column($response->json(), 'name'));
+            $allDatabases = SqldService::getDatabases(config('mylibsqladmin.local_instance'));
+            $names = Arr::pluck($allDatabases, 'name');
+            return in_array($subdomain, $names);
         } catch (\Exception $e) {
             logger()->error('Bridge service error: ' . $e->getMessage());
             return false;

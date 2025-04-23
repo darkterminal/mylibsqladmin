@@ -15,9 +15,5 @@ return [
         ]
     ],
 
-    'bridge' => [
-        'host' => env('BRIDGE_HTTP_HOST', 'bridge'),
-        'port' => env('BRIDGE_HTTP_PORT', '4500'),
-        'password' => env('BRIDGE_HTTP_PASSWORD', 'libsql'),
-    ]
+    'local_instance' => env('LIBSQL_LOCAL_INSTANCE', true),
 ];

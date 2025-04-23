@@ -1,0 +1,14 @@
+#!/bin/env bash
+
+cp .env.example .env
+
+cp admin/.env.example admin/.env
+
+cd admin
+php artisan key:generate
+composer install
+npm install
+
+cd ..
+
+make compose-dev/up
