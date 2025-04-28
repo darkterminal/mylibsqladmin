@@ -28,13 +28,13 @@ Thank you for considering contributing to **MylibSQLAdmin**—a modern, open-sou
    ```
 7. **Submit a Pull Request**: Go to your fork on GitHub and click "Compare & pull request."
 
-## 🧪 Development Environment
+## Development Environment
 
 - **Docker**: The project uses Docker for development. Refer to the `compose.yml` files for setup.
 - **Makefile**: Utilize the provided `Makefile` for common tasks.
 - **Environment Variables**: Use `.env.example` as a template for your environment configuration.
 
-## 📝 Code Standards
+## Code Standards
 
 - **Language**: Ensure your code is clean and well-documented.
 - **Style**: Follow consistent coding styles and conventions used in the project.
