@@ -10,6 +10,23 @@
 </p>
 <p align="center">A Modern SQLite Database Management System</p>
 
+<p align="center">
+  <a href="https://deepwiki.com/darkterminal/mylibsqladmin" target="_blank">
+    <img alt="Static Badge" src="https://img.shields.io/badge/DeepWiki-Docs?logo=wikibooks&label=Docs">
+  </a>
+  <a href="https://github,com/sponsors/darkterminal" target="_blank">
+    <img alt="GitHub Sponsors" src="https://img.shields.io/github/sponsors/darkterminal?logo=githubsponsors">
+  </a>
+  <a href="https://discord.gg/wWDzy5Nt44" target="_blank">
+    <img alt="Discord" src="https://img.shields.io/discord/1361788238561280101?logo=discord">
+  </a>
+  <img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/w/darkterminal/mylibsqladmin">
+  <img alt="GitHub License" src="https://img.shields.io/github/license/darkterminal/mylibsqladmin">
+  <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/darkterminal/mylibsqladmin">
+</p>
+
+<hr />
+
 In the age of data-driven applications, the demand for lightweight, scalable, and modern database solutions has never been greater. **libSQL** is a powerful fork of SQLite designed for the modern era, offering advanced features such as serverless and server-based modes, fine-grained access control, and native branching capabilities.
 
 **MylibSQLAdmin** is an open-source web GUI built specifically for managing libSQL databases. By harnessing the full potential of libSQL-server functionalities, this project provides an intuitive and comprehensive platform for database administration, making it easier than ever to manage your database systems through an accessible web interface. You can connect with `libsql-server` from **Docker Service** or use your existing `libsql-server` instance.
@@ -23,6 +40,10 @@ In the age of data-driven applications, the demand for lightweight, scalable, an
 - **Team Management** - Collaborate efficiently by managing teams and their access levels.
 - **User Management** - Easily handle user accounts, roles, and activity logs.
 - **Member Invitation Management** - Invite new members and track their onboarding status with ease.
+
+## Sponsors
+
+<img title="Sponsor Here" src="https://i.imgur.com/R1zU0eW.png" width="100%" />
 
 ## Support this Project
 
@@ -109,3 +130,11 @@ make compose-dev/up
 ```
 http://localhost:8000
 ```
+
+## Contributors
+
+![Contributors](https://contrib.nn.ci/api?no_bot=true&repo=darkterminal/mylibsqladmin)
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=darkterminal/mylibsqladmin&type=Date)](https://www.star-history.com/#darkterminal/mylibsqladmin&Date)
