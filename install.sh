@@ -267,9 +267,14 @@ while true; do
     fi
 done
 
-# 10) Start services
-echo "Starting services..."
-make compose-prod/up
+echo "Configuring nginx..."
+if [ "$APP_ENV" = "production" ]; then
+    echo -e "${YELLOW}Using production proxy configuration${NC}"
+    sed -i "s|proxy_pass http://web:8000/validate-subdomain;|proxy_pass http://web_prod:8000/validate-subdomain;|" nginx/nginx.conf
+else
+    echo -e "${YELLOW}Using development proxy configuration${NC}"
+    sed -i "s|proxy_pass http://web_prod:8000/validate-subdomain;|proxy_pass http://web:8000/validate-subdomain;|" nginx/nginx.conf
+fi
 
 # Final messages with support links
 echo -e "${YELLOW}===============================================================================${NC}"
@@ -284,3 +289,11 @@ echo -e "  • Sponsor / Donate: ${BLUE}https://github.com/sponsors/darkterminal
 echo
 echo -e "${YELLOW}Need help? Please visit our support channels above.${NC}"
 echo -e "${YELLOW}===============================================================================${NC}"
+
+# 10) Start services
+echo "Starting services..."
+if [ "$APP_ENV" = "production" ]; then
+    make compose-prod/up
+else
+    make compose-dev/up
+fi

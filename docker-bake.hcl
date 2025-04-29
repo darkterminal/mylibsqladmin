@@ -1,5 +1,9 @@
-group "default" {
-  targets = ["web", "web_prod", "proxy", "db"]
+group "development" {
+  targets = ["web", "proxy", "db"]
+}
+
+group "production" {
+  targets = ["web_prod", "proxy", "db"]
 }
 
 target "web" {
@@ -23,11 +27,9 @@ target "web_prod" {
 }
 
 target "proxy" {
-  dockerfile = "Dockerfile"  # You might need to create this
   tags       = ["mylibsqladmin-proxy:latest"]
 }
 
 target "db" {
-  dockerfile = "Dockerfile"  # You might need to create this
   tags       = ["mylibsqladmin-db:latest"]
 }
