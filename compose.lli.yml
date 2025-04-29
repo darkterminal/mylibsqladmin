@@ -27,12 +27,12 @@ services:
       dockerfile: Dockerfile
       args:
         APP_ENV: production
-        ENV_FILE: ./admin/.env.production # Use the production env file
+        ENV_FILE: .env.production # Use the production env file
     ports:
       - "8000:8000"
     volumes:
       - ./admin/database:/var/www/html/database
-    env_file: "./admin/.env.production"
+    env_file: "./.env" # Root env file (can hold overrides for dev)
     networks:
       - app-network
     restart: always
