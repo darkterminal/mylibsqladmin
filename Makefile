@@ -2,29 +2,29 @@ DOCKERIGNORE_DEV = ./admin/.docker/.dockerignore.local
 DOCKERIGNORE_PROD = ./admin/.docker/.dockerignore.prod
 DOCKERIGNORE_TARGET_DIR = ./admin/.dockerignore
 
-# Helper to read LIBSQL_LOCAL_INSTANCE from .env (unused in this version)
+# Read LIBSQL_LOCAL_INSTANCE from .env
 GET_LOCAL_INSTANCE = $(shell grep -E '^LIBSQL_LOCAL_INSTANCE=' .env | cut -d'=' -f2)
 
 # Common compose flags with conditional profile
-COMPOSE_PROFILES_DEV = --profile development $(if $(filter true,$(LIBSQL_LOCAL_INSTANCE)),--profile local-instance)
-COMPOSE_PROFILES_PROD = --profile production $(if $(filter true,$(LIBSQL_LOCAL_INSTANCE)),--profile local-instance)
+COMPOSE_PROFILES_DEV = --profile development $(if $(filter true,$(GET_LOCAL_INSTANCE)),--profile local-instance)
+COMPOSE_PROFILES_PROD = --profile production $(if $(filter true,$(GET_LOCAL_INSTANCE)),--profile local-instance)
 
-# Conditionally select between lli/lri compose files
+# Conditionally select between lli/lri compose files based on actual .env value
 COMPOSE_FILE_BASE = compose.yml
-COMPOSE_FILES = -f $(COMPOSE_FILE_BASE) $(if $(filter true,$(LIBSQL_LOCAL_INSTANCE)),-f compose.lli.yml,-f compose.lri.yml)
+COMPOSE_FILES = -f $(COMPOSE_FILE_BASE) $(if $(filter true,$(GET_LOCAL_INSTANCE)),-f compose.lli.yml,-f compose.lri.yml)
 
 .PHONY: help compose-dev/up compose-prod/up compose-dev/down compose-prod/down compose-dev/restart compose-prod/restart compose-dev/rebuild compose-prod/rebuild
 
 help:
 	@echo "Usage:"
-	@echo "  make compose-dev/up"
-	@echo "  make compose-prod/up"
-	@echo "  make compose-dev/down"
-	@echo "  make compose-prod/down"
-	@echo "  make compose-dev/restart"
-	@echo "  make compose-prod/restart"
-	@echo "  make compose-dev/rebuild"
-	@echo "  make compose-prod/rebuild"
+	@echo "  make compose-dev/up\t\tStart development environment"
+	@echo "  make compose-prod/up\t\tStart production environment"
+	@echo "  make compose-dev/down\t\tStop development environment"
+	@echo "  make compose-prod/down\tStop production environment"
+	@echo "  make compose-dev/restart\tRestart development environment"
+	@echo "  make compose-prod/restart\tRestart production environment"
+	@echo "  make compose-dev/rebuild\tRebuild development containers"
+	@echo "  make compose-prod/rebuild\tRebuild production containers"
 
 compose-dev/up:
 	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
