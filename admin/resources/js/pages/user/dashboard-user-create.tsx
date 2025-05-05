@@ -66,7 +66,7 @@ export default function CreateUserForm({
 
     const handleSubmit = (e: { preventDefault: () => void }) => {
         e.preventDefault()
-        post(route('user.create'), {
+        post(route('user.store'), {
             preserveScroll: true,
             onSuccess: () => {
                 toast.success('User created successfully', {

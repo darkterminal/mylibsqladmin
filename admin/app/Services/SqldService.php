@@ -126,7 +126,7 @@ class SqldService
                 'database_name' => $database['name'] ?? $database['database_name']
             ];
 
-            if ($database['status'] == 'inactive') {
+            if ($database['deleted_at'] !== null) {
                 $updateData['deleted_at'] = now()->format('Y-m-d H:i:s');
             }
 

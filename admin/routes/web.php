@@ -126,7 +126,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->can('create', User::class);
 
         Route::post('create', [UserController::class, 'store'])
-            ->name('user.create')
+            ->name('user.store')
             ->can('create', User::class);
 
         Route::get('{user}/edit', [UserController::class, 'edit'])
