@@ -5,8 +5,11 @@ ARG ENV_FILE
 
 # Environment variables
 ENV APP_ENV=${APP_ENV}
+
+# Required environment variables
 ENV FRANKENPHP_CONFIG="worker ./public/index.php"
 ENV FRANKENPHP_DOCUMENT_ROOT=/var/www/html/public
+
 ENV PHP_OPCACHE_ENABLE=1
 ENV PHP_OPCACHE_VALIDATE_TIMESTAMPS=0
 
@@ -73,13 +76,22 @@ RUN turso-php-installer install -n --thread-safe
 
 # Verify extensions
 RUN php -m | grep libsql && \
-    php -m | grep pdo_sqlite
+    php -m | grep pdo_sqlite \
+    && rm -rf public/build
 
 # Install dependencies
 RUN if [ "$APP_ENV" = "production" ]; then \
     composer install --optimize-autoloader --no-dev --no-interaction \
     && npm ci --omit=dev \
-    && npm run build; \
+    && npm run build \
+    && rm -f public/hot \
+    && php artisan key:generate \
+    && php artisan migrate:fresh --seed --force \
+    && php artisan optimize \
+    && php artisan cache:clear \
+    && php artisan route:clear \
+    && php artisan view:clear \
+    && php artisan config:clear; \
     else \
     composer install --optimize-autoloader --no-interaction \
     && npm install; \
@@ -96,6 +108,6 @@ HEALTHCHECK --interval=30s --timeout=3s CMD curl -f http://localhost:8000/up || 
 RUN mv .docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-EXPOSE 8000 9003 5173
+EXPOSE 8000 9003 5173 2019
 
-ENTRYPOINT ["docker-entrypoint.sh"]
+ENTRYPOINT ["sh", "-c", "/usr/local/bin/docker-entrypoint.sh"]
