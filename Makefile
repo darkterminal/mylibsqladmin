@@ -4,7 +4,6 @@ DOCKERIGNORE_TARGET_DIR = ./admin/.dockerignore
 
 # Read LIBSQL_LOCAL_INSTANCE from .env
 GET_LOCAL_INSTANCE = $(shell grep -E '^LIBSQL_LOCAL_INSTANCE=' .env | cut -d'=' -f2)
-GET_APP_URL = $(shell grep -E '^APP_URL=' .env | cut -d'=' -f2)
 
 # Common compose flags with conditional profile
 COMPOSE_PROFILES_DEV = --profile development $(if $(filter true,$(GET_LOCAL_INSTANCE)),--profile local-instance)
@@ -15,8 +14,8 @@ COMPOSE_FILE_BASE = compose.yml
 COMPOSE_FILES = -f $(COMPOSE_FILE_BASE) $(if $(filter true,$(GET_LOCAL_INSTANCE)),-f compose.lli.yml,-f compose.lri.yml)
 
 # Fixed sed commands with proper delimiter and matching
-SETUP_NGINX_PROD = sed -i "s|proxy_pass http://web:8000/validate-subdomain;|proxy_pass ${GET_APP_URL}/validate-subdomain;|" nginx/nginx.conf
-SETUP_NGINX_DEV = sed -i "s|proxy_pass ${GET_APP_URL}/validate-subdomain;|proxy_pass http://web:8000/validate-subdomain;|" nginx/nginx.conf
+SETUP_NGINX_PROD = sed -i "s|proxy_pass http://web:8000/validate-subdomain;|proxy_pass http://web_prod:8000/validate-subdomain;|" nginx/nginx.conf
+SETUP_NGINX_DEV = sed -i "s|proxy_pass http://web_prod:8000/validate-subdomain;|proxy_pass http://web:8000/validate-subdomain;|" nginx/nginx.conf
 
 .PHONY: help compose-dev/up compose-prod/up compose-dev/down compose-prod/down compose-dev/restart compose-prod/restart compose-dev/rebuild compose-prod/rebuild
 
