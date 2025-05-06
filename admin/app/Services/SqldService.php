@@ -68,13 +68,15 @@ class SqldService
 
         logger()->debug("is local: $local, Fetched databases: " . json_encode($allDatabases));
 
-        $userId = auth()->user()->id;
+        $userId = auth()->check() ? auth()->user()->id : null;
 
-        if (!str_starts_with(php_sapi_name(), 'cli')) {
+        if ($userId && !str_starts_with(php_sapi_name(), 'cli')) {
             self::syncDatabasesWithUser($userId, $allDatabases);
         }
 
-        return UserDatabase::where('user_id', $userId)->get()->toArray();
+        return $userId
+            ? UserDatabase::where('user_id', $userId)->get()->toArray()
+            : [];
     }
 
     private static function performHealthChecks(string $host, $request, $userDatabases)
