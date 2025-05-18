@@ -1,4 +1,4 @@
-# MylibSQLAdmin
+# MyLibSQLAdmin
 
 <p align="center">
   <picture>
