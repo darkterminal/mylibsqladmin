@@ -1,24 +1,34 @@
 # LibSQL Local Instance (LLI) Guide
 
-This guide provides comprehensive instructions for setting up, configuring, and using MyLibSQLAdmin with local LibSQL instances. The Local Instance configuration offers a self-contained solution for working with SQLite-compatible database files directly on your system.
+This guide provides comprehensive instructions for setting up, configuring, and using MylibSQLAdmin with local LibSQL instances. The Local Instance configuration offers a self-contained solution for working with SQLite-compatible database files directly on your system.
 
 ## Contents
 
 - [Overview](#overview)
-- [Features](#features)
+- [Key Benefits](#key-benefits)
 - [Requirements](#requirements)
 - [Installation](#installation)
+  - [Docker Installation](#docker-installation)
+  - [Docker Compose Installation](#docker-compose-installation)
+  - [Manual Installation](#manual-installation)
 - [Configuration](#configuration)
-- [Usage](#usage)
-- [Advanced Topics](#advanced-topics)
+  - [Environment Variables](#environment-variables)
+  - [Advanced Configuration](#advanced-configuration)
+- [Usage Guide](#usage-guide)
+  - [Creating Databases](#creating-databases)
+  - [Connecting to Existing Databases](#connecting-to-existing-databases)
+  - [Common Database Operations](#common-database-operations)
+- [Performance Optimization](#performance-optimization)
 - [Troubleshooting](#troubleshooting)
-- [Optimization](#optimization)
-- [Migration](#migration)
+- [Advanced Topics](#advanced-topics)
+  - [Custom SQLite Extensions](#custom-sqlite-extensions)
+  - [Backup and Recovery](#backup-and-recovery)
+  - [Migration from SQLite](#migration-from-sqlite)
 - [Resources](#resources)
 
 ## Overview
 
-A Local LibSQL Instance (LLI) runs as an integrated component of your MyLibSQLAdmin deployment. This configuration provides direct access to SQLite/LibSQL database files stored on your system or within Docker volumes without requiring external servers or network configuration.
+A Local LibSQL Instance (LLI) runs as an integrated component of your MylibSQLAdmin deployment. This configuration provides direct access to SQLite/LibSQL database files stored on your system or within Docker volumes without requiring external servers or network configuration.
 
 LLI is ideal for:
 
@@ -27,111 +37,109 @@ LLI is ideal for:
 - Offline database work
 - Single-user applications
 - Educational settings
+- Small to medium-sized projects
 
-## Features
+The LLI mode launches a libSQL server instance that provides SQLite compatibility with enhanced features such as improved concurrency, extended SQL syntax, and better performance for certain operations.
 
-### Core Capabilities
+## Key Benefits
 
-- **File-based Database Access** - Connect to any SQLite/LibSQL database file
-- **Zero Network Configuration** - No need for complex networking setup
-- **Offline Operation** - Work without internet connectivity
-- **Direct File System Access** - Import/export databases from your file system
-- **Full SQLite Compatibility** - Use all SQLite features and extensions
+Using MylibSQLAdmin with a Local LibSQL Instance provides several advantages:
 
-### Technical Advantages
-
-- **Low Resource Footprint** - Minimal system requirements
-- **Simple Deployment** - Quick setup with Docker or manual installation
-- **Data Persistence** - Store databases in mounted volumes or host directories
-- **Custom Extensions** - Support for SQLite extensions and custom modules
+- **Simple Setup** - No need for complex network configuration or external database servers
+- **Direct File Access** - Work with database files directly on your file system
+- **Enhanced SQLite Features** - Leverage libSQL improvements while maintaining compatibility
+- **Offline Capability** - Work without internet connectivity
+- **Minimal Resource Usage** - Efficient resource utilization compared to traditional database servers
+- **Familiar Interface** - Modern web UI for managing traditional SQLite databases
+- **Data Portability** - Export and import databases across different environments with ease
 
 ## Requirements
 
-### Hardware
+### Hardware Requirements
 
-- CPU: Any modern x86/64 or ARM processor
-- RAM: 2GB minimum (4GB recommended)
-- Disk: 500MB+ available space (plus storage for your databases)
+- **CPU**: Any modern x86/64 or ARM processor
+- **RAM**: 2GB minimum (4GB recommended)
+- **Disk**: 500MB+ available space (plus storage for your databases)
 
-### Software
+### Software Requirements
 
-- **Docker Environment**:
+#### For Docker Installation
 
-  - Docker Engine 20.10.0+
-  - Docker Compose 2.0.0+ (for compose setup)
-  - Host system with Linux, macOS, or Windows with WSL2
+- Docker Engine 20.10.0+
+- Docker Compose 2.0.0+ (for compose setup)
+- Host system with Linux, macOS, or Windows with WSL2
 
-- **Manual Installation**:
-  - PHP 8.1+
-  - Node.js 16+
-  - npm 8+
-  - Git
+#### For Manual Installation
+
+- PHP 8.1+
+- Composer
+- Node.js 16+ and npm
+- Git
+- Linux, macOS, or Windows with WSL2
 
 ## Installation
 
-Choose one of the following installation methods based on your requirements:
+Choose one of the following installation methods based on your needs:
 
-### Method 1: Docker (Recommended)
+### Docker Installation
 
-The simplest way to get started with LLI is using our pre-built Docker image:
+The simplest way to get started with LLI is using our installation script:
 
 ```bash
-# Pull the official image
-docker pull darkterminal/mylibsqladmin:local
+# Clone the repository
+git clone https://github.com/darkterminal/mylibsqladmin.git
 
-# Create a directory for your database files
-mkdir -p ./libsql-data
+# Navigate to the project directory
+cd mylibsqladmin
 
-# Start the container with mounted data directory
-docker run -d \
-  --name mylibsqladmin \
-  -p 8080:80 \
-  -v ./libsql-data:/var/lib/libsql \
-  darkterminal/mylibsqladmin:local
+# Run the installation script
+./install.sh
 ```
 
-Access the web interface at: `http://localhost:8080`
+During the installation, select the following options:
 
-### Method 2: Docker Compose
+- When prompted for application environment, choose your preferred environment
+- When prompted for "Use local LibSQL instance?", select **Yes**
 
-For a more customizable setup:
+The script will configure and start MylibSQLAdmin with a local libSQL instance automatically.
 
-1. Create a project directory and navigate into it:
+### Docker Compose Installation
+
+For a more customizable setup with Docker Compose:
+
+1. Clone the repository:
 
    ```bash
-   mkdir mylibsqladmin && cd mylibsqladmin
+   git clone https://github.com/darkterminal/mylibsqladmin.git
+   cd mylibsqladmin
    ```
 
-2. Create a `docker-compose.yml` file:
+2. Configure the environment:
 
-   ```yaml
-   version: "3"
-
-   services:
-     mylibsqladmin:
-       image: darkterminal/mylibsqladmin:local
-       ports:
-         - "8080:80"
-       volumes:
-         - ./data:/var/lib/libsql
-         - ./config:/etc/mylibsqladmin
-       environment:
-         - LIBSQL_LOCAL_INSTANCE=true
-         - MYLIBSQL_ADMIN_PORT=80
-         - LIBSQL_CACHE_SIZE=4000
-       restart: unless-stopped
-   ```
-
-3. Start the service:
    ```bash
-   docker-compose up -d
+   cp .env.example .env
+   cp admin/.env.example admin/.env
    ```
 
-Access the web interface at: `http://localhost:8080`
+3. Edit the `.env` file to enable local instance:
 
-### Method 3: Manual Setup from Source
+   ```
+   LIBSQL_LOCAL_INSTANCE=true
+   ```
 
-For development or custom installations:
+4. Start the services:
+
+   ```bash
+   # For development
+   make compose-dev/up
+
+   # Or for production
+   make compose-prod/up
+   ```
+
+### Manual Installation
+
+For environments without Docker or if you need full control over the installation:
 
 1. Clone the repository:
 
@@ -154,12 +162,36 @@ For development or custom installations:
    LIBSQL_DATA_DIR=./data
    ```
 
-4. Start the application:
+4. Install dependencies:
+
    ```bash
-   make compose-dev/up
+   cd admin
+   composer install
+   npm install
+   php artisan key:generate
+   cd ..
    ```
 
-Access the web interface at: `http://localhost:8000`
+5. Start the libSQL server separately:
+
+   ```bash
+   # Install libSQL server (if not already installed)
+   # See https://github.com/tursodatabase/libsql for installation instructions
+
+   # Start libSQL server
+   sqld --db-path ./data --http-listen-addr 0.0.0.0:8080
+   ```
+
+6. Start the MylibSQLAdmin application:
+
+   ```bash
+   cd admin
+   php artisan serve
+
+   # In another terminal window
+   cd admin
+   npm run dev
+   ```
 
 ## Configuration
 
@@ -172,57 +204,86 @@ Fine-tune your LLI with these environment variables:
 | `LIBSQL_LOCAL_INSTANCE`  | Enable local instance mode                 | `true`            | `true`         |
 | `LIBSQL_DATA_DIR`        | Directory to store database files          | `/var/lib/libsql` | `/data/sqlite` |
 | `LIBSQL_MEMORY_ONLY`     | Run databases in memory only               | `false`           | `true`         |
-| `LIBSQL_MAX_CONNECTIONS` | Maximum number of simultaneous connections | `10`              | `20`           |
 | `LIBSQL_PAGE_SIZE`       | Database page size in bytes                | `4096`            | `8192`         |
 | `LIBSQL_CACHE_SIZE`      | Cache size in KB                           | `2000`            | `4000`         |
 | `LIBSQL_BUSY_TIMEOUT`    | Busy timeout in milliseconds               | `5000`            | `10000`        |
 | `LIBSQL_JOURNAL_MODE`    | Journal mode                               | `WAL`             | `MEMORY`       |
 | `LIBSQL_SYNC_MODE`       | Sync mode                                  | `NORMAL`          | `FULL`         |
+| `LIBSQL_MAX_CONNECTIONS` | Maximum number of simultaneous connections | `10`              | `20`           |
 
-### Configuration File
+### Advanced Configuration
 
-For more advanced settings, mount a custom `config.json` file to `/etc/mylibsqladmin/config.json`:
+For more advanced settings, you can modify the libSQL server configuration directly:
 
-```json
-{
-  "libsql": {
-    "dataDir": "/var/lib/libsql",
-    "memoryOnly": false,
-    "maxConnections": 10,
-    "pageSize": 4096,
-    "cacheSize": 2000,
-    "busyTimeout": 5000,
-    "journalMode": "WAL",
-    "syncMode": "NORMAL",
-    "extensions": ["/opt/mylibsqladmin/extensions/math.so"]
-  },
-  "admin": {
-    "port": 80,
-    "logLevel": "info",
-    "enableAuth": false,
-    "sessionTimeout": 3600
-  }
-}
-```
+1. Create a custom configuration file:
 
-## Usage
+   ```json
+   {
+     "libsql": {
+       "dataDir": "/var/lib/libsql",
+       "memoryOnly": false,
+       "maxConnections": 10,
+       "pageSize": 4096,
+       "cacheSize": 2000,
+       "busyTimeout": 5000,
+       "journalMode": "WAL",
+       "syncMode": "NORMAL",
+       "extensions": []
+     },
+     "admin": {
+       "port": 80,
+       "logLevel": "info",
+       "enableAuth": true,
+       "sessionTimeout": 3600
+     }
+   }
+   ```
 
-### Creating a New Database
+2. Mount this configuration when using Docker:
 
-1. Navigate to the MyLibSQLAdmin web interface
-2. Click "New Connection" in the sidebar
-3. Select "Local Instance" as the connection type
-4. Enter a name for your database
-5. Click "Create New Database"
+   ```bash
+   docker run -d \
+     --name mylibsqladmin \
+     -p 8080:80 \
+     -v ./config.json:/etc/mylibsqladmin/config.json \
+     -v ./data:/var/lib/libsql \
+     darkterminal/mylibsqladmin:latest
+   ```
+
+## Usage Guide
+
+### Creating Databases
+
+#### Creating a New Database
+
+1. Navigate to the MylibSQLAdmin web interface (default: http://localhost:8000)
+2. Log in with your credentials (default: admin/admin)
+3. Click "Databases" in the sidebar
+4. Click "Create New Database"
+5. Enter a name for your database
+6. Optionally configure advanced settings (page size, journal mode, etc.)
+7. Click "Create Database"
+
+#### Database Creation Options
+
+When creating a new database, you can configure several options:
+
+- **Database Name**: Name of the database file (without extension)
+- **Page Size**: Size of database pages in bytes (default: 4096)
+- **Cache Size**: Amount of memory to use for caching (in KB)
+- **Journal Mode**: Transaction journaling method (WAL recommended)
+- **Sync Mode**: Disk synchronization level (NORMAL for balance of safety/performance)
+- **Encoding**: Character encoding for text (default: UTF-8)
 
 ### Connecting to Existing Databases
 
 #### Using the Web Interface
 
-1. Navigate to the MyLibSQLAdmin web interface
-2. Click "New Connection" in the sidebar
-3. Select "Local Instance" as the connection type
+1. Navigate to the MylibSQLAdmin web interface
+2. Click "Databases" in the sidebar
+3. Click "Connect to Database"
 4. Either:
+   - Select a database from the list of detected databases
    - Click "Browse" to select a database file (if enabled)
    - Enter the path to the database file (e.g., `/var/lib/libsql/mydb.sqlite`)
 5. Click "Connect"
@@ -233,85 +294,123 @@ When using Docker, place your database files in the mounted data directory:
 
 ```bash
 # Copy an existing database into the mounted volume
-cp my_existing_database.sqlite ./libsql-data/
+cp my_existing_database.sqlite ./data/
 
 # Then connect to it in the web interface using:
 # /var/lib/libsql/my_existing_database.sqlite
 ```
 
-### Database Operations
+### Common Database Operations
 
 Once connected to a database, you can:
 
-- **Execute SQL** - Use the SQL editor to run custom queries
-- **Browse Tables** - Navigate through tables, views, indexes, and triggers
-- **View Data** - Browse table contents with pagination, filtering, and sorting
-- **Import/Export** - Import from SQL files or export to SQL, CSV, or JSON
-- **Backup/Restore** - Create and restore database backups
+#### Execute SQL
 
-## Advanced Topics
+Use the built-in SQL editor to run queries:
 
-### Custom SQLite Extensions
+1. Click on "SQL Editor" in the sidebar
+2. Enter your SQL query in the editor
+3. Click "Execute" or press Ctrl+Enter
+4. View results in the results pane below
 
-To use SQLite extensions with your local instance:
+Example queries:
 
-1. Create a directory for extensions:
+```sql
+-- Create a new table
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY,
+  username TEXT NOT NULL UNIQUE,
+  email TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-   ```bash
-   mkdir -p ./extensions
-   ```
+-- Insert data
+INSERT INTO users (username, email)
+VALUES ('john_doe', 'john@example.com');
 
-2. Place your `.so` or `.dll` extension files in this directory
+-- Query data
+SELECT * FROM users;
+```
 
-3. Mount the extensions directory in your Docker container:
+#### Browse Tables
 
-   ```yaml
-   volumes:
-     - ./data:/var/lib/libsql
-     - ./extensions:/opt/mylibsqladmin/extensions
-   ```
+Navigate and explore your database structure:
 
-4. Update your configuration to load extensions:
+1. Click "Tables" in the sidebar
+2. Select a table to view its structure and data
+3. Use the "Structure" tab to view columns, indexes, and constraints
+4. Use the "Data" tab to browse table contents with pagination and filtering
 
-   ```json
-   {
-     "libsql": {
-       "extensions": [
-         "/opt/mylibsqladmin/extensions/math.so",
-         "/opt/mylibsqladmin/extensions/crypto.so"
-       ]
-     }
-   }
-   ```
+#### Import/Export Data
 
-5. Enable the extension in your database:
+Import or export data in various formats:
+
+1. Click "Import/Export" in the sidebar
+2. For importing:
+   - Select the file format (SQL, CSV, JSON)
+   - Upload your file or enter data directly
+   - Configure import options
+   - Click "Import"
+3. For exporting:
+   - Select the export format (SQL, CSV, JSON)
+   - Configure export options (tables, data, structure)
+   - Click "Export" to download the file
+
+## Performance Optimization
+
+### Optimizing for Different Workloads
+
+#### Read-Heavy Workloads
+
+For applications that perform many read operations:
+
+```
+LIBSQL_CACHE_SIZE=8000
+LIBSQL_JOURNAL_MODE=WAL
+LIBSQL_SYNC_MODE=NORMAL
+```
+
+#### Write-Heavy Workloads
+
+For applications with frequent write operations:
+
+```
+LIBSQL_CACHE_SIZE=4000
+LIBSQL_JOURNAL_MODE=WAL
+LIBSQL_SYNC_MODE=FULL
+LIBSQL_PAGE_SIZE=8192
+```
+
+#### Memory-Constrained Environments
+
+For systems with limited memory:
+
+```
+LIBSQL_CACHE_SIZE=1000
+LIBSQL_JOURNAL_MODE=DELETE
+LIBSQL_SYNC_MODE=NORMAL
+```
+
+### Database Optimization
+
+Regular maintenance tasks for optimal performance:
+
+1. Run VACUUM to reclaim space:
+
    ```sql
-   SELECT load_extension('/opt/mylibsqladmin/extensions/math');
+   VACUUM;
    ```
 
-### Virtual Tables
+2. Analyze tables for query optimization:
 
-Create and use virtual tables for advanced functionality:
+   ```sql
+   ANALYZE;
+   ```
 
-```sql
--- Full-text search example
-CREATE VIRTUAL TABLE search USING fts5(title, body);
-INSERT INTO search VALUES('SQLite Tutorial', 'Learn how to use SQLite database');
-SELECT * FROM search WHERE search MATCH 'sqlite';
-```
-
-### JSON Handling
-
-LibSQL provides enhanced JSON support:
-
-```sql
--- Create a table with JSON data
-CREATE TABLE users (id INTEGER PRIMARY KEY, data JSON);
-INSERT INTO users (data) VALUES ('{"name": "John", "age": 30, "email": "john@example.com"}');
-
--- Query JSON data
-SELECT json_extract(data, '$.name') AS name FROM users;
-```
+3. Create indexes for frequently queried columns:
+   ```sql
+   CREATE INDEX idx_username ON users(username);
+   ```
 
 ## Troubleshooting
 
@@ -328,13 +427,17 @@ Error: database is locked
 **Solution**:
 
 1. Increase busy timeout:
+
    ```
    LIBSQL_BUSY_TIMEOUT=10000
    ```
+
 2. Ensure WAL journal mode is enabled:
+
    ```
    LIBSQL_JOURNAL_MODE=WAL
    ```
+
 3. Check for other processes accessing the database file
 
 #### Permission Issues
@@ -348,13 +451,17 @@ Error: unable to open database file
 **Solution**:
 
 1. Check file permissions:
+
    ```bash
    chmod -R 755 ./data
    ```
+
 2. Verify Docker volume mount:
+
    ```bash
    docker exec -it mylibsqladmin ls -la /var/lib/libsql
    ```
+
 3. Check ownership of files (should match container user):
    ```bash
    chown -R 1000:1000 ./data
@@ -396,96 +503,102 @@ Error: out of memory
    sqlite3 database.db ".tables"
    ```
 
-## Optimization
+## Advanced Topics
 
-### Performance Tuning
+### Custom SQLite Extensions
 
-Optimize your local instance for specific workloads:
+libSQL supports loading custom SQLite extensions to extend functionality:
 
-#### Read-Heavy Workloads
+1. Create a directory for extensions:
 
-```
-LIBSQL_CACHE_SIZE=8000
-LIBSQL_JOURNAL_MODE=WAL
-LIBSQL_SYNC_MODE=NORMAL
-```
+   ```bash
+   mkdir -p ./extensions
+   ```
 
-#### Write-Heavy Workloads
+2. Place your `.so` or `.dll` extension files in this directory
 
-```
-LIBSQL_CACHE_SIZE=4000
-LIBSQL_JOURNAL_MODE=WAL
-LIBSQL_SYNC_MODE=FULL
-LIBSQL_PAGE_SIZE=8192
-```
+3. Mount the extensions directory in your Docker container:
 
-#### Memory-Constrained Environments
+   ```yaml
+   volumes:
+     - ./data:/var/lib/libsql
+     - ./extensions:/opt/mylibsqladmin/extensions
+   ```
 
-```
-LIBSQL_CACHE_SIZE=1000
-LIBSQL_JOURNAL_MODE=DELETE
-LIBSQL_SYNC_MODE=NORMAL
-```
+4. Load the extension in your database:
+   ```sql
+   SELECT load_extension('/opt/mylibsqladmin/extensions/math');
+   ```
 
-### Journal Modes
-
-Select the appropriate journal mode based on your needs:
-
-- **WAL**: Best for concurrent access (default)
-- **DELETE**: Most compatible but slower
-- **MEMORY**: Fastest but less safe
-- **OFF**: No journaling (not recommended for important data)
-
-### Sync Modes
-
-Choose a sync mode based on your durability requirements:
-
-- **FULL**: Highest safety, lowest performance
-- **NORMAL**: Good balance of safety and performance (default)
-- **OFF**: Highest performance, risk of data loss on system crash
-
-## Migration
-
-### SQLite to LibSQL Migration
-
-LibSQL is fully compatible with SQLite databases. To migrate:
-
-1. Simply connect to your existing SQLite database with MyLibSQLAdmin
-2. Verify functionality by running test queries
-3. Set optimal configuration parameters for your workload
-4. Begin using LibSQL-specific features as needed
-
-### Backup Strategy
+### Backup and Recovery
 
 Implement a robust backup strategy for your databases:
 
-1. **Regular file-based backups**:
+#### Automated Backups
+
+Set up a cron job for regular backups:
+
+```bash
+# Add to crontab (runs daily at 2am)
+0 2 * * * mkdir -p /backups/$(date +\%Y\%m\%d) && cp /var/lib/libsql/*.db /backups/$(date +\%Y\%m\%d)/
+```
+
+#### Backup Strategies
+
+1. **Full database file backup**:
 
    ```bash
    cp /var/lib/libsql/mydatabase.db /backups/mydatabase_$(date +%Y%m%d).db
    ```
 
-2. **SQL dumps for version control**:
+2. **SQL dump for version control**:
 
    ```bash
    sqlite3 mydatabase.db .dump > mydatabase_schema.sql
    ```
 
-3. **Use the built-in backup functionality** in MyLibSQLAdmin
-
-4. **Automated backups** with cron job:
+3. **Incremental WAL backup** (when using WAL mode):
    ```bash
-   # Add to crontab (runs daily at 2am)
-   0 2 * * * cp /var/lib/libsql/*.db /backups/$(date +\%Y\%m\%d)/
+   cp /var/lib/libsql/mydatabase.db-wal /backups/mydatabase_wal_$(date +%Y%m%d%H%M%S).wal
    ```
+
+#### Recovery Process
+
+To restore from a backup:
+
+1. Stop the MylibSQLAdmin services:
+
+   ```bash
+   make compose-dev/down
+   ```
+
+2. Replace the database file:
+
+   ```bash
+   cp /backups/mydatabase_20240101.db /var/lib/libsql/mydatabase.db
+   ```
+
+3. Restart the services:
+   ```bash
+   make compose-dev/up
+   ```
+
+### Migration from SQLite
+
+libSQL is fully compatible with SQLite databases. To migrate:
+
+1. Simply connect to your existing SQLite database with MylibSQLAdmin
+2. Verify functionality by running test queries
+3. Set optimal configuration parameters for your workload
+4. Begin using libSQL-specific features as needed
 
 ## Resources
 
-- [LibSQL Documentation](https://libsql.org/docs)
+- [MylibSQLAdmin GitHub Repository](https://github.com/darkterminal/mylibsqladmin)
+- [libSQL Documentation](https://github.com/tursodatabase/libsql)
 - [SQLite Documentation](https://sqlite.org/docs.html)
-- [MyLibSQLAdmin GitHub Repository](https://github.com/darkterminal/mylibsqladmin)
-- [DeepWiki Documentation](https://deepwiki.com/darkterminal/mylibsqladmin)
 - [Discord Community](https://discord.gg/wWDzy5Nt44)
+- [DeepWiki Documentation](https://deepwiki.com/darkterminal/mylibsqladmin)
 
 ## Next Steps
 

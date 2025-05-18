@@ -1,25 +1,37 @@
 # LibSQL Remote Instance (LRI) Guide
 
-This guide provides comprehensive instructions for setting up, configuring, and using MyLibSQLAdmin with remote LibSQL instances. The Remote Instance configuration enables you to connect to external LibSQL servers, offering enhanced scalability and collaboration features.
+This guide provides comprehensive instructions for setting up, configuring, and using MylibSQLAdmin with remote LibSQL instances. The Remote Instance configuration enables you to connect to external LibSQL servers, offering enhanced scalability and collaboration features.
 
 ## Contents
 
 - [Overview](#overview)
-- [Features](#features)
+- [Key Benefits](#key-benefits)
+- [Architecture](#architecture)
 - [Requirements](#requirements)
 - [Installation](#installation)
+  - [Docker Installation](#docker-installation)
+  - [Docker Compose Installation](#docker-compose-installation)
+  - [Manual Installation](#manual-installation)
 - [Configuration](#configuration)
+  - [Environment Variables](#environment-variables)
+  - [Advanced Configuration](#advanced-configuration)
 - [Connection Management](#connection-management)
-- [Security](#security)
-- [Advanced Usage](#advanced-usage)
+  - [Establishing Connections](#establishing-connections)
+  - [Authentication Methods](#authentication-methods)
+  - [Connection Profiles](#connection-profiles)
+  - [Multi-User Access](#multi-user-access)
+- [Security Best Practices](#security-best-practices)
+- [Advanced Features](#advanced-features)
+  - [Replication](#replication)
+  - [Monitoring and Statistics](#monitoring-and-statistics)
+  - [Batch Operations](#batch-operations)
 - [Troubleshooting](#troubleshooting)
 - [Performance Optimization](#performance-optimization)
-- [Migration](#migration)
 - [Resources](#resources)
 
 ## Overview
 
-A LibSQL Remote Instance (LRI) configuration allows MyLibSQLAdmin to connect to externally hosted LibSQL servers. This approach separates the database server from the administration interface, enabling team collaboration, higher scalability, and access to advanced server-side features of LibSQL.
+A LibSQL Remote Instance (LRI) configuration allows MylibSQLAdmin to connect to externally hosted LibSQL servers. This approach separates the database server from the administration interface, enabling team collaboration, higher scalability, and access to advanced server-side features of LibSQL.
 
 LRI is ideal for:
 
@@ -28,39 +40,51 @@ LRI is ideal for:
 - Cloud-based applications
 - Distributed systems
 - High-availability requirements
+- Scenarios requiring database replication
 
-## Features
+## Key Benefits
 
-### Core Capabilities
+Using MylibSQLAdmin with Remote LibSQL Instances provides several advantages:
 
-- **Remote Server Connectivity** - Connect to any LibSQL server over HTTP/HTTPS
-- **Multi-User Support** - Multiple administrators can work simultaneously
-- **Token-Based Authentication** - Secure access using authentication tokens
-- **Replication Management** - Configure and monitor database replication
-- **Server Monitoring** - Real-time performance and health metrics
+- **Multi-User Collaboration** - Multiple team members can work with the same database simultaneously
+- **Scalability** - Connect to servers with dedicated resources for better performance
+- **Security** - Enforce access control and authentication at the server level
+- **Replication Support** - Manage database replicas for high-availability scenarios
+- **Network Isolation** - Separate database and application layers for enhanced security
+- **Centralized Administration** - Manage multiple databases across different servers from a single interface
+- **Advanced Monitoring** - Gain insights into server performance, connections, and resource usage
 
-### Technical Advantages
+## Architecture
 
-- **Scalability** - Connect to servers with higher resource allocations
-- **High Availability** - Work with clustered LibSQL deployments
-- **Network Isolation** - Separate database and application layers
-- **Cloud Compatibility** - Work with hosted LibSQL services
-- **Advanced Security** - TLS encryption and token-based authentication
+The LRI architecture consists of several components working together:
+
+1. **MylibSQLAdmin Web Interface**: The user-facing frontend that provides management capabilities
+2. **libSQL Server**: The remote database server running in server mode
+3. **HTTP/HTTPS API Layer**: Communication protocol between MylibSQLAdmin and libSQL server
+4. **Authentication System**: Token-based or certificate-based security
+
+The typical data flow is:
+
+```
+Client Browser → MylibSQLAdmin Web Interface → HTTP/HTTPS → libSQL Server → Database Files
+```
 
 ## Requirements
 
-### Client (MyLibSQLAdmin)
+### Client (MylibSQLAdmin)
 
 - **Hardware**:
 
   - CPU: Any modern x86/64 or ARM processor
   - RAM: 2GB minimum (4GB recommended)
   - Disk: 500MB+ available space
-  - Network: Stable internet connection
+  - Network: Stable internet connection with access to the libSQL server
 
 - **Software**:
   - Docker Engine 20.10.0+ (for containerized deployment)
   - Modern web browser (Chrome, Firefox, Safari, Edge)
+  - PHP 8.1+ (for manual installation)
+  - Composer and Node.js (for manual installation)
 
 ### Server (LibSQL)
 
@@ -77,63 +101,79 @@ LRI is ideal for:
 
 ## Installation
 
-Choose one of the following installation methods for MyLibSQLAdmin with remote LibSQL support:
+Choose one of the following installation methods for MylibSQLAdmin with remote LibSQL support:
 
-### Method 1: Docker (Recommended)
+### Docker Installation
 
-The simplest way to get started with LRI is using our pre-built Docker image:
+The simplest way to get started with LRI is using our installation script:
 
 ```bash
-# Pull the official remote instance image
-docker pull darkterminal/mylibsqladmin:remote
+# Clone the repository
+git clone https://github.com/darkterminal/mylibsqladmin.git
 
-# Start the container
-docker run -d \
-  --name mylibsqladmin-remote \
-  -p 8080:80 \
-  darkterminal/mylibsqladmin:remote
+# Navigate to the project directory
+cd mylibsqladmin
+
+# Run the installation script
+./install.sh
 ```
 
-Access the web interface at: `http://localhost:8080`
+During the installation, select the following options:
 
-### Method 2: Docker Compose
+- When prompted for application environment, choose your preferred environment
+- When prompted for "Use local LibSQL instance?", select **No**
+- Enter your remote libSQL server details when prompted
 
-For a more customizable setup:
+The script will configure and start MylibSQLAdmin with remote libSQL instance support.
 
-1. Create a project directory and navigate into it:
+### Docker Compose Installation
+
+For a more customizable setup with Docker Compose:
+
+1. Clone the repository:
 
    ```bash
-   mkdir mylibsqladmin && cd mylibsqladmin
+   git clone https://github.com/darkterminal/mylibsqladmin.git
+   cd mylibsqladmin
    ```
 
-2. Create a `docker-compose.yml` file:
+2. Configure the environment:
 
-   ```yaml
-   version: "3"
-
-   services:
-     mylibsqladmin:
-       image: darkterminal/mylibsqladmin:remote
-       ports:
-         - "8080:80"
-       volumes:
-         - ./config:/etc/mylibsqladmin
-       environment:
-         - MYLIBSQL_ADMIN_PORT=80
-         - LIBSQL_REMOTE_INSTANCE=true
-       restart: unless-stopped
-   ```
-
-3. Start the service:
    ```bash
-   docker-compose up -d
+   cp .env.example .env
+   cp admin/.env.example admin/.env
    ```
 
-Access the web interface at: `http://localhost:8080`
+3. Edit the `.env` file to enable remote instance:
 
-### Method 3: Manual Setup from Source
+   ```
+   LIBSQL_LOCAL_INSTANCE=false
+   LIBSQL_HOST=<your-libsql-server-host>
+   LIBSQL_PORT=<your-libsql-server-port>
+   LIBSQL_API_HOST=<your-libsql-server-admin-api-host>
+   LIBSQL_API_PORT=<your-libsql-server-admin-api-port>
+   ```
 
-For development or custom installations:
+4. Optionally, configure authentication:
+
+   ```
+   LIBSQL_API_USERNAME=<your-libsql-server-admin-api-username>
+   LIBSQL_API_PASSWORD=<your-libsql-server-admin-api-password>
+   ```
+
+5. Start the services:
+
+   ```bash
+   # For development
+   make compose-dev/up
+
+   # Or for production
+   make compose-prod/up
+   ```
+
+### Manual Installation
+
+For environments without Docker or if you need full control over the installation:
 
 1. Clone the repository:
 
@@ -152,15 +192,33 @@ For development or custom installations:
 3. Edit the `.env` file to enable remote instance:
 
    ```
-   LIBSQL_REMOTE_INSTANCE=true
+   LIBSQL_LOCAL_INSTANCE=false
+   LIBSQL_HOST=<your-libsql-server-host>
+   LIBSQL_PORT=<your-libsql-server-port>
+   LIBSQL_API_HOST=<your-libsql-server-admin-api-host>
+   LIBSQL_API_PORT=<your-libsql-server-admin-api-port>
    ```
 
-4. Start the application:
+4. Install dependencies:
+
    ```bash
-   make compose-dev/up
+   cd admin
+   composer install
+   npm install
+   php artisan key:generate
+   cd ..
    ```
 
-Access the web interface at: `http://localhost:8000`
+5. Start the MylibSQLAdmin application:
+
+   ```bash
+   cd admin
+   php artisan serve
+
+   # In another terminal window
+   cd admin
+   npm run dev
+   ```
 
 ## Configuration
 
@@ -168,20 +226,24 @@ Access the web interface at: `http://localhost:8000`
 
 Fine-tune your LRI with these environment variables:
 
-| Variable                    | Description                                | Default | Example |
-| --------------------------- | ------------------------------------------ | ------- | ------- |
-| `LIBSQL_REMOTE_INSTANCE`    | Enable remote instance mode                | `true`  | `true`  |
-| `LIBSQL_CONNECTION_TIMEOUT` | Connection timeout in seconds              | `30`    | `60`    |
-| `LIBSQL_REQUEST_TIMEOUT`    | Request timeout in seconds                 | `60`    | `120`   |
-| `LIBSQL_MAX_CONNECTIONS`    | Maximum number of simultaneous connections | `10`    | `20`    |
-| `LIBSQL_TLS_VERIFY`         | Verify TLS certificates                    | `true`  | `false` |
-| `MYLIBSQL_ADMIN_PORT`       | Web interface port                         | `80`    | `8000`  |
-| `LIBSQL_AUTH_REQUIRED`      | Require authentication for connections     | `true`  | `true`  |
-| `LIBSQL_CACHE_TTL`          | Schema cache time-to-live (seconds)        | `300`   | `600`   |
+| Variable                    | Description                                | Default | Example                   |
+| --------------------------- | ------------------------------------------ | ------- | ------------------------- |
+| `LIBSQL_LOCAL_INSTANCE`     | Disable for remote instance                | `true`  | `false`                   |
+| `LIBSQL_HOST`               | Hostname of the libSQL server              | -       | `libsql.example.com`      |
+| `LIBSQL_PORT`               | Port for libSQL HTTP connections           | `8080`  | `8080`                    |
+| `LIBSQL_API_HOST`           | Hostname for libSQL admin API              | -       | `api.libsql.example.com`  |
+| `LIBSQL_API_PORT`           | Port for libSQL admin API                  | `8081`  | `8081`                    |
+| `LIBSQL_API_USERNAME`       | Username for API authentication (optional) | -       | `admin`                   |
+| `LIBSQL_API_PASSWORD`       | Password for API authentication (optional) | -       | `secure_password`         |
+| `LIBSQL_CONNECTION_TIMEOUT` | Connection timeout in seconds              | `30`    | `60`                      |
+| `LIBSQL_REQUEST_TIMEOUT`    | Request timeout in seconds                 | `60`    | `120`                     |
+| `LIBSQL_MAX_CONNECTIONS`    | Maximum number of simultaneous connections | `10`    | `20`                      |
+| `LIBSQL_TLS_VERIFY`         | Verify TLS certificates                    | `true`  | `false` (not recommended) |
+| `LIBSQL_CACHE_TTL`          | Schema cache time-to-live (seconds)        | `300`   | `600`                     |
 
-### Configuration File
+### Advanced Configuration
 
-For more advanced settings, mount a custom `config.json` file to `/etc/mylibsqladmin/config.json`:
+For more advanced settings, you can create a custom configuration file:
 
 ```json
 {
@@ -197,7 +259,14 @@ For more advanced settings, mount a custom `config.json` file to `/etc/mylibsqla
         {
           "name": "Production DB",
           "url": "https://prod.example.com:8080",
-          "tokenField": "x-libsql-token"
+          "tokenField": "x-libsql-token",
+          "token": "your-secret-token"
+        },
+        {
+          "name": "Testing DB",
+          "url": "https://test.example.com:8080",
+          "tokenField": "x-libsql-token",
+          "token": "your-testing-token"
         }
       ]
     }
@@ -211,39 +280,46 @@ For more advanced settings, mount a custom `config.json` file to `/etc/mylibsqla
 }
 ```
 
+When using Docker, mount this configuration:
+
+```bash
+docker run -d \
+  --name mylibsqladmin-remote \
+  -p 8080:80 \
+  -v ./config.json:/etc/mylibsqladmin/config.json \
+  darkterminal/mylibsqladmin:remote
+```
+
 ## Connection Management
 
-### Creating a New Connection
+### Establishing Connections
 
-1. Navigate to the MyLibSQLAdmin web interface
-2. Click "New Connection" in the sidebar
-3. Select "Remote Instance" as the connection type
-4. Enter the required connection details:
+#### Creating a New Connection
+
+1. Navigate to the MylibSQLAdmin web interface (default: http://localhost:8000)
+2. Log in with your credentials (default: admin/admin)
+3. Click "Connections" in the sidebar
+4. Click "New Connection"
+5. Select "Remote Instance" as the connection type
+6. Enter the required connection details:
    - **Connection Name**: A descriptive name for this connection
    - **Server URL**: The URL of your LibSQL server (e.g., `https://example.com:8080`)
    - **Authentication Token**: Your LibSQL server access token (if required)
-5. Click "Connect"
+7. Click "Connect"
 
-### Saving Connection Profiles
+#### Connection URL Formats
 
-Save frequently used connections for quick access:
+MylibSQLAdmin supports several URL formats for connecting to remote LibSQL servers:
 
-1. Configure a connection as described above
-2. Check "Save connection profile" before connecting
-3. Optionally set a connection password for added security
-4. Click "Connect and Save"
+- **HTTP/HTTPS**: `http://hostname:port` or `https://hostname:port`
+- **LibSQL Protocol**: `libsql://hostname:port`
 
-Your connection profile will be available in the "Saved Connections" list.
+Examples:
 
-### Managing Multiple Connections
-
-MyLibSQLAdmin allows you to work with multiple remote connections simultaneously:
-
-1. Open multiple connections by repeating the connection process
-2. Switch between active connections using the connection dropdown in the sidebar
-3. View connection status, including ping time and server version
-
-## Security
+```
+https://libsql.example.com:8080
+libsql://db.mycompany.com:8080
+```
 
 ### Authentication Methods
 
@@ -254,10 +330,10 @@ LibSQL Remote Instances support several authentication methods:
 The most common method for securing remote connections:
 
 1. Generate an authentication token on your LibSQL server
-2. In MyLibSQLAdmin, enter the token in the "Authentication Token" field
+2. In MylibSQLAdmin, enter the token in the "Authentication Token" field
 3. Optionally specify a custom header name if your server uses a non-standard header
 
-Example connection with custom token header:
+Example connection configuration with custom token header:
 
 ```json
 {
@@ -289,6 +365,57 @@ For enhanced security, use client certificates:
    }
    ```
 
+### Connection Profiles
+
+Save frequently used connections for quick access:
+
+#### Saving a Connection Profile
+
+1. Configure a connection as described above
+2. Check "Save connection profile" before connecting
+3. Optionally set a connection password for added security
+4. Click "Connect and Save"
+
+Your connection profile will be saved and available in the "Saved Connections" list.
+
+#### Managing Connection Profiles
+
+To manage your saved connections:
+
+1. Click "Connections" in the sidebar
+2. Click "Manage Profiles"
+3. From here you can:
+   - Edit existing profiles
+   - Delete profiles
+   - Export profiles (for backup or sharing)
+   - Import profiles
+
+### Multi-User Access
+
+MylibSQLAdmin allows multiple users to work with remote connections:
+
+#### Sharing Connections
+
+To share a connection with other users:
+
+1. Create and save a connection profile as described above
+2. Click "Connections" → "Manage Profiles"
+3. Select the profile you want to share
+4. Click "Share"
+5. Choose the users or groups to share with
+6. Set permission levels (Read-Only, Edit, Full Access)
+7. Click "Share Connection"
+
+#### Working with Multiple Connections
+
+Switch between active connections:
+
+1. Open multiple connections by repeating the connection process
+2. Use the connection dropdown in the sidebar to switch between them
+3. View connection status, including ping time and server version
+
+## Security Best Practices
+
 ### Secure Communication
 
 Always use HTTPS for remote LibSQL connections:
@@ -297,7 +424,7 @@ Always use HTTPS for remote LibSQL connections:
 2. Connect using the `https://` protocol in the server URL
 3. Set `LIBSQL_TLS_VERIFY=true` to validate certificates
 
-For testing environments, you can disable certificate verification:
+For testing environments only, you can disable certificate verification:
 
 ```
 LIBSQL_TLS_VERIFY=false
@@ -305,14 +432,35 @@ LIBSQL_TLS_VERIFY=false
 
 **Warning**: Disabling TLS verification is not recommended for production use.
 
-## Advanced Usage
+### Token Security
 
-### Working with Replicated Databases
+Best practices for token-based authentication:
+
+1. **Use Strong Tokens**: Generate long, random tokens (at least 32 characters)
+2. **Rotate Regularly**: Change tokens periodically (every 30-90 days)
+3. **Restrict Permissions**: Assign the minimum necessary permissions to each token
+4. **Avoid Sharing**: Each user or service should have its own token
+5. **Secure Storage**: Store tokens securely, never in plain text or public repositories
+
+### Network Security
+
+Additional measures to secure your remote connections:
+
+1. **IP Restrictions**: Limit server access to specific IP addresses or ranges
+2. **Firewall Rules**: Configure firewall to allow only necessary connections
+3. **VPN/Private Network**: Consider running libSQL server on a private network
+4. **Rate Limiting**: Implement rate limiting to prevent brute force attacks
+
+## Advanced Features
+
+### Replication
 
 LibSQL supports primary-replica replication:
 
-1. Connect to the primary database as described above
-2. Navigate to "Database Settings" > "Replication"
+#### Configuring Replication
+
+1. Connect to the primary database server
+2. Navigate to "Database Settings" → "Replication"
 3. Configure replica settings:
    - Add replica URLs and authentication
    - Set replication mode (sync or async)
@@ -339,6 +487,18 @@ Example replication configuration:
 }
 ```
 
+#### Monitoring Replication
+
+To monitor replication status:
+
+1. Connect to your primary database
+2. Navigate to "Monitoring" → "Replication"
+3. View replication metrics:
+   - Replica lag
+   - Sync status
+   - Last successful replication timestamp
+   - Error logs (if any)
+
 ### Monitoring and Statistics
 
 Monitor your remote LibSQL server performance:
@@ -349,6 +509,8 @@ Monitor your remote LibSQL server performance:
    - Connection count
    - Query performance
    - Server load
+   - Memory usage
+   - Disk I/O
    - Replication lag (if applicable)
 
 ### Batch Operations
@@ -362,6 +524,7 @@ Perform operations on multiple databases:
    - Execute SQL across multiple databases
    - Compare schema differences
    - Copy data between databases
+   - Schedule routine maintenance tasks
 
 ## Troubleshooting
 
@@ -438,7 +601,7 @@ Error: Unable to verify server certificate
    curl -H "x-libsql-token: your-token" https://your-libsql-server.com:8080/health
    ```
 
-3. Check MyLibSQLAdmin logs:
+3. Check MylibSQLAdmin logs:
 
    ```bash
    docker logs mylibsqladmin-remote
@@ -512,40 +675,13 @@ Reduce network overhead with effective caching:
 
 3. Implement application-level caching for frequently accessed data
 
-## Migration
-
-### SQLite to Remote LibSQL Migration
-
-Migrate from SQLite to a remote LibSQL server:
-
-1. Export your SQLite database:
-
-   ```bash
-   sqlite3 local.db .dump > database_dump.sql
-   ```
-
-2. Connect to your remote LibSQL server in MyLibSQLAdmin
-3. Import the SQL dump file via the "Import" function
-4. Verify data integrity after migration
-5. Update connection strings in your applications
-
-### Server Migration
-
-Move data between different LibSQL servers:
-
-1. Connect to your source server in MyLibSQLAdmin
-2. Export the database via "Export" > "SQL Format"
-3. Connect to your target server
-4. Import the exported SQL file
-5. Verify all objects and data were transferred correctly
-
 ## Resources
 
-- [LibSQL Documentation](https://libsql.org/docs)
-- [LibSQL Server Setup Guide](https://libsql.org/docs/server-setup)
-- [MyLibSQLAdmin GitHub Repository](https://github.com/darkterminal/mylibsqladmin)
-- [DeepWiki Documentation](https://deepwiki.com/darkterminal/mylibsqladmin)
+- [MylibSQLAdmin GitHub Repository](https://github.com/darkterminal/mylibsqladmin)
+- [libSQL Documentation](https://github.com/tursodatabase/libsql)
+- [libSQL Remote Protocol Reference](https://github.com/tursodatabase/libsql/tree/main/docs/remote-protocol)
 - [Discord Community](https://discord.gg/wWDzy5Nt44)
+- [DeepWiki Documentation](https://deepwiki.com/darkterminal/mylibsqladmin)
 
 ## Next Steps
 
