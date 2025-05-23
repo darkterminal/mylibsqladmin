@@ -1,7 +1,11 @@
 # MylibSQLAdmin
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/darkterminal/darkterminal/master/projects/mylibsqladmin.png" alt="MylibSQLAdmin Logo" width="200">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/darkterminal/darkterminal/master/projects/dark-mode.png">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/darkterminal/darkterminal/master/projects/light-mode.png">
+    <img alt="Shows a black logo in light color mode and a white one in dark color mode." src="https://raw.githubusercontent.com/darkterminal/darkterminal/master/projects/dark-mode.png">
+  </picture>
 </p>
 
 <p align="center">
