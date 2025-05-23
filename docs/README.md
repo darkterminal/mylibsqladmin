@@ -1,215 +1,222 @@
-# MyLibSQLAdmin
+# MylibSQLAdmin
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/darkterminal/darkterminal/master/projects/dark-mode.png">
-    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/darkterminal/darkterminal/master/projects/light-mode.png">
-    <img alt="MylibSQLAdmin logo" src="https://raw.githubusercontent.com/darkterminal/darkterminal/master/projects/dark-mode.png">
-  </picture>
+  <img src="https://raw.githubusercontent.com/darkterminal/darkterminal/master/projects/mylibsqladmin.png" alt="MylibSQLAdmin Logo" width="200">
 </p>
-
-<p align="center">A modern web interface for LibSQL and SQLite databases</p>
 
 <p align="center">
-  <a href="https://deepwiki.com/darkterminal/mylibsqladmin" target="_blank">
-    <img alt="Documentation" src="https://img.shields.io/badge/DeepWiki-Docs?logo=wikibooks&label=Docs">
-  </a>
-  <a href="https://github.com/sponsors/darkterminal" target="_blank">
-    <img alt="GitHub Sponsors" src="https://img.shields.io/github/sponsors/darkterminal?logo=githubsponsors">
-  </a>
-  <a href="https://discord.gg/wWDzy5Nt44" target="_blank">
-    <img alt="Discord" src="https://img.shields.io/discord/1361788238561280101?logo=discord">
-  </a>
-  <img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/w/darkterminal/mylibsqladmin">
-  <img alt="GitHub License" src="https://img.shields.io/github/license/darkterminal/mylibsqladmin">
-  <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/darkterminal/mylibsqladmin">
+  <strong>A modern web interface for managing LibSQL databases</strong>
 </p>
 
-> [!NOTE]  
-> This project is under active development.
+<p align="center">
+  <a href="https://deepwiki.com/darkterminal/mylibsqladmin">Documentation</a> •
+  <a href="https://discord.gg/wWDzy5Nt44">Discord</a> •
+  <a href="https://github.com/sponsors/darkterminal">Sponsor</a>
+</p>
+
+<p align="center">
+  <img alt="License" src="https://img.shields.io/github/license/darkterminal/mylibsqladmin">
+  <img alt="GitHub stars" src="https://img.shields.io/github/stars/darkterminal/mylibsqladmin">
+  <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/darkterminal/mylibsqladmin">
+</p>
 
 ## What is MylibSQLAdmin?
 
-MylibSQLAdmin is an open-source web-based administration interface specifically designed for [libSQL](https://github.com/tursodatabase/libsql) databases. libSQL is a powerful fork of SQLite designed for modern applications, offering advanced features such as serverless and server-based modes, fine-grained access control, and native branching capabilities.
+MylibSQLAdmin is a web-based database management tool designed specifically for [LibSQL](https://github.com/tursodatabase/libsql) databases. It provides an intuitive interface for managing both local SQLite-compatible databases and remote LibSQL servers, making database administration accessible through your web browser.
 
-By harnessing the full potential of libSQL-server functionalities, MylibSQLAdmin provides an intuitive and comprehensive platform for database administration, making it easier than ever to manage your database systems through an accessible web interface.
+## ✨ Features
 
-## ✨ Key Features
-
-### Database Management
-
-- **Intuitive Database Interface** - Create, browse, and manage databases with ease
-- **Performance Analytics** - View real-time database performance statistics with easy-to-understand metrics
-- **Powerful SQL Editor** - Execute queries with syntax highlighting, formatting, and result visualization
-
-### User & Access Management
-
-- **Token Management** - Secure and control access to your system using token-based authentication
-- **Group Management** - Organize users into groups for better structure and permission handling
-- **Team Management** - Collaborate efficiently by managing teams and their access levels
-- **User Management** - Easily handle user accounts, roles, and activity logs
-- **Member Invitation Management** - Invite new members and track their onboarding status
-
-### Connectivity Options
-
-MylibSQLAdmin offers two primary deployment modes:
-
-- **Local Instance (LLI)** - Connect to SQLite/libSQL database files on your system
-- **Remote Instance (LRI)** - Connect to remote libSQL servers for collaborative database management
+- **🗄️ Database Management** - Create, browse, and manage databases with an intuitive interface
+- **📝 SQL Editor** - Execute queries with syntax highlighting and auto-completion
+- **👥 User Management** - Control access with role-based permissions
+- **🔌 Flexible Connectivity** - Support for both local and remote LibSQL instances
+- **📊 Data Visualization** - View and export query results in multiple formats
+- **🔐 Secure by Default** - Built-in authentication and authorization
+- **🐳 Docker Ready** - Easy deployment with Docker and Docker Compose
 
 ## 🚀 Quick Start
 
-### Option 1: Using the Installation Script (Recommended)
+### Prerequisites
 
-The easiest way to get started is by using our installation script, which handles all dependencies and configuration:
+- Docker and Docker Compose installed
+- Git (for cloning the repository)
+
+### Installation
+
+The easiest way to get started is using the installation script:
 
 ```bash
 # Clone the repository
 git clone https://github.com/darkterminal/mylibsqladmin.git
-
-# Navigate to the project directory
 cd mylibsqladmin
 
 # Run the installation script
 ./install.sh
 ```
 
-The script will guide you through the configuration process and start the necessary services. Once complete, access the web interface at: `http://localhost:8000`
+The script will guide you through:
 
-### Option 2: Manual Setup
+1. Choosing between development or production environment
+2. Selecting local or remote LibSQL instance
+3. Configuring connection details (for remote instances)
 
-If you prefer a manual setup or need more customization:
+Once complete, access MylibSQLAdmin at:
 
-1. Clone the repository:
+- Development: `http://localhost:8001`
+- Production: `http://localhost:8000`
 
-   ```bash
-   git clone https://github.com/darkterminal/mylibsqladmin.git
-   cd mylibsqladmin
-   ```
+### Default Credentials
 
-2. Configure environment variables:
+- **Email**: `admin@mylibsqladmin.test`
+- **Password**: `mylibsqladmin`
 
-   ```bash
-   cp .env.example .env
-   cp admin/.env.example admin/.env
-   ```
+> **Important**: Change the default credentials after your first login!
 
-3. Edit the `.env` file to match your preferences:
+## 📋 Configuration
 
-   For local instance:
-   ```
-   LIBSQL_LOCAL_INSTANCE=true
-   ```
+### Local Instance Mode
 
-   For remote instance:
-   ```
-   LIBSQL_LOCAL_INSTANCE=false
-   LIBSQL_HOST=<your-libsql-server-host>
-   LIBSQL_PORT=<your-libsql-server-port>
-   LIBSQL_API_HOST=<your-libsql-server-admin-api-host>
-   LIBSQL_API_PORT=<your-libsql-server-admin-api-port>
-   ```
+For managing SQLite databases on your local system:
 
-4. Install dependencies and generate application key:
+```env
+LIBSQL_LOCAL_INSTANCE=true
+```
 
-   ```bash
-   cd admin
-   php artisan key:generate
-   composer install
-   npm install
-   cd ..
-   ```
+This mode:
 
-5. Start the application:
-   ```bash
-   make compose-dev/up   # For development
-   # or
-   make compose-prod/up  # For production
-   ```
+- Starts an embedded LibSQL server
+- Stores databases in Docker volumes
+- No external dependencies required
 
-Access the web interface at: `http://localhost:8000`
+[📖 Full Local Instance Guide](LLI.md)
 
-## 📋 System Requirements
+### Remote Instance Mode
 
-### Server Requirements
+For connecting to external LibSQL servers (Turso, self-hosted):
 
-- **PHP 8.1+**
-- **Composer**
-- **Node.js 16+** and npm
-- **Docker** and Docker Compose (for containerized deployment)
-- **Git**
+```env
+LIBSQL_LOCAL_INSTANCE=false
+LIBSQL_REMOTE_URL=libsql://your-database.turso.io
+LIBSQL_AUTH_TOKEN=your-auth-token
+```
 
-### Hardware Requirements
+This mode:
 
-- **CPU**: Any modern x86/64 or ARM processor
-- **RAM**: 2GB minimum (4GB recommended)
-- **Disk**: 500MB+ available space (plus storage for your databases)
+- Connects to existing LibSQL servers
+- Supports team collaboration
+- Ideal for production use
 
-### Client Requirements
+[📖 Full Remote Instance Guide](LRI.md)
 
-- Modern web browser (Chrome, Firefox, Safari, Edge)
-- JavaScript enabled
+## 🐳 Docker Deployment
+
+### Development Environment
+
+```bash
+# Start services
+docker compose -f docker-compose.dev.yml up -d
+
+# View logs
+docker compose -f docker-compose.dev.yml logs -f
+
+# Stop services
+docker compose -f docker-compose.dev.yml down
+```
+
+### Production Environment
+
+```bash
+# Start services
+docker compose -f docker-compose.prod.yml up -d
+
+# With custom configuration
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+```
+
+### Using Make Commands
+
+The project includes a Makefile for common operations:
+
+```bash
+make compose-dev/up     # Start development environment
+make compose-prod/up    # Start production environment
+make compose-dev/down   # Stop development environment
+make compose-prod/down  # Stop production environment
+```
+
+## 🏗️ Architecture
+
+MylibSQLAdmin consists of:
+
+- **Web Interface**: Modern, responsive UI built with Laravel and Alpine.js
+- **API Layer**: RESTful API for database operations
+- **LibSQL Integration**: Native support for LibSQL features
+- **Authentication**: Built-in user management and access control
 
 ## 📚 Documentation
 
-For detailed information on installation, configuration, and usage, please refer to our documentation:
-
-- [Getting Started Guide](https://deepwiki.com/darkterminal/mylibsqladmin)
-- [Local LibSQL Instance Guide (LLI)](LLI.md)
-- [Remote LibSQL Instance Guide (LRI)](LRI.md)
-- [Developer Documentation](https://deepwiki.com/darkterminal/mylibsqladmin/development)
-
-## 🔄 Deployment Options
-
-MylibSQLAdmin supports multiple deployment options:
-
-### Docker Compose (Development)
-
-```bash
-make compose-dev/up
-```
-
-### Docker Compose (Production)
-
-```bash
-make compose-prod/up
-```
-
-### Manual Deployment
-
-For environments without Docker, please refer to our [Manual Deployment Guide](https://deepwiki.com/darkterminal/mylibsqladmin/deployment/manual).
+- [Getting Started](https://deepwiki.com/darkterminal/mylibsqladmin)
+- [Local Instance Guide](LLI.md)
+- [Remote Instance Guide](LRI.md)
+- [API Documentation](https://deepwiki.com/darkterminal/mylibsqladmin/api)
+- [Troubleshooting](https://deepwiki.com/darkterminal/mylibsqladmin/troubleshooting)
 
 ## 🤝 Contributing
 
-We welcome contributions of all kinds! Here's how you can help:
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-1. Fork the repository
-2. Create your feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add some amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+### Development Setup
 
-Please read our [Contributing Guidelines](CONTRIBUTING.md) for more details.
+```bash
+# Clone the repository
+git clone https://github.com/darkterminal/mylibsqladmin.git
+cd mylibsqladmin
+
+# Install dependencies
+cd admin
+composer install
+npm install
+
+# Run tests
+php artisan test
+```
 
 ## 🐛 Reporting Issues
 
-Found a bug or have a feature request? Please open an issue on the [GitHub repository](https://github.com/darkterminal/mylibsqladmin/issues).
+Found a bug? Please [open an issue](https://github.com/darkterminal/mylibsqladmin/issues) with:
+
+- Clear description of the problem
+- Steps to reproduce
+- Expected vs actual behavior
+- Environment details (OS, Docker version, etc.)
 
 ## 💬 Community
 
-Join our [Discord community](https://discord.gg/wWDzy5Nt44) for discussions, support, and updates.
+- [Discord Server](https://discord.gg/wWDzy5Nt44) - Get help and discuss features
+- [GitHub Discussions](https://github.com/darkterminal/mylibsqladmin/discussions) - Share ideas and feedback
 
-## ❤️ Support and Sponsorship
+## ❤️ Support the Project
 
-If you find MylibSQLAdmin useful, please consider supporting the project:
+If you find MylibSQLAdmin useful, consider supporting its development:
 
-- [GitHub Sponsors](https://github.com/sponsors/darkterminal) (Global)
-- [Saweria](https://saweria.co/darkterminal) (Indonesia)
+- ⭐ Star the repository
+- 🐛 Report bugs and request features
+- 🤝 Contribute code or documentation
+- 💰 [Sponsor on GitHub](https://github.com/sponsors/darkterminal)
+- ☕ [Buy me a coffee](https://saweria.co/darkterminal) (Indonesia)
 
-## 📊 Project Stats
+## 📄 License
 
-[![Star History Chart](https://api.star-history.com/svg?repos=darkterminal/mylibsqladmin&type=Date)](https://www.star-history.com/#darkterminal/mylibsqladmin&Date)
+MylibSQLAdmin is open-source software licensed under the [Apache License 2.0](LICENSE).
 
-## 📝 License
+## 🙏 Acknowledgments
 
-MylibSQLAdmin is open-source software licensed under the [Apache-2.0 License](LICENSE).
+- [LibSQL](https://github.com/tursodatabase/libsql) team for the amazing database
+- [Laravel](https://laravel.com) for the web framework
+- All contributors and supporters of this project
+
+---
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/darkterminal">darkterminal</a> and contributors
+</p>
