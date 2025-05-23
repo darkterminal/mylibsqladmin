@@ -1,20 +1,26 @@
 # LibSQL Local Instance (LLI) Guide
 
-This guide provides instructions for using MylibSQLAdmin with local LibSQL instances, allowing you to manage SQLite-compatible database files directly on your system.
+This guide provides instructions for using MylibSQLAdmin with local LibSQL instances, allowing you to manage SQLite-compatible database files directly on your system through Docker.
 
 ## Overview
 
-A Local LibSQL Instance (LLI) configuration enables MylibSQLAdmin to work with database files stored locally within Docker volumes or mounted directories. This setup is ideal for development environments and single-user scenarios where you need direct control over your database files.
+A Local LibSQL Instance (LLI) configuration runs MylibSQLAdmin with an embedded libSQL server inside Docker containers. This setup stores databases in Docker volumes and provides a web interface for database management without requiring any external database servers.
 
 ## Key Benefits
 
-- **Simple Setup** - No external database server required
-- **SQLite Compatibility** - Work with existing SQLite databases
-- **Offline Capability** - No internet connection needed
-- **Direct File Access** - Manage database files on your file system
-- **Minimal Resources** - Lightweight compared to traditional database servers
+- **Zero Configuration** - Works out of the box with Docker
+- **SQLite Compatibility** - Full compatibility with existing SQLite databases
+- **Self-Contained** - Everything runs within Docker containers
+- **Development Ready** - Perfect for local development environments
+- **Easy Backup** - Simple volume-based backup and restore
 
 ## Installation
+
+### Prerequisites
+
+- Docker and Docker Compose installed
+- Git (for cloning the repository)
+- At least 2GB of free disk space
 
 ### Using the Installation Script (Recommended)
 
@@ -27,137 +33,192 @@ cd mylibsqladmin
 ./install.sh
 ```
 
-When prompted:
+When prompted during installation:
 
-- Select your preferred environment (development/production)
-- Choose **Yes** when asked about using a local LibSQL instance
-- Follow the remaining prompts to complete setup
+1. Select your environment (development/production)
+2. Choose **Yes** when asked "Do you want to use a local LibSQL instance?"
+3. The script will handle all configuration automatically
 
-### Manual Docker Compose Setup
+### Manual Setup
 
-1. Clone and prepare the environment:
+If you prefer manual configuration:
+
+1. Clone the repository:
 
 ```bash
 git clone https://github.com/darkterminal/mylibsqladmin.git
 cd mylibsqladmin
-cp .env.example .env
 ```
 
-2. Configure for local instance in `.env`:
+2. Create environment files:
+
+```bash
+cp .env.example .env
+cp admin/.env.example admin/.env
+```
+
+3. Edit `.env` and set:
 
 ```env
 LIBSQL_LOCAL_INSTANCE=true
 ```
 
-3. Start the services:
+4. Start the services:
 
 ```bash
-# Development
-docker compose -f docker-compose.dev.yml up -d
+# For development (port 8001)
+make compose-dev/up
 
-# Production
-docker compose -f docker-compose.prod.yml up -d
+# For production (port 8000)
+make compose-prod/up
 ```
 
 ## Configuration
 
-### Basic Configuration
+### Environment Variables
 
-The local instance mode is controlled by a single environment variable:
+The main configuration file (`.env`) supports these variables:
 
-| Variable                | Description                | Default | Required |
-| ----------------------- | -------------------------- | ------- | -------- |
-| `LIBSQL_LOCAL_INSTANCE` | Enable local instance mode | `true`  | Yes      |
+| Variable                | Description             | Default       | Options                     |
+| ----------------------- | ----------------------- | ------------- | --------------------------- |
+| `LIBSQL_LOCAL_INSTANCE` | Use local libSQL server | `true`        | `true`, `false`             |
+| `APP_ENVIRONMENT`       | Application environment | `development` | `development`, `production` |
 
-When set to `true`, MylibSQLAdmin will:
+### Laravel Application Settings
 
-- Start an embedded libSQL server
-- Store databases in Docker volumes
-- Provide a web interface for database management
+The `admin/.env` file contains Laravel-specific settings:
 
-### Docker Volumes
+```env
+APP_NAME=MylibSQLAdmin
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost:8000
 
-Local databases are stored in Docker volumes:
+# Database connection (handled automatically by Docker)
+DB_CONNECTION=libsql
+DB_DATABASE=database.db
 
-- **Development**: `mylibsqladmin_libsql_data_dev`
-- **Production**: `mylibsqladmin_libsql_data_prod`
-
-To access database files directly:
-
-```bash
-# List databases in development volume
-docker run --rm -v mylibsqladmin_libsql_data_dev:/data alpine ls -la /data
-
-# Copy a database file out of the volume
-docker run --rm -v mylibsqladmin_libsql_data_dev:/data -v $(pwd):/backup alpine cp /data/mydatabase.db /backup/
+# Default admin credentials
+DEFAULT_USER_EMAIL=admin@mylibsqladmin.test
+DEFAULT_USER_PASSWORD=mylibsqladmin
 ```
+
+### Docker Services
+
+The local instance runs these services:
+
+- **mylibsqladmin-admin**: Laravel application (PHP-FPM)
+- **mylibsqladmin-web**: Nginx web server
+- **mylibsqladmin-sqld**: LibSQL server instance
 
 ## Usage
 
 ### Accessing the Interface
 
-After installation, access MylibSQLAdmin at:
+After starting the services:
 
-- Development: `http://localhost:8001`
-- Production: `http://localhost:8000`
+- **Development**: http://localhost:8001
+- **Production**: http://localhost:8000
 
-Default credentials:
+Default login credentials:
 
-- Email: `admin@mylibsqladmin.test`
-- Password: `mylibsqladmin`
+- **Email**: `admin@mylibsqladmin.test`
+- **Password**: `mylibsqladmin`
 
-### Creating a Database
+> **Important**: Change these credentials after first login!
+
+### Database Storage
+
+Databases are stored in Docker volumes:
+
+- **Development**: `mylibsqladmin_libsql_data_dev`
+- **Production**: `mylibsqladmin_libsql_data_prod`
+
+### Working with Databases
+
+#### Creating a New Database
 
 1. Log in to the web interface
-2. Navigate to the Databases section
+2. Navigate to "Databases" in the sidebar
 3. Click "Create Database"
-4. Enter a database name
+4. Enter a database name (alphanumeric and underscores only)
 5. Click "Create"
 
-### Managing Databases
+#### Importing Existing SQLite Databases
 
-The interface provides:
-
-- SQL query editor with syntax highlighting
-- Table browser and structure viewer
-- Data import/export capabilities
-- User and permission management
-
-### Connecting Existing SQLite Databases
-
-To use existing SQLite database files:
-
-1. Copy your database file to the Docker volume:
+To import an existing SQLite database:
 
 ```bash
-# For development
-docker run --rm -v $(pwd):/source -v mylibsqladmin_libsql_data_dev:/data alpine cp /source/existing.db /data/
+# Copy database to the Docker volume
+docker cp mydatabase.db mylibsqladmin-sqld:/var/lib/libsql/
+
+# Or using docker run
+docker run --rm -v $(pwd):/src -v mylibsqladmin_libsql_data_dev:/dest alpine cp /src/mydatabase.db /dest/
 ```
 
-2. The database will appear in the MylibSQLAdmin interface
+The database will automatically appear in the web interface.
+
+#### Executing SQL Queries
+
+1. Select a database from the dropdown
+2. Click "SQL Editor" in the sidebar
+3. Write your SQL query
+4. Press "Execute" or use Ctrl+Enter
 
 ## Backup and Restore
 
-### Backing Up Databases
+### Creating Backups
+
+#### Method 1: Volume Backup
 
 ```bash
-# Create a backup directory
+# Create backup directory
 mkdir -p ./backups
 
-# Backup all databases from development
-docker run --rm -v mylibsqladmin_libsql_data_dev:/data -v $(pwd)/backups:/backup alpine tar -czf /backup/databases-$(date +%Y%m%d).tar.gz -C /data .
+# Backup entire volume
+docker run --rm \
+  -v mylibsqladmin_libsql_data_dev:/data \
+  -v $(pwd)/backups:/backup \
+  alpine tar czf /backup/libsql-backup-$(date +%Y%m%d-%H%M%S).tar.gz -C /data .
 ```
 
-### Restoring Databases
+#### Method 2: Individual Database Export
 
 ```bash
-# Restore databases to development volume
-docker run --rm -v mylibsqladmin_libsql_data_dev:/data -v $(pwd)/backups:/backup alpine tar -xzf /backup/databases-20240101.tar.gz -C /data
+# Export specific database
+docker exec mylibsqladmin-sqld sqlite3 /var/lib/libsql/mydatabase.db .dump > mydatabase-backup.sql
+```
+
+### Restoring Backups
+
+#### From Volume Backup
+
+```bash
+# Stop services first
+docker compose down
+
+# Restore volume
+docker run --rm \
+  -v mylibsqladmin_libsql_data_dev:/data \
+  -v $(pwd)/backups:/backup \
+  alpine tar xzf /backup/libsql-backup-20240101-120000.tar.gz -C /data
+
+# Restart services
+docker compose up -d
+```
+
+#### From SQL Dump
+
+```bash
+# Import SQL dump
+docker exec -i mylibsqladmin-sqld sqlite3 /var/lib/libsql/mydatabase.db < mydatabase-backup.sql
 ```
 
 ## Troubleshooting
 
-### Cannot Access the Interface
+### Common Issues
+
+#### Cannot Access Web Interface
 
 1. Check if containers are running:
 
@@ -165,54 +226,100 @@ docker run --rm -v mylibsqladmin_libsql_data_dev:/data -v $(pwd)/backups:/backup
 docker compose ps
 ```
 
-2. View container logs:
+2. Check container logs:
 
 ```bash
-docker compose logs -f
+docker compose logs -f mylibsqladmin-admin
+docker compose logs -f mylibsqladmin-web
 ```
 
-3. Ensure ports are not in use:
+3. Verify port availability:
 
 ```bash
-# Check if port 8001 (dev) or 8000 (prod) is available
+# For Linux/Mac
 lsof -i :8001
+
+# For Windows
+netstat -an | findstr :8001
 ```
 
-### Database File Permissions
+#### Permission Errors
 
-If you encounter permission issues:
+If you see permission-related errors:
 
 ```bash
-# Fix permissions on the volume
-docker run --rm -v mylibsqladmin_libsql_data_dev:/data alpine chown -R 1000:1000 /data
+# Fix volume permissions
+docker exec mylibsqladmin-sqld chown -R 1000:1000 /var/lib/libsql
 ```
 
-### Container Won't Start
+#### Container Fails to Start
 
-1. Check Docker daemon is running:
+1. Check Docker is running:
 
 ```bash
-docker info
+docker version
 ```
 
 2. Clean up and restart:
 
 ```bash
+# Stop and remove containers
+docker compose down
+
+# Remove volumes (WARNING: This deletes data!)
 docker compose down -v
+
+# Restart
 docker compose up -d
 ```
 
-## Migration from SQLite
+### Viewing Logs
 
-LibSQL is fully compatible with SQLite databases. To migrate:
+```bash
+# View all logs
+docker compose logs
 
-1. Copy your `.sqlite` or `.db` files to the Docker volume
-2. Access them through the MylibSQLAdmin interface
-3. All SQLite features remain available
+# Follow specific service logs
+docker compose logs -f mylibsqladmin-admin
+
+# View last 100 lines
+docker compose logs --tail=100
+```
+
+## Performance Tuning
+
+### Memory Configuration
+
+For better performance with large databases, adjust Docker memory limits in `docker-compose.yml`:
+
+```yaml
+services:
+  sqld:
+    mem_limit: 2g
+    memswap_limit: 2g
+```
+
+### Database Optimization
+
+Regular maintenance improves performance:
+
+```bash
+# Vacuum database
+docker exec mylibsqladmin-sqld sqlite3 /var/lib/libsql/mydatabase.db "VACUUM;"
+
+# Analyze for query optimization
+docker exec mylibsqladmin-sqld sqlite3 /var/lib/libsql/mydatabase.db "ANALYZE;"
+```
+
+## Security Considerations
+
+1. **Change Default Credentials**: Always change the default admin credentials after installation
+2. **Network Isolation**: The libSQL server is not exposed outside Docker by default
+3. **Regular Backups**: Implement automated backup procedures
+4. **Updates**: Keep Docker images updated for security patches
 
 ## Next Steps
 
-- Explore the web interface and its features
-- Set up regular backups for your databases
-- Configure additional users and permissions
-- For multi-user or remote access needs, see the [Remote Instance Guide](LRI.md)
+- [Remote Instance Guide](LRI.md) - For connecting to external libSQL servers
+- [Docker Compose Reference](https://docs.docker.com/compose/) - Advanced Docker configuration
+- [LibSQL Documentation](https://github.com/tursodatabase/libsql) - Understanding libSQL features
