@@ -3,6 +3,14 @@
 </p>
 
 <p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/darkterminal/darkterminal/master/projects/dark-mode.png">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/darkterminal/darkterminal/master/projects/light-mode.png">
+    <img alt="Shows a black logo in light color mode and a white one in dark color mode." src="https://raw.githubusercontent.com/darkterminal/darkterminal/master/projects/dark-mode.png">
+  </picture>
+</p>
+
+<p align="center">
   <a href="https://deepwiki.com/darkterminal/mylibsqladmin">Documentation</a> •
   <a href="https://discord.gg/wWDzy5Nt44">Discord</a> •
   <a href="https://github.com/sponsors/darkterminal">Sponsor</a>
