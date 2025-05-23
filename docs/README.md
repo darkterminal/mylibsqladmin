@@ -165,7 +165,7 @@ MylibSQLAdmin consists of:
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guide](https://github.com/darkterminal/mylibsqladmin/blob/main/CONTRIBUTING.md) for details.
 
 ### Development Setup
 
