@@ -2,7 +2,7 @@ services:
   web:
     container_name: mylibsqladmin-web
     build:
-      context: ./admin
+      context: .
       dockerfile: Dockerfile
       args:
         APP_ENV: development
@@ -12,8 +12,8 @@ services:
       - "9003:9003" # Xdebug
       - "5173:5173" # Vite
     volumes:
-      - ./admin:/var/www/html
-      - ./admin/storage:/var/www/html/storage
+      - ./:/var/www/html
+      - ./storage:/var/www/html/storage
     env_file: "./.env" # Root env file (can hold overrides for dev)
     networks:
       - app-network
@@ -23,15 +23,13 @@ services:
   web_prod:
     container_name: mylibsqladmin-web
     build:
-      context: ./admin
+      context: .
       dockerfile: Dockerfile
       args:
         APP_ENV: production
         ENV_FILE: .env.production # Use the production env file
     ports:
       - "8000:8000"
-    volumes:
-      - ./admin/database:/var/www/html/database
     env_file: "./.env" # Root env file (can hold overrides for dev)
     networks:
       - app-network
@@ -71,7 +69,7 @@ services:
       - "--no-welcome"
     user: "1000:1000"
     volumes:
-      - ./data:/var/lib/sqld
+      - ./database/libsql-data:/var/lib/sqld
     restart: always
     networks:
       - app-network

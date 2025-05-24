@@ -1,6 +1,6 @@
-DOCKERIGNORE_DEV = ./admin/.docker/.dockerignore.local
-DOCKERIGNORE_PROD = ./admin/.docker/.dockerignore.prod
-DOCKERIGNORE_TARGET_DIR = ./admin/.dockerignore
+DOCKERIGNORE_DEV = ./docker/.dockerignore.local
+DOCKERIGNORE_PROD = ./docker/.dockerignore.prod
+DOCKERIGNORE_TARGET_DIR = ./dockerignore
 
 # Read LIBSQL_LOCAL_INSTANCE from .env
 GET_LOCAL_INSTANCE = $(shell grep -E '^LIBSQL_LOCAL_INSTANCE=' .env | cut -d'=' -f2)

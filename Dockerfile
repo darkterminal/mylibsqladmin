@@ -105,7 +105,7 @@ RUN chmod -R 775 storage bootstrap/cache
 HEALTHCHECK --interval=30s --timeout=3s CMD curl -f http://localhost:8000/up || exit 1
 
 # Entrypoint script
-RUN mv .docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN mv docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 8000 9003 5173 2019
