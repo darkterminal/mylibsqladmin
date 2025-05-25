@@ -26,3 +26,21 @@ if (!function_exists('get_ip_location')) {
         return $location;
     }
 }
+
+if (!function_exists('sanitizeData')) {
+    function sanitizeData($data)
+    {
+        if (is_string($data)) {
+            return mb_convert_encoding($data, 'UTF-8', 'UTF-8');
+        }
+
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                $data[$key] = sanitizeData($value);
+            } elseif (is_string($value)) {
+                $data[$key] = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+            }
+        }
+        return $data;
+    }
+}

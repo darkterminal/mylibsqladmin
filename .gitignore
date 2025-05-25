@@ -28,3 +28,7 @@ test.*
 /.ideas
 *.txt
 /.version
+
+**/caddy
+frankenphp
+frankenphp-worker.php

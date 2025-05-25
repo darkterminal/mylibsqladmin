@@ -29,54 +29,85 @@ class SqldService
 
     public static function getDatabases(bool $local = true): array
     {
-        if (!auth()->check() && !str_starts_with(php_sapi_name(), 'cli')) {
-            return [];
-        }
+        logger()->debug("Entering getDatabases with local: $local");
+        $sapi = php_sapi_name();
 
-        switch ($local) {
-            case false:
-                $host = self::useEndpoint('db');
-                $request = self::createBaseRequest();
+        $allDatabases = $local
+            ? self::getLocalDatabases()
+            : self::getRemoteDatabases();
 
-                // First metrics fetch attempt
-                $allMetrics = $request->retry(3, 100)
-                    ->timeout(10)
-                    ->get("$host/metrics");
-
-                $allDatabases = [];
-                if ($allMetrics->successful()) {
-                    $allDatabases = self::parseMetricsResponse($allMetrics->body());
-
-                    // Trigger health checks if no databases found
-                    if (empty($allDatabases)) {
-                        $userDatabases = UserDatabase::where('user_id', auth()->user()->id)
-                            ->whereNotIn('database_name', ['default'])
-                            ->get();
-
-                        $retryMetrics = self::performHealthChecks($host, $request, $userDatabases);
-                        $allDatabases = self::parseMetricsResponse($retryMetrics->successful() ? $retryMetrics->body() : '');
-                    }
-                }
-                break;
-            case true:
-                $allDatabases = UserDatabase::whereNotIn('database_name', ['default'])
-                    ->get()
-                    ->collect()
-                    ->toArray();
-                break;
+        if (!str_starts_with($sapi, 'cli') || $sapi === 'frankenphp') {
+            logger()->debug("User is not authenticated and not running in CLI, source $sapi");
+            return $allDatabases;
         }
 
         logger()->debug("is local: $local, Fetched databases: " . json_encode($allDatabases));
 
         $userId = auth()->check() ? auth()->user()->id : null;
+        logger()->debug("User ID: " . ($userId ?? 'null'));
 
-        if ($userId && !str_starts_with(php_sapi_name(), 'cli')) {
+        if ($userId && (!str_starts_with($sapi, 'cli') || $sapi === 'frankenphp')) {
+            logger()->debug("Syncing databases with user");
             self::syncDatabasesWithUser($userId, $allDatabases);
         }
 
-        return $userId
+        $result = $userId
             ? UserDatabase::where('user_id', $userId)->get()->toArray()
             : [];
+
+        logger()->debug("Returning databases: " . json_encode($result));
+
+        return $result;
+    }
+
+    public static function getLocalDatabases(): array
+    {
+        logger()->debug("Fetching databases from local instance");
+
+        $allDatabases = UserDatabase::whereNotIn('database_name', ['default'])
+            ->get()
+            ->collect()
+            ->toArray();
+
+        return $allDatabases;
+    }
+
+    public static function getRemoteDatabases(): array
+    {
+        logger()->debug("Fetching databases from remote endpoint");
+
+        $allDatabases = [];
+        $host = self::useEndpoint('db');
+        $request = self::createBaseRequest();
+
+        logger()->debug("Attempting to fetch metrics from $host");
+        $allMetrics = $request->retry(3, 100)
+            ->timeout(10)
+            ->get("$host/metrics");
+
+        if ($allMetrics->successful()) {
+            logger()->debug("Metrics fetch successful, parsing response");
+            $allDatabases = self::parseMetricsResponse($allMetrics->body());
+
+            if (empty($allDatabases)) {
+                logger()->debug("No databases found, performing health checks");
+                $userDatabases = UserDatabase::where('user_id', auth()->user()->id)
+                    ->whereNotIn('database_name', ['default'])
+                    ->get();
+
+                $retryMetrics = self::performHealthChecks($host, $request, $userDatabases);
+                if ($retryMetrics->successful()) {
+                    logger()->debug("Health checks successful, parsing retry metrics");
+                    $allDatabases = self::parseMetricsResponse($retryMetrics->body());
+                } else {
+                    logger()->debug("Health checks failed on retry");
+                }
+            }
+        } else {
+            logger()->debug("Metrics fetch failed");
+        }
+
+        return $allDatabases;
     }
 
     private static function performHealthChecks(string $host, $request, $userDatabases)
@@ -261,6 +292,16 @@ class SqldService
 
     public static function deleteDatabase(string $database): bool
     {
+        $archivedDatabase = null;
+        $userDatabase = UserDatabase::where('database_name', $database)
+            ->where('user_id', auth()->user()->id)
+            ->onlyTrashed()
+            ->first();
+
+        if ($userDatabase) {
+            $archivedDatabase = "$database-archived";
+        }
+
         $deletedCount = UserDatabase::where('database_name', $database)
             ->where('user_id', auth()->user()->id)
             ->forceDelete();
@@ -270,16 +311,17 @@ class SqldService
             return false;
         }
 
+        $databaseShouldBeDeleted = $archivedDatabase ?? $database;
         $host = self::useEndpoint('db');
         $request = self::createBaseRequest();
-        $response = $request->delete("$host/v1/namespaces/$database");
+        $response = $request->delete("$host/v1/namespaces/$databaseShouldBeDeleted");
 
         if ($response->status() !== 200) {
-            logger()->error("SQLD deletion failed for: $database");
+            logger()->error("SQLD deletion failed for: $databaseShouldBeDeleted");
             return false;
         }
 
-        logger()->info("Deleted database: $database");
+        logger()->info("Deleted database: $databaseShouldBeDeleted");
         return true;
     }
 

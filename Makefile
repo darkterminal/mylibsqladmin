@@ -22,10 +22,12 @@ SETUP_NGINX_DEV = sed -i "s|proxy_pass http://web_prod:8000/validate-subdomain;|
 help:
 	@echo "Usage:"
 	@echo "  make compose-dev/up\t\tStart development environment"
+	@echo "  make compose-dev/upd\t\tStart development environment in detached mode"
 	@echo "  make compose-prod/up\t\tStart production environment"
 	@echo "  make compose-dev/down\t\tStop development environment"
 	@echo "  make compose-prod/down\tStop production environment"
 	@echo "  make compose-dev/restart\tRestart development environment"
+	@echo "  make compose-dev/restartd\tRestart development environment in detached mode"
 	@echo "  make compose-prod/restart\tRestart production environment"
 	@echo "  make compose-dev/rebuild\tRebuild development containers"
 	@echo "  make compose-prod/rebuild\tRebuild production containers"
@@ -34,6 +36,11 @@ compose-dev/up:
 	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_DEV)
 	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) up
+
+compose-dev/upd:
+	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
+	$(SETUP_NGINX_DEV)
+	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) up -d
 
 compose-prod/up:
 	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
@@ -52,6 +59,12 @@ compose-dev/restart:
 	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) down --remove-orphans
 	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) up
 
+compose-dev/restartd:
+	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
+	$(SETUP_NGINX_DEV)
+	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) down --remove-orphans
+	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) up -d
+
 compose-prod/restart:
 	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_PROD)
@@ -69,3 +82,4 @@ compose-prod/rebuild:
 	$(SETUP_NGINX_PROD)
 	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_PROD) down -v --remove-orphans
 	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_PROD) build --no-cache
+
