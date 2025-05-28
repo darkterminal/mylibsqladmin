@@ -163,7 +163,7 @@ class SubdomainValidationController extends Controller
 
     private function createResponse(string $accessLevel)
     {
-        event(new TriggerDatabaseStatsChangeEvent($this->subdomain));
+        event(new TriggerDatabaseStatsChangeEvent($this->subdomain, 'web'));
         return response()->noContent(200)->header('X-Access-Level', $accessLevel);
     }
 }

@@ -48,11 +48,9 @@ class HandleInertiaRequests extends Middleware
                         return null;
                     }
 
-                    $username = sanitizeData($user->username);
-
                     if ($user->teams()->doesntExist()) {
                         $team = Team::firstOrCreate([
-                            "name" => "{$username} space",
+                            "name" => "{$user->username} space",
                             'description' => 'Personal workspace'
                         ]);
 
