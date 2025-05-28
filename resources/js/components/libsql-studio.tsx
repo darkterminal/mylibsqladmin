@@ -25,8 +25,8 @@ export function LibsqlStudio({ databaseName, clientUrl, authToken }: LibSQLStudi
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', effectiveTheme);
-        localStorage.setItem("appearance", appearance);
-    }, [appearance, effectiveTheme]);
+        localStorage.setItem("appearance", effectiveTheme);
+    }, [effectiveTheme]);
 
     useEffect(() => {
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');

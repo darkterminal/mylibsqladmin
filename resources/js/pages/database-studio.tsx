@@ -72,7 +72,7 @@ export default function DatabaseStudio() {
     }, [parent]);
 
     useCustomEvent<DatabaseStatsChangeProps>('stats-changed', async ({ databaseName, statement, type }) => {
-        const statsEndpoint = route('trigger.stats-changed', { databaseName });
+        const statsEndpoint = route('trigger.stats-changed', { databaseName, source: 'web' });
         const logEndpoint = route('activities.store');
         const currentTeamId = localStorage.getItem('currentTeamId') || 'null';
 
