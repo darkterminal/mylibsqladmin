@@ -21,6 +21,6 @@ class RecordDatabaseStatsChangeListener
     public function handle(TriggerDatabaseStatsChangeEvent $event): void
     {
         // logger("Stats changed for {$event->databaseName}");
-        StatsFetcherService::run($event->databaseName);
+        StatsFetcherService::run($event->databaseName, $event->source);
     }
 }

@@ -12,11 +12,11 @@ use Illuminate\Support\Facades\Log;
 
 class SqldService
 {
-    public static function useEndpoint(string $service): string|false
+    public static function useEndpoint(string $service, ?string $source = null): string|false
     {
         switch ($service) {
             case 'db':
-                $host = config('mylibsqladmin.libsql.api.host');
+                $host = $source === 'web' ? env('LIBSQL_HOST') : config('mylibsqladmin.libsql.api.host');
                 $port = config('mylibsqladmin.libsql.api.port');
 
                 return "http://{$host}" . ($port === null ? '' : ":{$port}");
