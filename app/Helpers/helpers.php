@@ -27,20 +27,9 @@ if (!function_exists('get_ip_location')) {
     }
 }
 
-if (!function_exists('sanitizeData')) {
-    function sanitizeData($data)
+if (!function_exists('mylibsqladmin_env')) {
+    function mylibsqladmin_env(string $variable_name): string
     {
-        if (is_string($data)) {
-            return mb_convert_encoding($data, 'UTF-8', 'UTF-8');
-        }
-
-        foreach ($data as $key => $value) {
-            if (is_array($value)) {
-                $data[$key] = sanitizeData($value);
-            } elseif (is_string($value)) {
-                $data[$key] = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
-            }
-        }
-        return $data;
+        return in_array(php_sapi_name(), ['cli']) ? env($variable_name, 'db') : 'localhost';
     }
 }
