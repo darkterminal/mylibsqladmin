@@ -116,7 +116,7 @@ class ActivityLog extends Model
         if (!$baseDescription)
             return null;
 
-        return strtolower($table)
+        return !empty($table) && strtolower($table)
             ? sprintf("%s [%s] table in database [%s]", $baseDescription, strtolower($table), UserDatabase::find($databaseId)->database_name)
             : $baseDescription;
     }
