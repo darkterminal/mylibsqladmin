@@ -9,6 +9,11 @@ on:
 jobs:
   build-and-push-dev:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      pull-requests: read
+      
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
