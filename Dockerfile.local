@@ -44,11 +44,9 @@ RUN install-php-extensions \
     zip
 
 # Conditionally install Xdebug for development
-RUN if [ "$APP_ENV" = "development" ]; then \
-    install-php-extensions xdebug \
+RUN install-php-extensions xdebug \
     && echo "xdebug.mode=debug" >> /usr/local/etc/php/conf.d/xdebug.ini \
-    && echo "xdebug.client_host=host.docker.internal" >> /usr/local/etc/php/conf.d/xdebug.ini; \
-    fi
+    && echo "xdebug.client_host=host.docker.internal" >> /usr/local/etc/php/conf.d/xdebug.ini;
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
@@ -58,9 +56,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs
 
 # Configure environment specific settings
-RUN if [ "$APP_ENV" = "development" ]; then \
-    export PHP_OPCACHE_VALIDATE_TIMESTAMPS=1; \
-    fi
+RUN export PHP_OPCACHE_VALIDATE_TIMESTAMPS=1
 
 WORKDIR /var/www/html
 
@@ -82,22 +78,8 @@ RUN php -m | grep libsql && \
     && rm -rf public/build
 
 # Install dependencies
-RUN if [ "$APP_ENV" = "production" ]; then \
-    composer install --optimize-autoloader --no-dev --no-interaction \
-    && npm ci --omit=dev \
-    && npm run build \
-    && rm -f public/hot \
-    && php artisan key:generate \
-    && php artisan migrate:fresh --seed --force \
-    && php artisan optimize \
-    && php artisan cache:clear \
-    && php artisan route:clear \
-    && php artisan view:clear \
-    && php artisan config:clear; \
-    else \
-    composer install --optimize-autoloader --no-interaction \
-    && npm install; \
-    fi
+RUN composer install --optimize-autoloader --no-interaction \
+    && npm install;
 
 # Set permissions
 RUN chown -R www-data:www-data storage bootstrap/cache

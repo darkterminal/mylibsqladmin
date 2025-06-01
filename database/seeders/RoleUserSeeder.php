@@ -321,31 +321,31 @@ class RoleUserSeeder extends Seeder
         // Create users with roles
         $users = [
             [
-                'name' => 'Imam Ali Mustofa',
-                'username' => 'darkterminal',
+                'name' => 'Robert Jamiin',
+                'username' => 'superadmin',
                 'email' => 'superadmin@mylibsqladmin.oss',
-                'password' => Hash::make('dimonggoin123'),
+                'password' => Hash::make('superadmin12345'),
                 'role' => 'Super Admin'
             ],
             [
-                'name' => 'Roy Alkina',
-                'username' => 'royalkina',
+                'name' => 'Valentinus Marheng',
+                'username' => 'manager',
                 'email' => 'manager@mylibsqladmin.oss',
-                'password' => Hash::make('dimonggoin123'),
+                'password' => Hash::make('manager12345'),
                 'role' => 'Team Manager'
             ],
             [
-                'name' => 'Jane Doe',
-                'username' => 'janedoe',
-                'email' => 'database_maintainer@mylibsqladmin.oss',
-                'password' => Hash::make('dimonggoin123'),
+                'name' => 'Lee Gi Min',
+                'username' => 'database-maintainer',
+                'email' => 'database-maintainer@mylibsqladmin.oss',
+                'password' => Hash::make('database-maintainer12345'),
                 'role' => 'Database Maintainer'
             ],
             [
-                'name' => 'John Doe',
-                'username' => 'jdoe',
+                'name' => 'Alexander To Ming',
+                'username' => 'member',
                 'email' => 'member@mylibsqladmin.oss',
-                'password' => Hash::make('dimonggoin123'),
+                'password' => Hash::make('member12345'),
                 'role' => 'Member'
             ],
         ];

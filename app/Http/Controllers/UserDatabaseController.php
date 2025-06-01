@@ -187,7 +187,8 @@ class UserDatabaseController extends Controller
                 $validated['database'],
                 $validated['isSchema'],
                 $validated['groupId'],
-                $validated['teamId']
+                $validated['teamId'],
+                'web'
             );
 
             $databases = session('team_databases')['databases'] ?? SqldService::getDatabases(config('mylibsqladmin.local_instance'));
@@ -212,7 +213,7 @@ class UserDatabaseController extends Controller
 
     public function deleteDatabase(string $database)
     {
-        if (!SqldService::archiveDatabase($database)) {
+        if (!SqldService::archiveDatabase($database, 'web')) {
             return redirect()->back()->with(['error' => 'Database deletion failed']);
         }
 
@@ -226,7 +227,7 @@ class UserDatabaseController extends Controller
     public function restoreDatabase(Request $request)
     {
         $database = $request->input('name');
-        if (!SqldService::restoreDatabase($database)) {
+        if (!SqldService::restoreDatabase($database, 'web')) {
             return redirect()->back()->with(['error' => 'Database restore failed']);
         }
 
@@ -239,7 +240,7 @@ class UserDatabaseController extends Controller
 
     public function forceDeleteDatabase(string $database)
     {
-        if (!SqldService::deleteDatabase($database)) {
+        if (!SqldService::deleteDatabase($database, 'web')) {
             return redirect()->back()->with(['error' => 'Database force deletion failed']);
         }
 

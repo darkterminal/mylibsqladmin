@@ -4,7 +4,7 @@
 .gitattributes
 
 # Environment Files
-!.env.local
+.env.local
 !.env.production
 .env
 
@@ -19,6 +19,7 @@ Thumbs.db
 
 # Docker Files
 Dockerfile
+Dockerfile.*
 docker-compose.yml
 docker-compose.*.yml
 .dockerignore
@@ -58,3 +59,15 @@ CHANGELOG.md
 .github
 .gitlab-ci.yml
 .travis.yml
+
+# Misc
+.editorconfig
+/.ideas
+.prettierignore
+.prettierrc
+test.*
+Makefile
+/examples
+install.sh
+setup
+turso-cli

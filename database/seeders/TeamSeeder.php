@@ -18,10 +18,10 @@ class TeamSeeder extends Seeder
 
             // Get existing users
             $users = [
-                'super-admin' => User::where('username', 'darkterminal')->first(),
-                'team-manager' => User::where('username', 'royalkina')->first(),
-                'database-maintainer' => User::where('username', 'janedoe')->first(),
-                'member' => User::where('username', 'jdoe')->first(),
+                'super-admin' => User::where('username', 'superadmin')->first(),
+                'team-manager' => User::where('username', 'manager')->first(),
+                'database-maintainer' => User::where('username', 'database-maintainer')->first(),
+                'member' => User::where('username', 'member')->first(),
             ];
 
             // Create core teams

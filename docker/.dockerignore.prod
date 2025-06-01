@@ -4,7 +4,7 @@
 .gitattributes
 
 # Environment Files
-!.env.local
+.env.local
 !.env.production
 .env
 
@@ -43,6 +43,7 @@ Thumbs.db
 
 # Docker Files
 Dockerfile
+Dockerfile.*
 docker-compose.yml
 docker-compose.*.yml
 .dockerignore
@@ -88,3 +89,15 @@ CHANGELOG.md
 /storage/app/public/*
 !.storage/app/public/.gitkeep
 /horizon-assets
+
+# Misc
+.editorconfig
+/.ideas
+.prettierignore
+.prettierrc
+test.*
+Makefile
+/examples
+install.sh
+setup
+turso-cli

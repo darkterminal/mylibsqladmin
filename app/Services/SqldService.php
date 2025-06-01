@@ -176,7 +176,7 @@ class SqldService
      * @param string $database The name of the database to archive
      * @return bool True if archiving was successful, false otherwise
      */
-    public static function archiveDatabase(string $database): bool
+    public static function archiveDatabase(string $database, ?string $source = null): bool
     {
         $deletedCount = UserDatabase::where('database_name', $database)
             ->where('user_id', auth()->user()->id)
@@ -187,7 +187,7 @@ class SqldService
             return false;
         }
 
-        $host = self::useEndpoint('db');
+        $host = self::useEndpoint('db', $source);
 
         try {
             $request = self::createBaseRequest();
@@ -211,7 +211,7 @@ class SqldService
         }
     }
 
-    public static function restoreDatabase(string $database): bool
+    public static function restoreDatabase(string $database, ?string $source = null): bool
     {
         $restored = UserDatabase::where('database_name', $database)
             ->where('user_id', auth()->user()->id)
@@ -222,7 +222,7 @@ class SqldService
             return false;
         }
 
-        $host = self::useEndpoint('db');
+        $host = self::useEndpoint('db', $source);
 
         try {
             $request = self::createBaseRequest();
@@ -248,7 +248,7 @@ class SqldService
         }
     }
 
-    public static function createDatabase(string $database, mixed $isSchema, int $groupId, int $teamId): bool
+    public static function createDatabase(string $database, mixed $isSchema, int $groupId, int $teamId, ?string $source = null): bool
     {
         if (is_bool($isSchema)) {
             $data['shared_schema'] = $isSchema;
@@ -261,7 +261,7 @@ class SqldService
             return false;
         }
 
-        $host = self::useEndpoint('db');
+        $host = self::useEndpoint('db', $source);
         $request = self::createBaseRequest();
         $response = $request->post("$host/v1/namespaces/$database/create", $data);
 
@@ -290,7 +290,7 @@ class SqldService
         return true;
     }
 
-    public static function deleteDatabase(string $database): bool
+    public static function deleteDatabase(string $database, ?string $source = null): bool
     {
         $archivedDatabase = null;
         $userDatabase = UserDatabase::where('database_name', $database)
@@ -312,7 +312,7 @@ class SqldService
         }
 
         $databaseShouldBeDeleted = $archivedDatabase ?? $database;
-        $host = self::useEndpoint('db');
+        $host = self::useEndpoint('db', $source);
         $request = self::createBaseRequest();
         $response = $request->delete("$host/v1/namespaces/$databaseShouldBeDeleted");
 
@@ -338,7 +338,7 @@ class SqldService
 
                 $userDatabase = UserDatabase::where('database_name', $database);
 
-                if (php_sapi_name() === 'cli') {
+                if (in_array(php_sapi_name(), ['cli', 'frankenphp'])) {
                     $userDatabase->delete();
                 }
 

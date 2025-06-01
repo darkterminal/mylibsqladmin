@@ -1,12 +1,12 @@
 services:
   web:
-    container_name: mylibsqladmin-web
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.local
       args:
         APP_ENV: development
         ENV_FILE: .env.local # Use the development env file
+    image: ghcr.io/mylibsqladmin-web:development
     ports:
       - '8000:8000' # Laravel
       - '9003:9003' # Xdebug
@@ -14,26 +14,27 @@ services:
     volumes:
       - ./:/var/www/html
       - ./storage:/var/www/html/storage
-    env_file: './.env' # Root env file (can hold overrides for dev)
+    env_file: './.env'
     networks:
       - app-network
     restart: always
     profiles: ['development']
 
   web_prod:
-    container_name: mylibsqladmin-web
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.production
       args:
         APP_ENV: production
+        APP_DEBUG: false
         ENV_FILE: .env.production # Use the production env file
+    image: ghcr.io/mylibsqladmin-web:production
     ports:
       - '8000:8000'
-    env_file: './.env' # Root env file (can hold overrides for dev)
+    env_file: './.env'
     networks:
       - app-network
-    restart: always
+    restart: unless-stopped
     profiles: ['production']
 
   proxy:
@@ -70,7 +71,7 @@ services:
     user: '1000:1000'
     volumes:
       - ./database/libsql-data:/var/lib/sqld
-    restart: always
+    restart: unless-stopped
     networks:
       - app-network
     profiles: ['local-instance']
