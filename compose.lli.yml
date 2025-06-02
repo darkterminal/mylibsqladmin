@@ -31,6 +31,9 @@ services:
     image: ghcr.io/mylibsqladmin-web:production
     ports:
       - '8000:8000'
+    volumes:
+      - ./:/var/www/html
+      - ./storage:/var/www/html/storage
     env_file: './.env'
     networks:
       - app-network
