@@ -50,7 +50,7 @@ compose-prod-lli/build:
 compose-prod-lri/build:
 	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_PROD)
-	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:$(VERSION)-production-lri -f Dockerfile .
+	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:$(VERSION)-production-lri -f Dockerfile.production .
 
 compose-dev/build:
 	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
@@ -65,7 +65,7 @@ compose-dev-lli/build:
 compose-dev-lri/build:
 	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_DEV)
-	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:development-lri -f Dockerfile .
+	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:development-lri -f Dockerfile.local .
 
 compose-dev/up:
 	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
