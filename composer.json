@@ -44,6 +44,9 @@
         }
     },
     "scripts": {
+        "release:patch": "./release.sh patch",
+        "release:minor": "./release.sh minor",
+        "release:major": "./release.sh major",
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
