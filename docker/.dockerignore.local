@@ -4,8 +4,8 @@
 .gitattributes
 
 # Environment Files
-.env.local
-!.env.production
+!.env.local
+.env.production
 .env
 
 # IDE & Editor
