@@ -49,11 +49,11 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
 
 WORKDIR /var/www/html
 
-# Copy environment file
-COPY ${ENV_FILE} .env
-
 # Copy application files
 COPY . .
+
+# Copy environment file
+COPY ${ENV_FILE} .env
 
 # Install Turso PHP extension
 ENV COMPOSER_HOME=/root/.composer

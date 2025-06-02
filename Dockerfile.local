@@ -60,11 +60,11 @@ RUN export PHP_OPCACHE_VALIDATE_TIMESTAMPS=1
 
 WORKDIR /var/www/html
 
-# Copy environment file
-COPY ${ENV_FILE} .env
-
 # Copy application files
 COPY . .
+
+# Copy environment file
+COPY ${ENV_FILE} .env
 
 # Install Turso PHP extension
 ENV COMPOSER_HOME=/root/.composer
