@@ -40,32 +40,32 @@ help:
 compose-prod/build:
 	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_PROD)
-	docker buildx build --push -t ghcr.io/mylibsqladmin-web:$(VERSION)-production -f Dockerfile.production .
+	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:$(VERSION)-production -f Dockerfile.production .
 
 compose-prod-lli/build:
 	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_PROD)
-	docker buildx build --push -t ghcr.io/mylibsqladmin-web:$(VERSION)-production-lli -f Dockerfile.production .
+	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:$(VERSION)-production-lli -f Dockerfile.production .
 
 compose-prod-lri/build:
 	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_PROD)
-	docker buildx build --push -t ghcr.io/mylibsqladmin-web:$(VERSION)-production-lri -f Dockerfile .
+	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:$(VERSION)-production-lri -f Dockerfile .
 
 compose-dev/build:
 	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_DEV)
-	docker buildx build --push -t ghcr.io/mylibsqladmin-web:development -f Dockerfile.local .
+	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:development -f Dockerfile.local .
 
 compose-dev-lli/build:
 	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_DEV)
-	docker buildx build --push -t ghcr.io/mylibsqladmin-web:development-lli -f Dockerfile.local .
+	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:development-lli -f Dockerfile.local .
 
 compose-dev-lri/build:
 	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_DEV)
-	docker buildx build --push -t ghcr.io/mylibsqladmin-web:development-lri -f Dockerfile .
+	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:development-lri -f Dockerfile .
 
 compose-dev/up:
 	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
