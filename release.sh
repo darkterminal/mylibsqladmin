@@ -50,7 +50,7 @@ fi
 
 # 🔖 Step 3: Create a new tag
 echo "🏷️ Creating new git tag..."
-git tag "$NEW_VERSION" -m "Release $BUILD_TYPE version $NEW_VERSION"
+git tag "v$NEW_VERSION" -m "Release $BUILD_TYPE version v$NEW_VERSION"
 if [[ $? -ne 0 ]]; then
     echo "❌ Error: Git tag creation failed."
     exit 1
