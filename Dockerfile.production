@@ -71,13 +71,7 @@ RUN composer install --optimize-autoloader --no-dev --no-interaction \
     && npm ci --omit=dev \
     && npm run build \
     && rm -f public/hot \
-    && php artisan key:generate \
-    && php artisan migrate:fresh --seed --force \
-    && php artisan optimize \
-    && php artisan cache:clear \
-    && php artisan route:clear \
-    && php artisan view:clear \
-    && php artisan config:clear;
+    && php artisan migrate:fresh --seed --force
 
 # Set permissions
 RUN chown -R www-data:www-data storage bootstrap/cache
