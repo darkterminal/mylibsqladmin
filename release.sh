@@ -37,42 +37,39 @@ NEW_VERSION="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.${VERSION_PARTS[2]}"
 
 # Update the composer.json file
 jq --arg new_version "$NEW_VERSION" '.version = $new_version' composer.json >composer_temp.json && mv composer_temp.json composer.json
+composer update
 echo "✅ Updated version to $NEW_VERSION in composer.json"
 
-# 📝 Step 2: Git commit and tag
+# 📜 Step 2: Update CHANGELOG.md
+echo "📜 Updating CHANGELOG.md..."
+PREVIOUS_TAG=$(git describe --tags --abbrev=0 2>/dev/null) || true
+
+if [[ -z "$PREVIOUS_TAG" ]]; then
+    echo "📝 Generating changelog from initial commit..."
+    CHANGELOG_ENTRIES=$(git log --pretty=format:"- %s [%an]")
+else
+    echo "📝 Generating changelog from $PREVIOUS_TAG to HEAD..."
+    CHANGELOG_ENTRIES=$(git log "$PREVIOUS_TAG"..HEAD --pretty=format:"- %s [%an]")
+fi
+
+# Prepend new changelog entries
+echo -e "## [$NEW_VERSION] - $(date +"%Y-%m-%d")\n\n$CHANGELOG_ENTRIES\n\n$(cat CHANGELOG.md)" >CHANGELOG.md
+echo "✅ Updated CHANGELOG.md"
+
+# 📝 Step 3: Git commit and tag
 echo "🔨 Committing changes..."
-git add .
+git add composer.json CHANGELOG.md
 git commit -m "release: $BUILD_TYPE version $NEW_VERSION"
 if [[ $? -ne 0 ]]; then
     echo "❌ Error: Git commit failed."
     exit 1
 fi
 
-# 🔖 Step 3: Create a new tag
+# 🔖 Step 4: Create a new tag
 echo "🏷️ Creating new git tag..."
 git tag "v$NEW_VERSION" -m "Release $BUILD_TYPE version v$NEW_VERSION"
 if [[ $? -ne 0 ]]; then
     echo "❌ Error: Git tag creation failed."
-    exit 1
-fi
-
-# 📜 Step 4: Update CHANGELOG.md
-echo "📜 Updating CHANGELOG.md..."
-PREVIOUS_TAG=$(git tag --sort=-version:refname | sed -n 2p) # Get the second latest tag
-if [[ -z "$PREVIOUS_TAG" ]]; then
-    PREVIOUS_TAG="HEAD" # Use HEAD if no previous tag exists
-fi
-
-echo "📝 Generating changelog from $PREVIOUS_TAG to $NEW_VERSION..."
-CHANGELOG_ENTRIES=$(git log "$PREVIOUS_TAG".."$NEW_VERSION" --pretty=format:"- %s [%an]")
-echo -e "## [$NEW_VERSION] - $(date +"%Y-%m-%d")\n\n$CHANGELOG_ENTRIES\n\n$(cat CHANGELOG.md)" >CHANGELOG.md
-echo "✅ Updated CHANGELOG.md"
-
-# Add CHANGELOG.md to git
-git add CHANGELOG.md
-git commit -m "chore: update CHANGELOG.md for $BUILD_TYPE version $NEW_VERSION"
-if [[ $? -ne 0 ]]; then
-    echo "❌ Error: Git commit for CHANGELOG.md failed."
     exit 1
 fi
 
