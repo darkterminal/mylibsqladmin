@@ -70,8 +70,7 @@ RUN php -m | grep libsql && \
 RUN composer install --optimize-autoloader --no-dev --no-interaction \
     && npm ci --omit=dev \
     && npm run build \
-    && rm -f public/hot \
-    && php artisan migrate:fresh --seed --force
+    && rm -f public/hot
 
 # Set permissions
 RUN chown -R www-data:www-data storage bootstrap/cache
