@@ -1,3 +1,7 @@
+## [1.1.13] - 2025-06-07
+
+- build: use copy command [Imam Ali Mustofa]
+
 ## [1.1.12] - 2025-06-07
 
 - build: use service name in production [Imam Ali Mustofa]
