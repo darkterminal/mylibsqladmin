@@ -1,3 +1,7 @@
+## [1.1.15] - 2025-06-07
+
+- refactor: using app environment method [Imam Ali Mustofa]
+
 ## [1.1.14] - 2025-06-07
 
 - fix: ensure correct host resolution for production CLI and web contexts [Imam Ali Mustofa]
