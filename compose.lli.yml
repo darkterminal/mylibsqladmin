@@ -2,7 +2,7 @@ services:
   web:
     container_name: mylibsqladmin-webui-dev
     build:
-      context: .
+      context: ./webapp
       dockerfile: Dockerfile.local
       args:
         APP_ENV: development
@@ -22,7 +22,7 @@ services:
   web_prod:
     container_name: mylibsqladmin-webui-prod
     build:
-      context: .
+      context: ./webapp
       dockerfile: Dockerfile.production
       args:
         APP_ENV: production
@@ -37,13 +37,13 @@ services:
 
   proxy:
     container_name: mylibsqladmin-proxy
-    image: openresty/openresty:alpine
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
     ports:
       - '8080:8080'
       - '5001:5001'
       - '8081:8081'
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
     networks:
       - app-network
     restart: unless-stopped
@@ -68,7 +68,7 @@ services:
       - '--no-welcome'
     user: '1000:1000'
     volumes:
-      - ./database/libsql-data:/var/lib/sqld
+      - ./libsql-data:/var/lib/sqld
     restart: unless-stopped
     networks:
       - app-network

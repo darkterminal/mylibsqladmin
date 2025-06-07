@@ -31,15 +31,17 @@ In the age of data-driven applications, the demand for lightweight, scalable, an
 
 **MylibSQLAdmin** is an open-source web GUI built specifically for managing libSQL databases. By harnessing the full potential of libSQL-server functionalities, this project provides an intuitive and comprehensive platform for database administration, making it easier than ever to manage your database systems through an accessible web interface. You can connect with `libsql-server` from **Docker Service** or use your existing `libsql-server` instance.
 
+<iframe width="100%" height="980" src="https://www.youtube-nocookie.com/embed/dntNiEYA4mU?si=LAqhOT8OyBAjMhN3&amp;controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
 ## What Does MylibSQLAdmin Offer?
 
-- **Simple Database Statistics** - Get quick insights into your database performance with easy-to-understand stats.
-- **Database Management** - Create, edit, and manage your databases with intuitive tools.
-- **Token Management** - Secure and control access to your system using token-based authentication.
-- **Group Management** - Organize users into groups for better structure and permission handling.
-- **Team Management** - Collaborate efficiently by managing teams and their access levels.
-- **User Management** - Easily handle user accounts, roles, and activity logs.
-- **Member Invitation Management** - Invite new members and track their onboarding status with ease.
+-   **Simple Database Statistics** - Get quick insights into your database performance with easy-to-understand stats.
+-   **Database Management** - Create, edit, and manage your databases with intuitive tools.
+-   **Token Management** - Secure and control access to your system using token-based authentication.
+-   **Group Management** - Organize users into groups for better structure and permission handling.
+-   **Team Management** - Collaborate efficiently by managing teams and their access levels.
+-   **User Management** - Easily handle user accounts, roles, and activity logs.
+-   **Member Invitation Management** - Invite new members and track their onboarding status with ease.
 
 ## Sponsors
 
@@ -47,8 +49,8 @@ In the age of data-driven applications, the demand for lightweight, scalable, an
 
 ## Support this Project
 
-- via <a href="https://github.com/sponsors/darkterminal">GitHub Sponsor</a> (Global)
-- via <a href="https://saweria.co/darkterminal" target="_blank">Saweria</a> (Indonesian)
+-   via <a href="https://github.com/sponsors/darkterminal">GitHub Sponsor</a> (Global)
+-   via <a href="https://saweria.co/darkterminal" target="_blank">Saweria</a> (Indonesian)
 
 ## Getting Started
 

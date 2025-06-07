@@ -1,17 +1,14 @@
 FROM dunglas/frankenphp:1.4-php8.3-bookworm
 
-ARG APP_ENV=development
+ARG APP_ENV=production
 ARG ENV_FILE
 
 # Environment variables
-ENV APP_ENV=${APP_ENV}
-
-# Required environment variables
-ENV FRANKENPHP_CONFIG="worker ./public/index.php"
-ENV FRANKENPHP_DOCUMENT_ROOT=/var/www/html/public
-
-ENV PHP_OPCACHE_ENABLE=1
-ENV PHP_OPCACHE_VALIDATE_TIMESTAMPS=0
+ENV APP_ENV=${APP_ENV} \
+    FRANKENPHP_CONFIG="worker ./public/index.php" \
+    FRANKENPHP_DOCUMENT_ROOT=/var/www/html/public \
+    PHP_OPCACHE_ENABLE=1 \
+    PHP_OPCACHE_VALIDATE_TIMESTAMPS=0
 
 # Install system dependencies
 RUN apt-get update && \
@@ -27,9 +24,8 @@ RUN apt-get update && \
     libsqlite3-dev \
     libssh2-1-dev \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN git config --system --add safe.directory /var/www/html
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --system --add safe.directory /var/www/html
 
 # Install PHP extensions
 ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
@@ -43,20 +39,12 @@ RUN install-php-extensions \
     gd \
     zip
 
-# Conditionally install Xdebug for development
-RUN install-php-extensions xdebug \
-    && echo "xdebug.mode=debug" >> /usr/local/etc/php/conf.d/xdebug.ini \
-    && echo "xdebug.client_host=host.docker.internal" >> /usr/local/etc/php/conf.d/xdebug.ini;
-
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
 # Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs
-
-# Configure environment specific settings
-RUN export PHP_OPCACHE_VALIDATE_TIMESTAMPS=1
 
 WORKDIR /var/www/html
 
@@ -66,32 +54,37 @@ COPY . .
 # Copy environment file
 COPY ${ENV_FILE} .env
 
+RUN touch /var/www/html/database/database.sqlite && rm -rf public/build
+
 # Install Turso PHP extension
 ENV COMPOSER_HOME=/root/.composer
+ENV PATH="${COMPOSER_HOME}/vendor/bin:${PATH}"
 RUN composer global require darkterminal/turso-php-installer
-ENV PATH="/root/.composer/vendor/bin:${PATH}"
 RUN turso-php-installer install -n --thread-safe
 
-# Verify extensions
-RUN php -m | grep libsql && \
-    php -m | grep pdo_sqlite \
-    && rm -rf public/build
-
 # Install dependencies
-RUN composer install --optimize-autoloader --no-interaction \
-    && npm install;
+RUN composer install --optimize-autoloader --no-dev --no-interaction \
+    && php artisan migrate:fresh --seed --force \
+    && php artisan sqld:remove-database-except-default \
+    && php artisan config:clear \
+    && php artisan route:clear \
+    && php artisan view:clear \
+    && rm -rf database/migrations \
+    && rm -rf database/seeders \
+    && rm -rf database/factories \
+    && rm -rf database/libsql-data \
+    && npm ci --omit=dev \
+    && npm run build \
+    && rm -f public/hot
 
 # Set permissions
-RUN chown -R www-data:www-data storage bootstrap/cache
-RUN chmod -R 775 storage bootstrap/cache
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s CMD curl -f http://localhost:8000/up || exit 1
+RUN chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
 # Entrypoint script
-RUN mv docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN mv entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-EXPOSE 8000 9003 5173 2019
+EXPOSE 8000
 
 ENTRYPOINT ["sh", "-c", "/usr/local/bin/docker-entrypoint.sh"]

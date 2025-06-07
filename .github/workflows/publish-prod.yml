@@ -39,6 +39,9 @@ jobs:
 
       - name: Build and Push Production Remote Instance Images
         run: make compose-prod-lri/build
+
+      - name: Build and Push MylibSQLAdmin Proxy
+        run: make compose-proxy/build
         
   create-release:
     runs-on: ubuntu-latest
