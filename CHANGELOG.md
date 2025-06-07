@@ -1,3 +1,7 @@
+## [1.1.14] - 2025-06-07
+
+- fix: ensure correct host resolution for production CLI and web contexts [Imam Ali Mustofa]
+
 ## [1.1.13] - 2025-06-07
 
 - build: use copy command [Imam Ali Mustofa]
