@@ -54,14 +54,13 @@ COPY . .
 # Copy environment file
 COPY ${ENV_FILE} .env
 
+RUN touch /var/www/html/database/database.sqlite && rm -rf public/build
+
 # Install Turso PHP extension
 ENV COMPOSER_HOME=/root/.composer
 ENV PATH="${COMPOSER_HOME}/vendor/bin:${PATH}"
 RUN composer global require darkterminal/turso-php-installer
 RUN turso-php-installer install -n --thread-safe
-
-# Verify extensions
-RUN rm -rf public/build
 
 # Install dependencies
 RUN composer install --optimize-autoloader --no-dev --no-interaction \
