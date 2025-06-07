@@ -19,7 +19,7 @@ fi
 
 # 📦 Step 1: Update composer.version in composer.json
 echo "🔄 Updating version in composer.json..."
-CURRENT_VERSION=$(jq -r '.version' composer.json)
+CURRENT_VERSION=$(jq -r '.version' ./webapp/composer.json)
 IFS='.' read -r -a VERSION_PARTS <<<"$CURRENT_VERSION"
 
 if [[ "$BUILD_TYPE" == "patch" ]]; then
@@ -36,7 +36,7 @@ fi
 NEW_VERSION="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.${VERSION_PARTS[2]}"
 
 # Update the composer.json file
-jq --arg new_version "$NEW_VERSION" '.version = $new_version' composer.json >composer_temp.json && mv composer_temp.json composer.json
+jq --arg new_version "$NEW_VERSION" '.version = $new_version' ./webapp/composer.json >composer_temp.json && mv ./webapp/composer_temp.json ./webapp/composer.json
 composer update
 echo "✅ Updated version to $NEW_VERSION in composer.json"
 
@@ -58,7 +58,7 @@ echo "✅ Updated CHANGELOG.md"
 
 # 📝 Step 3: Git commit and tag
 echo "🔨 Committing changes..."
-git add composer.json composer.lock CHANGELOG.md
+git add .
 git commit -m "release: $BUILD_TYPE version $NEW_VERSION"
 if [[ $? -ne 0 ]]; then
     echo "❌ Error: Git commit failed."

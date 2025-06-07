@@ -1,3 +1,9 @@
+## [1.2.0] - 2025-06-08
+
+- fix: mount volumes [Imam Ali Mustofa]
+- docs: add demo video and screenshot [Imam Ali Mustofa]
+- refactor: re-organize directory structure [Imam Ali Mustofa]
+
 ## [1.1.16] - 2025-06-07
 
 - refactor: use db service in production [Imam Ali Mustofa]
