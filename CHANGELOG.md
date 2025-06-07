@@ -1,3 +1,7 @@
+## [1.1.10] - 2025-06-07
+
+- build: generate key using openssl [Imam Ali Mustofa]
+
 ## [1.1.9] - 2025-06-07
 
 - build: create database file at runtime [Imam Ali Mustofa]
