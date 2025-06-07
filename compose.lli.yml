@@ -14,7 +14,6 @@ services:
     volumes:
       - ./:/var/www/html
       - ./storage:/var/www/html/storage
-    env_file: './.env'
     networks:
       - app-network
     restart: always
@@ -31,7 +30,6 @@ services:
         ENV_FILE: .env.production # Use the production env file
     ports:
       - '8000:8000'
-    env_file: './.env'
     networks:
       - app-network
     restart: unless-stopped
