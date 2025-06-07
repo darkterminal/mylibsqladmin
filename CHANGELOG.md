@@ -1,3 +1,7 @@
+## [1.1.12] - 2025-06-07
+
+- build: use service name in production [Imam Ali Mustofa]
+
 ## [1.1.11] - 2025-06-07
 
 - build: remove env_file from compose [Imam Ali Mustofa]
