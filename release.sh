@@ -36,8 +36,8 @@ fi
 NEW_VERSION="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.${VERSION_PARTS[2]}"
 
 # Update the composer.json file
-jq --arg new_version "$NEW_VERSION" '.version = $new_version' ./webapp/composer.json >composer_temp.json && mv ./webapp/composer_temp.json ./webapp/composer.json
-composer update
+jq --arg new_version "$NEW_VERSION" '.version = $new_version' ./webapp/composer.json >./webapp/composer_temp.json && mv ./webapp/composer_temp.json ./webapp/composer.json
+cd webapp && composer update && cd ..
 echo "✅ Updated version to $NEW_VERSION in composer.json"
 
 # 📜 Step 2: Update CHANGELOG.md

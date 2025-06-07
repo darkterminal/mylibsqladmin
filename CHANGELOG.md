@@ -1,5 +1,9 @@
 ## [1.2.0] - 2025-06-08
 
+
+
+## [1.2.0] - 2025-06-08
+
 - fix: mount volumes [Imam Ali Mustofa]
 - docs: add demo video and screenshot [Imam Ali Mustofa]
 - refactor: re-organize directory structure [Imam Ali Mustofa]
