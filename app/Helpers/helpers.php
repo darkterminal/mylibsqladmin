@@ -30,6 +30,6 @@ if (!function_exists('get_ip_location')) {
 if (!function_exists('mylibsqladmin_env')) {
     function mylibsqladmin_env(string $variable_name): string
     {
-        return in_array(php_sapi_name(), ['cli']) ? env($variable_name, 'db') : 'localhost';
+        return in_array(php_sapi_name(), ['cli']) && app()->isProduction() ? env($variable_name, 'db') : 'localhost';
     }
 }
