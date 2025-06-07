@@ -1,3 +1,11 @@
+## [1.3.0] - 2025-06-08
+
+- release: minor version 1.2.0 [Imam Ali Mustofa]
+- release: minor version 1.2.0 [Imam Ali Mustofa]
+- fix: mount volumes [Imam Ali Mustofa]
+- docs: add demo video and screenshot [Imam Ali Mustofa]
+- refactor: re-organize directory structure [Imam Ali Mustofa]
+
 ## [1.2.0] - 2025-06-08
 
 
