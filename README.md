@@ -31,7 +31,12 @@ In the age of data-driven applications, the demand for lightweight, scalable, an
 
 **MylibSQLAdmin** is an open-source web GUI built specifically for managing libSQL databases. By harnessing the full potential of libSQL-server functionalities, this project provides an intuitive and comprehensive platform for database administration, making it easier than ever to manage your database systems through an accessible web interface. You can connect with `libsql-server` from **Docker Service** or use your existing `libsql-server` instance.
 
-<iframe width="100%" height="980" src="https://www.youtube-nocookie.com/embed/dntNiEYA4mU?si=LAqhOT8OyBAjMhN3&amp;controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<p align="center">
+    <a href="https://www.youtube.com/watch?v=dntNiEYA4mU" target="_blank">
+        <img width="100%" src="https://github.com/user-attachments/assets/bfc06ec7-6265-481b-a493-ce5a0d440b05" />
+    </a>
+    <a href="https://www.youtube.com/watch?v=dntNiEYA4mU" target="_blank">View on YouTube</a>
+</p>
 
 ## What Does MylibSQLAdmin Offer?
 
