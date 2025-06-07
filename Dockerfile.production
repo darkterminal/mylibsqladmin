@@ -52,7 +52,7 @@ WORKDIR /var/www/html
 COPY . .
 
 # Copy environment file
-RUN cp ${ENV_FILE} .env
+COPY ${ENV_FILE} .env
 
 RUN touch /var/www/html/database/database.sqlite && rm -rf public/build
 
