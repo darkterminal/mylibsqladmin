@@ -11,8 +11,8 @@ COMPOSE_PROFILES_PROD = --profile production $(if $(filter true,$(GET_LOCAL_INST
 COMPOSE_FILE_BASE = compose.yml
 COMPOSE_FILES = -f $(COMPOSE_FILE_BASE) $(if $(filter true,$(GET_LOCAL_INSTANCE)),-f compose.lli.yml,-f compose.lri.yml)
 
-SETUP_NGINX_PROD = sed -i "s|proxy_pass http://web:8000/validate-subdomain;|proxy_pass http://web_prod:8000/validate-subdomain;|" nginx/nginx.conf
-SETUP_NGINX_DEV = sed -i "s|proxy_pass http://web_prod:8000/validate-subdomain;|proxy_pass http://web:8000/validate-subdomain;|" nginx/nginx.conf
+SETUP_NGINX_PROD = sed -i "s|proxy_pass http://mylibsqladmin-webui-dev:8000/validate-subdomain;|proxy_pass http://mylibsqladmin-webui-prod:8000/validate-subdomain;|" nginx/nginx.conf
+SETUP_NGINX_DEV = sed -i "s|proxy_pass http://mylibsqladmin-webui-prod:8000/validate-subdomain;|proxy_pass http://mylibsqladmin-webui-dev:8000/validate-subdomain;|" nginx/nginx.conf
 
 .PHONY: help compose-dev/build compose-prod/build compose-dev/up compose-prod/up compose-dev/down compose-prod/down compose-dev/restart compose-prod/restart compose-dev/rebuild compose-prod/rebuild compose-lli/build compose-lri/build compose-dev/upd compose-prod/upd compose-dev/restartd compose-prod/restartd compose-dev-lli/build compose-prod-lli/build compose-dev-lri/build compose-prod-lri/build
 
