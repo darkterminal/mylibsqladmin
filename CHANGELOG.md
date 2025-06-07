@@ -1,3 +1,7 @@
+## [1.1.8] - 2025-06-07
+
+- build: run key generate in entrypoint [Imam Ali Mustofa]
+
 ## [1.1.7] - 2025-06-07
 
 - build: reorder build command [Imam Ali Mustofa]
