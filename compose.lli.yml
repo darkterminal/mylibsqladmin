@@ -12,8 +12,8 @@ services:
       - '9003:9003' # Xdebug
       - '5173:5173' # Vite
     volumes:
-      - ./:/var/www/html
-      - ./storage:/var/www/html/storage
+      - ./webapp:/var/www/html
+      - ./webapp/storage:/var/www/html/storage
     networks:
       - app-network
     restart: always
