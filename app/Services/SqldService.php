@@ -15,7 +15,7 @@ class SqldService
     {
         switch ($service) {
             case 'db':
-                $host = $source === 'web' && app()->environment('production') ? env('LIBSQL_HOST', 'db') : config('mylibsqladmin.libsql.api.host');
+                $host = $source === 'web' && env('APP_ENV') === 'production' ? env('LIBSQL_HOST') : config('mylibsqladmin.libsql.api.host');
                 $port = config('mylibsqladmin.libsql.api.port');
 
                 return "http://{$host}" . ($port === null ? '' : ":{$port}");
