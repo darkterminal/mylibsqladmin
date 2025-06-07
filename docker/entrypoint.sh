@@ -6,6 +6,7 @@ fi
 
 echo "🚀 Starting $APP_ENV server..."
 if [ "$APP_ENV" = "production" ]; then
+    php artisan key:generate --force
     exec php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000
 else
     exec composer run dev

@@ -58,7 +58,7 @@ echo "✅ Updated CHANGELOG.md"
 
 # 📝 Step 3: Git commit and tag
 echo "🔨 Committing changes..."
-git add composer.json CHANGELOG.md
+git add composer.json composer.lock CHANGELOG.md
 git commit -m "release: $BUILD_TYPE version $NEW_VERSION"
 if [[ $? -ne 0 ]]; then
     echo "❌ Error: Git commit failed."

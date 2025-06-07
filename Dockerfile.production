@@ -65,7 +65,6 @@ RUN rm -rf public/build
 
 # Install dependencies
 RUN composer install --optimize-autoloader --no-dev --no-interaction \
-    && php artisan key:generate --force \
     && php artisan migrate:fresh --seed --force \
     && php artisan sqld:remove-database-except-default \
     && php artisan config:clear \
