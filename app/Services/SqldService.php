@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\GroupDatabase;
-use App\Models\Team;
 use App\Models\UserDatabase;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
@@ -16,7 +15,7 @@ class SqldService
     {
         switch ($service) {
             case 'db':
-                $host = $source === 'web' ? env('LIBSQL_HOST') : config('mylibsqladmin.libsql.api.host');
+                $host = $source === 'web' || app()->environment('production') ? env('LIBSQL_HOST') : config('mylibsqladmin.libsql.api.host');
                 $port = config('mylibsqladmin.libsql.api.port');
 
                 return "http://{$host}" . ($port === null ? '' : ":{$port}");

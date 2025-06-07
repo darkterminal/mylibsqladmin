@@ -52,7 +52,7 @@ WORKDIR /var/www/html
 COPY . .
 
 # Copy environment file
-COPY ${ENV_FILE} .env
+RUN cp ${ENV_FILE} .env
 
 RUN touch /var/www/html/database/database.sqlite && rm -rf public/build
 
@@ -69,6 +69,10 @@ RUN composer install --optimize-autoloader --no-dev --no-interaction \
     && php artisan config:clear \
     && php artisan route:clear \
     && php artisan view:clear \
+    && rm -rf database/migrations \
+    && rm -rf database/seeders \
+    && rm -rf database/factories \
+    && rm -rf database/libsql-data \
     && npm ci --omit=dev \
     && npm run build \
     && rm -f public/hot

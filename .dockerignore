@@ -46,6 +46,7 @@ Dockerfile
 Dockerfile.*
 docker-compose.yml
 docker-compose.*.yml
+compose.*.yml
 .dockerignore
 
 # Development Specific
