@@ -1,3 +1,7 @@
+## [1.1.11] - 2025-06-07
+
+- build: remove env_file from compose [Imam Ali Mustofa]
+
 ## [1.1.10] - 2025-06-07
 
 - build: generate key using openssl [Imam Ali Mustofa]
