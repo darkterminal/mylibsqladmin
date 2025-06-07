@@ -1,3 +1,7 @@
+## [1.1.16] - 2025-06-07
+
+- refactor: use db service in production [Imam Ali Mustofa]
+
 ## [1.1.15] - 2025-06-07
 
 - refactor: using app environment method [Imam Ali Mustofa]
