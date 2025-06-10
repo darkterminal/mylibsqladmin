@@ -1,3 +1,7 @@
+## [1.3.1] - 2025-06-10
+
+- refactor: trying to be cool [Imam Ali Mustofa]
+
 ## [1.3.0] - 2025-06-08
 
 - release: minor version 1.2.0 [Imam Ali Mustofa]
