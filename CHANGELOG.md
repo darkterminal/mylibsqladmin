@@ -1,3 +1,7 @@
+## [1.3.3] - 2025-06-11
+
+- refactor: trying to be cool [Imam Ali Mustofa]
+
 ## [1.3.1] - 2025-06-10
 
 - refactor: trying to be cool [Imam Ali Mustofa]
