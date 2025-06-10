@@ -1,3 +1,7 @@
+## [1.3.4] - 2025-06-11
+
+- refactor: Makefile losing control [Imam Ali Mustofa]
+
 ## [1.3.3] - 2025-06-11
 
 - refactor: trying to be cool [Imam Ali Mustofa]
