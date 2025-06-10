@@ -79,7 +79,8 @@ RUN php -m | grep libsql && \
 
 # Install dependencies
 RUN composer install --optimize-autoloader --no-interaction \
-    && npm install;
+    && npm install \
+    && npm run build;
 
 # Set permissions
 RUN chown -R www-data:www-data storage bootstrap/cache

@@ -15,12 +15,10 @@
 
     @routes
 
-    @if (app()->isLocal())
+    @if (config('app.env') !== 'production')
         @viteReactRefresh
-        @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"], 'public/build')
-    @else
-        @vite(['resources/js/app.tsx'])
     @endif
+    @vite(['resources/js/app.tsx'])
 
     @inertiaHead
 </head>

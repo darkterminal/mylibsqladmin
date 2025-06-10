@@ -6,7 +6,7 @@
 # Environment Files
 !.env.local
 .env.production
-.env
+!.env
 
 # IDE & Editor
 .idea

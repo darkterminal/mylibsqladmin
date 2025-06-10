@@ -1,6 +1,6 @@
 DOCKERIGNORE_DEV = ./docker/.dockerignore.local
 DOCKERIGNORE_PROD = ./docker/.dockerignore.prod
-DOCKERIGNORE_TARGET_DIR = ./.dockerignore
+DOCKERIGNORE_TARGET_DIR = ./webapp/.dockerignore
 
 GET_LOCAL_INSTANCE = $(shell grep -E '^LIBSQL_LOCAL_INSTANCE=' .env | cut -d'=' -f2)
 VERSION ?= $(shell git describe --tags --abbrev=0)

@@ -4,6 +4,14 @@ if [ ! -f /var/www/html/database/database.sqlite ] && [ ! -f /var/www/html/datab
     touch /var/www/html/database/database.sqlite
 fi
 
+if [ "$APP_ENV" = "production" ]; then
+    cp .env.production .env
+else
+    cp .env.local .env
+fi
+
+source .env
+
 APP_KEY="base64:$(openssl rand -base64 32)"
 
 echo "🚀 Starting $APP_ENV server..."
