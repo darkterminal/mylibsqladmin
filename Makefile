@@ -41,37 +41,37 @@ help:
 compose-prod/build:
 	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_PROD)
-	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:$(VERSION)-production -f webapp/Dockerfile.production .
+	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:$(VERSION)-production -f webapp/Dockerfile.production ./webapp
 
 compose-prod-lli/build:
 	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_PROD)
-	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:$(VERSION)-production-lli -f webapp/Dockerfile.production .
+	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:$(VERSION)-production-lli -f webapp/Dockerfile.production ./webapp
 
 compose-prod-lri/build:
 	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_PROD)
-	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:$(VERSION)-production-lri -f webapp/Dockerfile.production .
+	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:$(VERSION)-production-lri -f webapp/Dockerfile.production ./webapp
 
 compose-dev/build:
 	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_DEV)
-	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:development -f webapp/Dockerfile.local .
+	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:development -f webapp/Dockerfile.local ./webapp
 
 compose-dev-lli/build:
 	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_DEV)
-	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:development-lli -f webapp/Dockerfile.local .
+	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:development-lli -f webapp/Dockerfile.local ./webapp
 
 compose-dev-lri/build:
 	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_DEV)
-	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:development-lri -f webapp/Dockerfile.local .
+	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:development-lri -f webapp/Dockerfile.local ./webapp
 
 compose-proxy/build:
 	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_DEV)
-	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-proxy:$(VERSION) -f nginx/Dockerfile .
+	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-proxy:$(VERSION) -f nginx/Dockerfile ./nginx
 
 compose-dev/up:
 	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
