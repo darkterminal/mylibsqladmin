@@ -54,7 +54,9 @@ COPY . .
 # Copy environment file
 COPY ${ENV_FILE} .env
 
-RUN touch /var/www/html/database/database.sqlite && rm -rf public/build
+RUN mkdir -p /var/www/html/database && \
+    touch /var/www/html/database/database.sqlite && \
+    rm -rf public/build
 
 # Install Turso PHP extension
 ENV COMPOSER_HOME=/root/.composer
