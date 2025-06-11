@@ -1,3 +1,7 @@
+## [1.3.5] - 2025-06-11
+
+- refactor: proxy entrypoint [Imam Ali Mustofa]
+
 ## [1.3.4] - 2025-06-11
 
 - refactor: Makefile losing control [Imam Ali Mustofa]
