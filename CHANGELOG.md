@@ -1,3 +1,7 @@
+## [1.3.6] - 2025-06-12
+
+- fix: proxy forgot the entrypoint [Imam Ali Mustofa]
+
 ## [1.3.5] - 2025-06-11
 
 - refactor: proxy entrypoint [Imam Ali Mustofa]
