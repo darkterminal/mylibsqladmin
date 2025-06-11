@@ -8,16 +8,16 @@ services:
         APP_ENV: development
         ENV_FILE: .env.local # Use the development env file
     ports:
-      - '8000:8000' # Laravel
-      - '9003:9003' # Xdebug
-      - '5173:5173' # Vite
+      - "8000:8000" # Laravel
+      - "9003:9003" # Xdebug
+      - "5173:5173" # Vite
     volumes:
       - ./webapp:/var/www/html
       - ./webapp/storage:/var/www/html/storage
     networks:
       - app-network
     restart: always
-    profiles: ['development']
+    profiles: ["development"]
 
   web_prod:
     container_name: mylibsqladmin-webui-prod
@@ -29,11 +29,11 @@ services:
         APP_DEBUG: false
         ENV_FILE: .env.production # Use the production env file
     ports:
-      - '8000:8000'
+      - "8000:8000"
     networks:
       - app-network
     restart: unless-stopped
-    profiles: ['production']
+    profiles: ["production"]
 
   proxy:
     container_name: mylibsqladmin-proxy
@@ -41,9 +41,9 @@ services:
       context: ./nginx
       dockerfile: Dockerfile
     ports:
-      - '8080:8080'
-      - '5001:5001'
-      - '8081:8081'
+      - "8080:8080"
+      - "5001:5001"
+      - "8081:8081"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
     networks:
@@ -52,29 +52,29 @@ services:
     depends_on:
       db:
         condition: service_started
-    profiles: ['local-instance']
+    profiles: ["local-instance"]
 
   db:
     container_name: mylibsqladmin-db
     image: ghcr.io/tursodatabase/libsql-server:latest
     platform: linux/amd64
-    entrypoint: ['/bin/sqld']
+    entrypoint: ["/bin/sqld"]
     command:
-      - '--http-listen-addr'
-      - '0.0.0.0:8080'
-      - '--grpc-listen-addr'
-      - '0.0.0.0:5001'
-      - '--admin-listen-addr'
-      - '0.0.0.0:8081'
-      - '--enable-namespaces'
-      - '--no-welcome'
-    user: '1000:1000'
+      - "--http-listen-addr"
+      - "0.0.0.0:8080"
+      - "--grpc-listen-addr"
+      - "0.0.0.0:5001"
+      - "--admin-listen-addr"
+      - "0.0.0.0:8081"
+      - "--enable-namespaces"
+      - "--no-welcome"
+    user: "1000:1000"
     volumes:
       - ./libsql-data:/var/lib/sqld
     restart: unless-stopped
     networks:
       - app-network
-    profiles: ['local-instance']
+    profiles: ["local-instance"]
 
   mailpit:
     image: axllent/mailpit
@@ -91,7 +91,7 @@ services:
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
     networks:
       - app-network
-    profiles: ['development']
+    profiles: ["development"]
 
 networks:
   app-network:

@@ -85,8 +85,6 @@ CHANGELOG.md
 .gitlab-ci.yml
 .travis.yml
 
-/database/database.sqlite
-/database/database.db
 /storage/app/public/*
 !.storage/app/public/.gitkeep
 /horizon-assets
