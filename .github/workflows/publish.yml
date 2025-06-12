@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-push-prod:
+  build-and-push:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -34,18 +34,15 @@ jobs:
       - name: Build and Push Production Images
         run: make compose-prod/build
 
-      - name: Build and Push Production Local Instance Images
-        run: make compose-prod-lli/build
-
-      - name: Build and Push Production Remote Instance Images
-        run: make compose-prod-lri/build
+      - name: Build and Push Development Images
+        run: make compose-prod/build
 
       - name: Build and Push MylibSQLAdmin Proxy
         run: make compose-proxy/build
         
   create-release:
     runs-on: ubuntu-latest
-    needs: build-and-push-prod
+    needs: build-and-push
     permissions:
       contents: write
 

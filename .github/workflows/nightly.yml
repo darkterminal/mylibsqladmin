@@ -28,9 +28,3 @@ jobs:
 
       - name: Build and Push Development Images
         run: make compose-dev/build
-
-      - name: Build and Push Development Local Instance Images
-        run: make compose-dev-lli/build
-
-      - name: Build and Push Development Remote Instance Images
-        run: make compose-dev-lri/build

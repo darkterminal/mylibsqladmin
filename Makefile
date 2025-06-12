@@ -14,7 +14,7 @@ COMPOSE_FILES = -f $(COMPOSE_FILE_BASE) $(if $(filter true,$(GET_LOCAL_INSTANCE)
 SETUP_NGINX_PROD = sed -i "s|proxy_pass http://mylibsqladmin-webui-dev:8000/validate-subdomain;|proxy_pass http://mylibsqladmin-webui-prod:8000/validate-subdomain;|" nginx/nginx.conf
 SETUP_NGINX_DEV = sed -i "s|proxy_pass http://mylibsqladmin-webui-prod:8000/validate-subdomain;|proxy_pass http://mylibsqladmin-webui-dev:8000/validate-subdomain;|" nginx/nginx.conf
 
-.PHONY: help compose-dev/build compose-prod/build compose-dev/up compose-prod/up compose-dev/down compose-prod/down compose-dev/restart compose-prod/restart compose-dev/rebuild compose-prod/rebuild compose-lli/build compose-lri/build compose-dev/upd compose-prod/upd compose-dev/restartd compose-prod/restartd compose-dev-lli/build compose-prod-lli/build compose-dev-lri/build compose-prod-lri/build compose-proxy/build
+.PHONY: help compose-dev/build compose-prod/build compose-dev/up compose-prod/up compose-dev/down compose-prod/down compose-dev/restart compose-prod/restart compose-dev/rebuild compose-prod/rebuild compose-lli/build compose-lri/build compose-dev/upd compose-prod/upd compose-dev/restartd compose-prod/restartd compose-proxy/build
 
 help:
 	@echo "Usage:"
@@ -32,45 +32,23 @@ help:
 	@echo "  make compose-prod/restartd\t\tRestart production environment in detached mode"
 	@echo "  make compose-dev/rebuild\t\tRebuild development containers"
 	@echo "  make compose-prod/rebuild\t\tRebuild production containers"
-	@echo "  make compose-dev-lli/build\t\tBuild development environment with local instance"
-	@echo "  make compose-prod-lli/build\t\tBuild production environment with local instance"
-	@echo "  make compose-dev-lri/build\t\tBuild development environment with remote instance"
-	@echo "  make compose-prod-lri/build\t\tBuild production environment with remote instance"
 	@echo "  make compose-proxy/build\t\tBuild proxy container"
 
 compose-prod/build:
 	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_PROD)
+	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:latest -f webapp/Dockerfile.production ./webapp
 	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:$(VERSION)-production -f webapp/Dockerfile.production ./webapp
-
-compose-prod-lli/build:
-	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
-	$(SETUP_NGINX_PROD)
-	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:$(VERSION)-production-lli -f webapp/Dockerfile.production ./webapp
-
-compose-prod-lri/build:
-	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
-	$(SETUP_NGINX_PROD)
-	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:$(VERSION)-production-lri -f webapp/Dockerfile.production ./webapp
 
 compose-dev/build:
 	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_DEV)
-	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:development -f webapp/Dockerfile.local ./webapp
-
-compose-dev-lli/build:
-	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
-	$(SETUP_NGINX_DEV)
-	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:development-lli -f webapp/Dockerfile.local ./webapp
-
-compose-dev-lri/build:
-	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
-	$(SETUP_NGINX_DEV)
-	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:development-lri -f webapp/Dockerfile.local ./webapp
+	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:nightly -f webapp/Dockerfile.local ./webapp
 
 compose-proxy/build:
 	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
 	$(SETUP_NGINX_DEV)
+	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-proxy:latest -f nginx/Dockerfile ./nginx
 	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-proxy:$(VERSION) -f nginx/Dockerfile ./nginx
 
 compose-dev/up:

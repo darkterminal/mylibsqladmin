@@ -31,9 +31,7 @@ class SqldService
         logger()->debug("Entering getDatabases with local: $local");
         $sapi = php_sapi_name();
 
-        $allDatabases = $local
-            ? self::getLocalDatabases()
-            : self::getRemoteDatabases();
+        $allDatabases = self::getLocalDatabases();
 
         if (!str_starts_with($sapi, 'cli') || $sapi === 'frankenphp') {
             logger()->debug("User is not authenticated and not running in CLI, source $sapi");
