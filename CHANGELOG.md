@@ -1,3 +1,7 @@
+## [1.3.8] - 2025-06-14
+
+- fix: stats event-listener and sqld service [Imam Ali Mustofa]
+
 ## [1.3.7] - 2025-06-12
 
 - fix: libsql remote instance stats [Imam Ali Mustofa]
