@@ -17,8 +17,8 @@ class TriggerDatabaseStatsChangeEvent
     /**
      * Create a new event instance.
      */
-    public function __construct(public string $databaseName, public string $source)
+    public function __construct(public string $databaseName, public string $source, public int $userId)
     {
-        logger("Triggering stats changed for {$this->databaseName} from $source");
+        logger("Triggering stats changed for {$this->databaseName} from {$this->source} by user {$this->userId}");
     }
 }

@@ -26,21 +26,17 @@ class SqldService
         }
     }
 
-    public static function getDatabases(bool $local = true): array
+    public static function getDatabases(bool $local = true, ?int $userId = null): array
     {
         logger()->debug("Entering getDatabases with local: $local");
         $sapi = php_sapi_name();
 
-        $allDatabases = self::getLocalDatabases();
+        $allDatabases = $local ? self::getLocalDatabases() : self::getRemoteDatabases();
 
-        if (!str_starts_with($sapi, 'cli') || $sapi === 'frankenphp') {
-            logger()->debug("User is not authenticated and not running in CLI, source $sapi");
-            return $allDatabases;
-        }
+        logger()->debug("Fetched databases for user $userId");
 
         logger()->debug("is local: $local, Fetched databases: " . json_encode($allDatabases));
 
-        $userId = auth()->check() ? auth()->user()->id : null;
         logger()->debug("User ID: " . ($userId ?? 'null'));
 
         if ($userId && (!str_starts_with($sapi, 'cli') || $sapi === 'frankenphp')) {
@@ -109,21 +105,19 @@ class SqldService
 
     private static function performHealthChecks(string $host, $request, $userDatabases)
     {
-        foreach ($userDatabases as $db) {
-            try {
-                $pipelineRequest = [
-                    'requests' => [
-                        ['type' => 'execute', 'stmt' => ['sql' => 'SELECT 1']],
-                        ['type' => 'close']
-                    ]
-                ];
+        try {
+            $pipelineRequest = [
+                'requests' => [
+                    ['type' => 'execute', 'stmt' => ['sql' => 'SELECT 1']],
+                    ['type' => 'close']
+                ]
+            ];
 
-                self::createBaseRequest()
-                    ->timeout(3)
-                    ->post("{$db->database_name}.{$host}/v2/pipeline", $pipelineRequest);
-            } catch (\Exception $e) {
-                logger()->error($e->getMessage());
-            }
+            self::createBaseRequest()
+                ->timeout(3)
+                ->post("{$host}/v2/pipeline", $pipelineRequest);
+        } catch (\Exception $e) {
+            logger()->error($e->getMessage());
         }
 
         return $request->retry(3, 100)

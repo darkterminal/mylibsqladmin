@@ -9,7 +9,7 @@ use App\Models\UserDatabase;
 
 class StatsFetcherService
 {
-    public static function run(?string $databaseName = null, ?string $source = null): string|array
+    public static function run(?string $databaseName = null, ?string $source = null, ?int $userId = null): string|array
     {
         if ($databaseName) {
 
@@ -18,15 +18,15 @@ class StatsFetcherService
                 return "Database not found";
             }
 
-            return self::broadcastToDatabase($databaseName, $source);
+            return self::broadcastToDatabase($databaseName, $source, $userId);
         } else {
-            return self::broadcastStatsChanged($source);
+            return self::broadcastStatsChanged($source, $userId);
         }
     }
 
-    protected static function broadcastStatsChanged($source): string
+    protected static function broadcastStatsChanged($source, $userId): string
     {
-        $databases = SqldService::getDatabases(config('mylibsqladmin.local_instance'));
+        $databases = SqldService::getDatabases(config('mylibsqladmin.local_instance'), $userId);
         foreach ($databases as $database) {
 
             $host = SqldService::useEndpoint('db', $source);
@@ -83,9 +83,9 @@ class StatsFetcherService
         return 'Stats fetched';
     }
 
-    protected static function broadcastToDatabase(string $databaseName, string $source): array
+    protected static function broadcastToDatabase(string $databaseName, string $source, int $userId): array
     {
-        $databases = SqldService::getDatabases(config('mylibsqladmin.local_instance'));
+        $databases = SqldService::getDatabases(config('mylibsqladmin.local_instance'), $userId);
         $database = collect($databases)->where('database_name', $databaseName)->first();
 
         $host = SqldService::useEndpoint('db', $source);
