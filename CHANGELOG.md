@@ -1,3 +1,9 @@
+## [1.4.0] - 2025-06-18
+
+- refactor: using csrf token all over the places [Imam Ali Mustofa]
+- feat: add platform auto-sync remote databases [Imam Ali Mustofa]
+- refactor: use artisan serve in dev [Imam Ali Mustofa]
+
 ## [1.3.8] - 2025-06-14
 
 - fix: stats event-listener and sqld service [Imam Ali Mustofa]
