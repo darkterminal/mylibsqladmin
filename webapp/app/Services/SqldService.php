@@ -6,6 +6,7 @@ use App\Models\GroupDatabase;
 use App\Models\UserDatabase;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -29,7 +30,6 @@ class SqldService
     public static function getDatabases(bool $local = true, ?int $userId = null): array
     {
         logger()->debug("Entering getDatabases with local: $local");
-        $sapi = php_sapi_name();
 
         $allDatabases = $local ? self::getLocalDatabases() : self::getRemoteDatabases();
 
@@ -39,7 +39,7 @@ class SqldService
 
         logger()->debug("User ID: " . ($userId ?? 'null'));
 
-        if ($userId && (!str_starts_with($sapi, 'cli') || $sapi === 'frankenphp')) {
+        if ($userId && UserDatabase::whereIn('database_name', Arr::pluck($allDatabases, 'name'))->where('user_id', $userId)->doesntExist()) {
             logger()->debug("Syncing databases with user");
             self::syncDatabasesWithUser($userId, $allDatabases);
         }
@@ -48,7 +48,7 @@ class SqldService
             ? UserDatabase::where('user_id', $userId)->get()->toArray()
             : [];
 
-        logger()->debug("Returning databases: " . json_encode($result));
+        logger()->debug("Returning databases: {$userId}" . json_encode($result));
 
         return $result;
     }
@@ -81,6 +81,7 @@ class SqldService
         if ($allMetrics->successful()) {
             logger()->debug("Metrics fetch successful, parsing response");
             $allDatabases = self::parseMetricsResponse($allMetrics->body());
+            logger()->debug("Fetched databases: " . json_encode($allDatabases));
 
             if (empty($allDatabases)) {
                 logger()->debug("No databases found, performing health checks");
@@ -150,12 +151,12 @@ class SqldService
                 'database_name' => $database['name'] ?? $database['database_name']
             ];
 
-            if ($database['deleted_at'] !== null) {
+            if (isset($database['deleted_at'])) {
                 $updateData['deleted_at'] = now()->format('Y-m-d H:i:s');
             }
 
             UserDatabase::updateOrInsert(
-                ['user_id' => $userId, 'database_name' => $database['name'] ?? $database['database_name']],
+                ['user_id' => $userId, 'database_name' => $database['name'] ?? $database['database_name'], 'created_by' => $userId],
                 $updateData
             );
         }
