@@ -1,22 +1,26 @@
-#!/bin/bash
-set -euo pipefail
-set -x
+#!/bin/sh
+set -eu
 
-# Function to prompt user with default
+# Function to prompt user with default (POSIX-compliant)
 prompt() {
-  local message="$1"
-  local default="$2"
-  read -p "$message [$default]: " input
-  echo "${input:-$default}"
+  message="$1"
+  default="$2"
+  printf "%s [%s]: " "$message" "$default"
+  read input
+  if [ -z "$input" ]; then
+    echo "$default"
+  else
+    echo "$input"
+  fi
 }
 
 # Check if Docker is installed
-if ! command -v docker &>/dev/null; then
+if ! command -v docker >/dev/null 2>&1; then
   echo "❌ Docker is not installed. Please install Docker first."
-  if [[ "$(uname)" == "Darwin" ]]; then
+  if [ "$(uname)" = "Darwin" ]; then
     echo "You can install Docker using Homebrew with the following command:"
-    echo "brew cask install docker"
-  elif [[ "$(uname)" == "Linux" ]]; then
+    echo "brew install --cask docker"
+  elif [ "$(uname)" = "Linux" ]; then
     echo "You can install Docker using the following command:"
     echo "curl -fsSL https://get.docker.com | sh"
   fi
@@ -24,24 +28,24 @@ if ! command -v docker &>/dev/null; then
 fi
 
 # Check if Docker is running
-if ! docker info &>/dev/null; then
+if ! docker info >/dev/null 2>&1; then
   echo "❌ Docker is not running. Please start Docker first."
   exit 1
 fi
 
 # Check if Docker Compose file already exists
-if [[ -f "compose.yml" || -f "docker-compose.yml" ]]; then
+if [ -f "compose.yml" ] || [ -f "docker-compose.yml" ]; then
   echo "❌ Docker Compose file already exists. Please remove it first."
   exit 1
 fi
 
 # Check if openssl is installed
-if ! command -v openssl &>/dev/null; then
+if ! command -v openssl >/dev/null 2>&1; then
   echo "❌ openssl is not installed. Please install openssl first."
-  if [[ "$(uname)" == "Darwin" ]]; then
+  if [ "$(uname)" = "Darwin" ]; then
     echo "You can install openssl using Homebrew with the following command:"
     echo "brew install openssl"
-  elif [[ "$(uname)" == "Linux" ]]; then
+  elif [ "$(uname)" = "Linux" ]; then
     echo "You can install openssl using the following command:"
     echo "sudo apt-get install openssl"
   fi
@@ -55,7 +59,7 @@ APP_NAME=$(prompt "Enter application name" "MyLibSQLAdmin")
 LIBSQL_LOCAL_INSTANCE=$(prompt "Use local LibSQL instance? (true/false)" "true")
 
 # Defaults for local instance
-if [[ "$LIBSQL_LOCAL_INSTANCE" == "true" ]]; then
+if [ "$LIBSQL_LOCAL_INSTANCE" = "true" ]; then
   LIBSQL_HOST="proxy"
   LIBSQL_PORT="8080"
   LIBSQL_API_HOST="proxy"
@@ -63,26 +67,29 @@ if [[ "$LIBSQL_LOCAL_INSTANCE" == "true" ]]; then
   LIBSQL_API_USERNAME=""
   LIBSQL_API_PASSWORD=""
 else
-  read -p "Enter LibSQL host: " LIBSQL_HOST
-  read -p "Enter LibSQL port [8080]: " input_port
+  printf "Enter LibSQL host: "
+  read LIBSQL_HOST
+  printf "Enter LibSQL port [8080]: "
+  read input_port
   LIBSQL_PORT="${input_port:-8080}"
-  read -p "Enter LibSQL API host: " LIBSQL_API_HOST
-  read -p "Enter LibSQL API port [8081]: " input_api_port
+  printf "Enter LibSQL API host: "
+  read LIBSQL_API_HOST
+  printf "Enter LibSQL API port [8081]: "
+  read input_api_port
   LIBSQL_API_PORT="${input_api_port:-8081}"
-  read -p "Enter LibSQL API username (optional): " LIBSQL_API_USERNAME
-  read -s -p "Enter LibSQL API password (optional): " LIBSQL_API_PASSWORD
+  printf "Enter LibSQL API username (optional): "
+  read LIBSQL_API_USERNAME
+  printf "Enter LibSQL API password (optional): "
+  stty -echo
+  read LIBSQL_API_PASSWORD
+  stty echo
   echo
 fi
 
-APP_TIMEZONE=${APP_TIMEZONE:-Asia/Jakarta}
-APP_NAME=${APP_NAME:-MyLibSQLAdmin}
-LIBSQL_LOCAL_INSTANCE=${LIBSQL_LOCAL_INSTANCE:-true}
-LIBSQL_API_USERNAME=${LIBSQL_API_USERNAME:-}
-LIBSQL_API_PASSWORD=${LIBSQL_API_PASSWORD:-}
-
 # Compose templates
 COMPOSE_TEMPLATE_WEBUI_LOCAL_INSTANCE=$(
-  echo "services:
+  cat <<EOF
+services:
   webui:
     container_name: mylibsqladmin-webui-prod
     image: ghcr.io/darkterminal/mylibsqladmin-web:latest
@@ -107,11 +114,12 @@ COMPOSE_TEMPLATE_WEBUI_LOCAL_INSTANCE=$(
       - LIBSQL_API_PASSWORD=$LIBSQL_API_PASSWORD
     depends_on:
       - db
-"
+EOF
 )
 
 COMPOSE_TEMPLATE_WEBUI_REMOTE_INSTANCE=$(
-  echo "services:
+  cat <<EOF
+services:
   webui:
     container_name: mylibsqladmin-webui
     image: ghcr.io/darkterminal/mylibsqladmin-web:latest
@@ -133,11 +141,11 @@ COMPOSE_TEMPLATE_WEBUI_REMOTE_INSTANCE=$(
       - LIBSQL_API_PORT=$LIBSQL_API_PORT
       - LIBSQL_API_USERNAME=$LIBSQL_API_USERNAME
       - LIBSQL_API_PASSWORD=$LIBSQL_API_PASSWORD
-"
+EOF
 )
 
 COMPOSE_TEMPLATE_PROXY=$(
-  echo "
+  cat <<EOF
   proxy:
     container_name: mylibsqladmin-proxy
     image: ghcr.io/darkterminal/mylibsqladmin-proxy:latest
@@ -153,11 +161,11 @@ COMPOSE_TEMPLATE_PROXY=$(
     depends_on:
       - webui
       - db
-"
+EOF
 )
 
 COMPOSE_TEMPLATE_DB=$(
-  echo "
+  cat <<EOF
   db:
     container_name: mylibsqladmin-db
     image: ghcr.io/tursodatabase/libsql-server:latest
@@ -177,20 +185,20 @@ COMPOSE_TEMPLATE_DB=$(
     restart: unless-stopped
     networks:
       - mylibsqladmin-network
-"
+EOF
 )
 
 COMPOSE_TEMPLATE_NETWORK=$(
-  echo "
+  cat <<EOF
 networks:
   mylibsqladmin-network:
     driver: bridge
     name: mylibsqladmin-network
-"
+EOF
 )
 
 # Write to compose.yml
-if [[ "$LIBSQL_LOCAL_INSTANCE" == "true" ]]; then
+if [ "$LIBSQL_LOCAL_INSTANCE" = "true" ]; then
   {
     echo "$COMPOSE_TEMPLATE_WEBUI_LOCAL_INSTANCE"
     echo "$COMPOSE_TEMPLATE_PROXY"
@@ -203,19 +211,21 @@ else
   } >compose.yml
 fi
 
-echo -e "\n✅ Docker Compose file created at: compose.yml"
-echo "👉 Run it with: docker compose -f compose.yml up -d"
+printf "\n✅ Docker Compose file created at: compose.yml\n"
+printf "👉 Run it with: docker compose -f compose.yml up -d\n"
 
 # Ask to run
-read -p "Run Docker Compose now? (y/n) " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-  docker compose -f compose.yml up -d
-fi
+printf "Run Docker Compose now? (y/n) "
+read run_reply
+case $run_reply in
+[yY]*) docker compose -f compose.yml up -d ;;
+esac
 
 # Ask to self-delete script
-read -p "Delete this script? (y/n) " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-  rm -rf "$0"
-fi
+printf "Delete this script? (y/n) "
+read delete_reply
+case $delete_reply in
+[yY]*) rm -f "$0" ;;
+esac
+
+printf "\n🎉 Installation completed successfully!\n"
