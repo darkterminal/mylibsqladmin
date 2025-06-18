@@ -1,6 +1,3 @@
-> [!WARNING]
-> Still in development process.
-
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/darkterminal/darkterminal/master/projects/dark-mode.png">
@@ -57,86 +54,22 @@ In the age of data-driven applications, the demand for lightweight, scalable, an
 -   via <a href="https://github.com/sponsors/darkterminal">GitHub Sponsor</a> (Global)
 -   via <a href="https://saweria.co/darkterminal" target="_blank">Saweria</a> (Indonesian)
 
+## Requirements
+
+-   Docker & Docker Compose
+-   openssl
+
 ## Getting Started
 
-For now there is no build images, but you can use clone this repository and use MylibSQLAdmin.
+Install MylibSQLAdmin Platform using installer script:
 
-1. Clone MylibSQLAdmin
-
-```bash
-git clone git@github.com:darkterminal/mylibsqladmin.git
-./setup
+```sh
+mkdir -p ~/apps/mylibsqladmin
+cd ~/apps/mylibsqladmin
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/darkterminal/mylibsqladmin/raw/refs/heads/main/scripts/installer.sh | sh
 ```
 
-or
-
-```bash
-git clone https://github.com/darkterminal/mylibsqladmin.git
-./setup
-```
-
-2. Access Web GUI of MylibSQLAdmin Platform
-
-```
-http://localhost:8000
-```
-
-## Using Existing libsql-server Instance
-
-By default MylibSQLServer will use `libsql-server` from **Docker Service**. But if you want to try with your existing `libsql-server` instance you can do it too.
-
-1. Clone MylibSQLAdmin
-
-```bash
-git clone git@github.com:darkterminal/mylibsqladmin.git
-```
-
-or
-
-```bash
-git clone https://github.com/darkterminal/mylibsqladmin.git
-```
-
-2. Setting Environment Variable File
-
-```bash
-cp .env.example .env
-cp admin/.env.example admin/.env
-```
-
-3. adjust the settings
-
-```bash
-LIBSQL_LOCAL_INSTANCE=false
-
-LIBSQL_HOST=<your-existing-libsql-server-host>
-LIBSQL_PORT=<your-existing-libsql-server-port>
-
-LIBSQL_API_HOST=<your-existing-libsql-server-admin-api-host>
-LIBSQL_API_PORT=<your-existing-libsql-server-admin-api-port>
-# Optional (you can leave username and password with empty value)
-LIBSQL_API_USERNAME=<your-existing-libsql-server-admin-api-username>
-LIBSQL_API_PASSWORD=<your-existing-libsql-server-admin-api-password>
-```
-
-4. Running MylibSQLAdmin Platform
-
-```bash
-cd admin
-php artisan key:generate
-composer install
-npm install
-
-cd ..
-
-make compose-dev/up
-```
-
-5. Access Web GUI of MylibSQLAdmin Platform
-
-```
-http://localhost:8000
-```
+This script will ask you simple questions to prepare your platform. Make sure all requirements are met.
 
 ## Contributors
 
