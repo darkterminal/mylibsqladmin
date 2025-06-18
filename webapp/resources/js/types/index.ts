@@ -54,6 +54,7 @@ export interface SharedData {
     groups: GroupDatabaseProps[];
     configs?: Configs;
     invitation?: Invitation;
+    csrfToken: string;
     [key: string]: unknown;
 }
 

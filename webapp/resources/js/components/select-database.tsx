@@ -39,6 +39,9 @@ export function SelectDatabase() {
             const response = await apiFetch(route('api.group.create-only'), {
                 method: 'POST',
                 body: JSON.stringify({ name, team_id: teamId }),
+                headers: {
+                    'X-CSRF-TOKEN': props.csrfToken
+                }
             });
 
             if (!response.ok) {

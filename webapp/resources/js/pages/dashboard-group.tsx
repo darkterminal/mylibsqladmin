@@ -7,12 +7,13 @@ import AppLayout from "@/layouts/app-layout";
 import { apiFetch } from "@/lib/api";
 import { usePermission } from "@/lib/auth";
 import {
+    SharedData,
     UserDatabaseTokenProps,
     type BreadcrumbItem,
     type DatabaseInGroupProps,
     type GroupDatabaseProps
 } from "@/types";
-import { Head, router } from "@inertiajs/react";
+import { Head, router, usePage } from "@inertiajs/react";
 import { Users2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -35,6 +36,7 @@ export default function DashboardGroup({
     databaseNotInGroup: DatabaseInGroupProps[]
 }) {
     const { can } = usePermission();
+    const { csrfToken } = usePage<SharedData>().props;
     const [groups, setGroups] = useState<GroupDatabaseProps[]>(databaseGroups);
     const [selectedGroup, setSelectedGroup] = useState<GroupDatabaseProps | null>(null);
 
@@ -55,13 +57,21 @@ export default function DashboardGroup({
             const response = await apiFetch(route('api.group.create-only'), {
                 method: 'POST',
                 body: JSON.stringify({ name, team_id: teamId }),
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                }
             });
 
             if (!response.ok) {
                 throw new Error('Failed to create group');
             }
 
-            const refreshSession = await apiFetch(route('api.teams.databases', Number(teamId)));
+            const refreshSession = await apiFetch(route('api.teams.databases', Number(teamId)), {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            });
 
             if (!refreshSession.ok) {
                 throw new Error('Failed to refresh session');

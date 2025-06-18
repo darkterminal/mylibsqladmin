@@ -81,12 +81,13 @@ export default function DatabaseStudio() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': props.csrfToken
                 },
                 body: JSON.stringify({
                     team_id: currentTeamId,
                     database_name: databaseName,
                     query: statement
-                })
+                }),
             });
         }
 

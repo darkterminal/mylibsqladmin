@@ -1,6 +1,6 @@
 import { apiFetch } from "@/lib/api";
-import { Team } from "@/types";
-import { router } from "@inertiajs/react";
+import { SharedData, Team } from "@/types";
+import { router, usePage } from "@inertiajs/react";
 import { VariantProps } from "class-variance-authority";
 import { BoxIcon } from "lucide-react";
 import { AppTooltip } from "../app-tooltip";
@@ -17,11 +17,18 @@ export default function ButtonOpenDatabaseStudio({
     team?: Team,
     size?: VariantProps<typeof Button>["size"]
 }) {
+
+    const { csrfToken } = usePage<SharedData>().props
     const handleSelectDatabase = async (database: string) => {
         localStorage.setItem('sidebar', 'false');
         if (team) {
             localStorage.setItem('currentTeamId', team.id.toString());
-            await apiFetch(route('api.teams.databases', team.id));
+            await apiFetch(route('api.teams.databases', team.id), {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            });
         }
         router.get(route('database.studio', { database }));
     }

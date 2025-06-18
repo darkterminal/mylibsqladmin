@@ -11,8 +11,8 @@ import AppLayout from "@/layouts/app-layout"
 import { apiFetch } from "@/lib/api"
 import { usePermission } from "@/lib/auth"
 import { databaseType, formatBytes, getQuery } from "@/lib/utils"
-import { BreadcrumbItem, Team } from "@/types"
-import { Head, router } from "@inertiajs/react"
+import { BreadcrumbItem, SharedData, Team } from "@/types"
+import { Head, router, usePage } from "@inertiajs/react"
 import { Cylinder, DatabaseIcon, File, GitBranch, Handshake, KeyIcon, LockIcon, Trash2Icon, Users } from "lucide-react"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
@@ -164,6 +164,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 function DatabaseActions({ database }: { database: Databases }) {
     const { can } = usePermission()
+    const { csrfToken } = usePage<SharedData>().props
 
     const handleDeleteDatabase = useCallback((database: string) => {
         toast('Are you sure you want to delete this database?', {
@@ -183,7 +184,12 @@ function DatabaseActions({ database }: { database: Databases }) {
                                 const teamId = localStorage.getItem('currentTeamId');
 
                                 if (teamId) {
-                                    await apiFetch(route('api.teams.databases', Number(teamId)));
+                                    await apiFetch(route('api.teams.databases', Number(teamId)), {
+                                        method: 'GET',
+                                        headers: {
+                                            'X-CSRF-TOKEN': csrfToken
+                                        }
+                                    });
                                 }
 
                                 router.visit(route('dashboard.databases'));

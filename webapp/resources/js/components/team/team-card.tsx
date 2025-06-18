@@ -25,7 +25,7 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams }: Te
     const getInitials = useInitials();
     const { can } = usePermission();
 
-    const { databases, groups: databaseGroups } = usePage<SharedData>().props;
+    const { csrfToken, databases, groups: databaseGroups } = usePage<SharedData>().props;
     const groupedDatabases = (databaseGroups || [])
         .map?.(group => ({
             label: group.name,
@@ -40,6 +40,9 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams }: Te
             const response = await apiFetch(route('api.group.create-only'), {
                 method: 'POST',
                 body: JSON.stringify({ name, team_id: teamId }),
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                }
             });
 
             if (!response.ok) {
@@ -69,13 +72,21 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams }: Te
         const response = await apiFetch(route('database.create'), {
             method: 'POST',
             body: JSON.stringify(submittedData),
+            headers: {
+                'X-CSRF-TOKEN': csrfToken
+            }
         });
 
         if (!response.ok) {
             toast.error('Failed to create database');
         }
 
-        const refreshSession = await apiFetch(route('api.teams.databases', Number(teamId)));
+        const refreshSession = await apiFetch(route('api.teams.databases', Number(teamId)), {
+            method: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken
+            }
+        });
 
         if (!refreshSession.ok) {
             toast.error('Failed to refresh session');
@@ -90,6 +101,9 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams }: Te
         const response = await apiFetch(route('team.update', team.id), {
             method: 'PUT',
             body: JSON.stringify(formData),
+            headers: {
+                'X-CSRF-TOKEN': csrfToken
+            }
         });
         if (response.ok) {
             router.visit(window.location.href, {
@@ -102,6 +116,9 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams }: Te
         const response = await apiFetch(route('teams.invitations.store', team.id), {
             method: 'POST',
             body: JSON.stringify(member),
+            headers: {
+                'X-CSRF-TOKEN': csrfToken
+            }
         });
 
         if (response.ok) {
@@ -116,6 +133,9 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams }: Te
             const response = await apiFetch(route('api.group.create-only'), {
                 method: 'POST',
                 body: JSON.stringify({ name: groupOnlyForm.groupName, team_id: Number(groupOnlyForm.teamId) }),
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                }
             });
 
             // Parse response regardless of status
@@ -139,7 +159,12 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams }: Te
             }
 
             // Handle success
-            const refreshSession = await apiFetch(route('api.teams.databases', Number(groupOnlyForm.teamId)));
+            const refreshSession = await apiFetch(route('api.teams.databases', Number(groupOnlyForm.teamId)), {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            });
 
             if (!refreshSession.ok) {
                 throw new Error('Failed to refresh session');
@@ -184,6 +209,9 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams }: Te
     const handleDeleteTeam = async (teamId: number) => {
         const response = await apiFetch(route('team.delete', teamId), {
             method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken
+            }
         });
 
         if (response.ok) {
@@ -201,6 +229,9 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams }: Te
             user: userId
         }), {
             method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken
+            }
         })
 
         if (response.ok) {

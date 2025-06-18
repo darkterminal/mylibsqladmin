@@ -18,6 +18,7 @@ import { ComboboxOption } from './ui/combobox';
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
 
     const { can } = usePermission();
+    const { csrfToken } = usePage<SharedData>().props
     const { databases, groups: databaseGroups, auth } = usePage<SharedData>().props;
     const database = getQuery('database', 'No database selected');
     const groupedDatabases = (databaseGroups || [])
@@ -40,6 +41,9 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
             const response = await apiFetch(route('api.group.create-only'), {
                 method: 'POST',
                 body: JSON.stringify({ name, team_id: teamId }),
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                }
             });
 
             if (!response.ok) {
@@ -70,6 +74,9 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
         const response = await apiFetch(route('database.create'), {
             method: 'POST',
             body: JSON.stringify(submittedData),
+            headers: {
+                'X-CSRF-TOKEN': csrfToken
+            }
         });
 
         if (response.ok) {

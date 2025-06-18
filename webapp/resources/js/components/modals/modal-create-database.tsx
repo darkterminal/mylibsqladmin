@@ -9,6 +9,7 @@ import { ModalForm } from "@/components/ui/modal-form"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useCustomEvent } from "@/hooks/use-custom-event"
+import { databaseType } from "@/lib/utils"
 import { type LibSQLDatabases, type OpenModalStateChangeProps, type Team } from "@/types"
 import { useEffect, useState } from "react"
 import { Combobox, ComboboxOption } from "../ui/combobox"
@@ -106,7 +107,7 @@ export function ModalCreateDatabase({
         }
     }, [currentGroup?.id]);
 
-    const sharedDatabases = existingDatabases.filter((db) => db.is_schema)
+    const sharedDatabases = existingDatabases.filter((db) => databaseType(db.is_schema.toString()) === "schema");
 
     useCustomEvent<OpenModalStateChangeProps>("open-modal-changed", async ({ isModalOpen, parentDatabase }) => {
         setOpen(isModalOpen)

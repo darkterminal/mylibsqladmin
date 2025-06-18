@@ -40,7 +40,7 @@ interface TeamSwitcherProps extends PopoverTriggerProps { }
 export const teamSignal = createSignal<Team | null>(null)
 
 export function TeamSwitcher({ className }: TeamSwitcherProps) {
-    const { auth } = usePage<SharedData>().props
+    const { auth, csrfToken } = usePage<SharedData>().props
     const [currentTeamId, setCurrentTeamId] = useLocalStorage<number | null>('currentTeamId', auth.user.teams[0]?.id || null)
 
     const getInitials = useInitials();
@@ -72,7 +72,12 @@ export function TeamSwitcher({ className }: TeamSwitcherProps) {
         setSelectedTeam(team)
         setCurrentTeamId(team.id)
         setOpen(false)
-        const response = await apiFetch(route('api.teams.databases', team.id))
+        const response = await apiFetch(route('api.teams.databases', team.id), {
+            method: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken
+            }
+        })
         if (response.ok) {
             router.visit(window.location.href, {
                 preserveScroll: true,
@@ -84,7 +89,12 @@ export function TeamSwitcher({ className }: TeamSwitcherProps) {
         if (auth.user.teams.length > 0) {
             const team = auth.user.teams.find(team => team.id === Number(currentTeamId)) || auth.user.teams[0]
             if (team) {
-                (async () => await apiFetch(route('api.teams.databases', team.id)))()
+                (async () => await apiFetch(route('api.teams.databases', team.id), {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                }))()
                 setSelectedTeam(team)
                 setCurrentTeamId(team.id)
             }

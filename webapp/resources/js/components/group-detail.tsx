@@ -31,7 +31,7 @@ export default function GroupDetail({
     availableDatabases: DatabaseInGroupProps[]
 }) {
     const { can } = usePermission();
-    const { databases, groups: databaseGroups } = usePage<SharedData>().props;
+    const { csrfToken, databases, groups: databaseGroups } = usePage<SharedData>().props;
     const groupedDatabases = (databaseGroups || [])
         .map?.(group => ({
             label: group.name,
@@ -100,6 +100,9 @@ export default function GroupDetail({
         const response = await apiFetch(route('database.create'), {
             method: 'POST',
             body: JSON.stringify(submittedData),
+            headers: {
+                'X-CSRF-TOKEN': csrfToken
+            }
         });
 
         if (response.ok) {
