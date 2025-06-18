@@ -66,7 +66,7 @@ Install MylibSQLAdmin Platform using installer script:
 ```sh
 mkdir -p ~/apps/mylibsqladmin
 cd ~/apps/mylibsqladmin
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/darkterminal/mylibsqladmin/raw/refs/heads/main/scripts/installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/darkterminal/mylibsqladmin/raw/refs/heads/main/scripts/installer.sh | bash
 ```
 
 This script will ask you simple questions to prepare your platform. Make sure all requirements are met.
