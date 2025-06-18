@@ -1,7 +1,6 @@
 #!/bin/sh
 set -eu
 
-# Function to prompt user with default (POSIX-compliant)
 prompt() {
   message="$1"
   default="$2"
@@ -14,51 +13,45 @@ prompt() {
   fi
 }
 
-# Check if Docker is installed
 if ! command -v docker >/dev/null 2>&1; then
   echo "❌ Docker is not installed. Please install Docker first."
   if [ "$(uname)" = "Darwin" ]; then
-    echo "You can install Docker using Homebrew with the following command:"
+    echo "You can install Docker using Homebrew with:"
     echo "brew install --cask docker"
   elif [ "$(uname)" = "Linux" ]; then
-    echo "You can install Docker using the following command:"
+    echo "You can install Docker using:"
     echo "curl -fsSL https://get.docker.com | sh"
   fi
   exit 1
 fi
 
-# Check if Docker is running
 if ! docker info >/dev/null 2>&1; then
   echo "❌ Docker is not running. Please start Docker first."
   exit 1
 fi
 
-# Check if Docker Compose file already exists
 if [ -f "compose.yml" ] || [ -f "docker-compose.yml" ]; then
   echo "❌ Docker Compose file already exists. Please remove it first."
   exit 1
 fi
 
-# Check if openssl is installed
 if ! command -v openssl >/dev/null 2>&1; then
   echo "❌ openssl is not installed. Please install openssl first."
   if [ "$(uname)" = "Darwin" ]; then
-    echo "You can install openssl using Homebrew with the following command:"
+    echo "You can install openssl using Homebrew with:"
     echo "brew install openssl"
   elif [ "$(uname)" = "Linux" ]; then
-    echo "You can install openssl using the following command:"
+    echo "You can install openssl using:"
     echo "sudo apt-get install openssl"
   fi
   exit 1
 fi
 
-# Collect user input
 APP_KEY="base64:$(openssl rand -base64 32 | tr -d '\n')"
 APP_TIMEZONE=$(prompt "Enter timezone" "Asia/Jakarta")
 APP_NAME=$(prompt "Enter application name" "MyLibSQLAdmin")
 LIBSQL_LOCAL_INSTANCE=$(prompt "Use local LibSQL instance? (true/false)" "true")
 
-# Defaults for local instance
 if [ "$LIBSQL_LOCAL_INSTANCE" = "true" ]; then
   LIBSQL_HOST="proxy"
   LIBSQL_PORT="8080"
@@ -80,13 +73,10 @@ else
   printf "Enter LibSQL API username (optional): "
   read LIBSQL_API_USERNAME
   printf "Enter LibSQL API password (optional): "
-  stty -echo
   read LIBSQL_API_PASSWORD
-  stty echo
   echo
 fi
 
-# Compose templates
 COMPOSE_TEMPLATE_WEBUI_LOCAL_INSTANCE=$(
   cat <<EOF
 services:
@@ -197,7 +187,6 @@ networks:
 EOF
 )
 
-# Write to compose.yml
 if [ "$LIBSQL_LOCAL_INSTANCE" = "true" ]; then
   {
     echo "$COMPOSE_TEMPLATE_WEBUI_LOCAL_INSTANCE"
@@ -214,18 +203,14 @@ fi
 printf "\n✅ Docker Compose file created at: compose.yml\n"
 printf "👉 Run it with: docker compose -f compose.yml up -d\n"
 
-# Ask to run
 printf "Run Docker Compose now? (y/n) "
 read run_reply
 case $run_reply in
 [yY]*) docker compose -f compose.yml up -d ;;
 esac
 
-# Ask to self-delete script
 printf "Delete this script? (y/n) "
 read delete_reply
 case $delete_reply in
 [yY]*) rm -f "$0" ;;
 esac
-
-printf "\n🎉 Installation completed successfully!\n"
