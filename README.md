@@ -61,9 +61,21 @@ In the age of data-driven applications, the demand for lightweight, scalable, an
 
 ## Getting Started
 
+### Using Installer Script
+
+-   create directory to save the `compose.yml` file (generate by installer)
+-   `cd` into directory
+-   and run this command
+
+```
+curl --proto '=https' https://github.com/darkterminal/mylibsqladmin/raw/refs/heads/main/scripts/installer.sh | sh
+```
+
+### Manual Installation
+
 Create directory to save the `compose.yml` file in your desire location.
 
-### LRI (libSQL Remote Instance)
+#### LRI (libSQL Remote Instance)
 
 Install MylibSQLAdmin Platform with your existing `libsql-server` instance
 
@@ -92,7 +104,7 @@ services:
             - LIBSQL_API_PASSWORD=
 ```
 
-### LLI (libSQL Local Instance)
+#### LLI (libSQL Local Instance)
 
 Install MyLibSQLAdmin Platform with libsql-server
 
