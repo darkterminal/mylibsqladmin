@@ -183,6 +183,13 @@ networks:
 docker compose up -d
 ```
 
+### Default Credentials
+
+-   Super Admin = username: `superadmin` password: `superadmin12345`
+-   Manager = username: `manager` password: `manager12345`
+-   Database Maintainer = username: `database-maintainer` password: `database-maintainer12345`
+-   Member = username: `member` password: `member`
+
 ## Contributors
 
 ![Contributors](https://contrib.nn.ci/api?no_bot=true&repo=darkterminal/mylibsqladmin)

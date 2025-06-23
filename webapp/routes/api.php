@@ -12,14 +12,11 @@ Route::middleware('auth')->group(function () {
         try {
             $localDbs = SqldService::getDatabases(local: false);
 
-            $transformed = array_map(function ($db) {
-                return [
-                    'name' => $db['database_name'],
-                    'status' => $db['deleted_at'] != null ? 'inactive' : 'active',
-                    'path' => $db['database_name'],
-                ];
-            }, $localDbs);
-
+            $transformed = array_map(fn($db) => [
+                'name' => $db['database_name'],
+                'status' => $db['deleted_at'] != null ? 'inactive' : 'active',
+                'path' => $db['database_name'],
+            ], $localDbs);
 
             return response()->json([
                 'databases' => $transformed
