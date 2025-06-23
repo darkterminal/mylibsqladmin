@@ -1,3 +1,16 @@
+## [1.4.2] - 2025-06-23
+
+- fix: local instance proxy connection [Imam Ali Mustofa]
+- docs: add instalation step using installer script [Imam Ali Mustofa]
+- fix: make installer script work [Imam Ali Mustofa]
+- docs: change the installation method [Imam Ali Mustofa]
+- chore: shot [Imam Ali Mustofa]
+- chore: whoops [Imam Ali Mustofa]
+- chore: idk [Imam Ali Mustofa]
+- fix: unbound env name error [Imam Ali Mustofa]
+- docs: write the installation guide [Imam Ali Mustofa]
+- feat: add the installer script [Imam Ali Mustofa]
+
 ## [1.4.0] - 2025-06-18
 
 - refactor: using csrf token all over the places [Imam Ali Mustofa]
