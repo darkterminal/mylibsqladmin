@@ -21,7 +21,7 @@ Thank you for choosing MylibSQLAdmin as your `libsql-server` Database Management
 Make sure the installer script is running inside your prefered directory!
 
 ```
-curl --proto '=https' https://github.com/darkterminal/mylibsqladmin/raw/refs/heads/main/scripts/installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/darkterminal/mylibsqladmin/refs/heads/main/scripts/installer.sh | sh
 ```
 
 ### Manual Installation
