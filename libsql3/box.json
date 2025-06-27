@@ -1,0 +1,5 @@
+{
+    "chmod": "0700",
+    "main": "libsql3",
+    "output": "build/libsql3"
+}

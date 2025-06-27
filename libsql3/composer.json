@@ -1,0 +1,20 @@
+{
+    "name": "darkterminal/libsql3",
+    "description": "libsql3 CLI tool to interact with your MylibSQLAdmin",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Libsql3\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Imam Ali Mustofa",
+            "email": "d.darkterminal@gmail.com"
+        }
+    ],
+    "require": {
+        "psy/psysh": "^0.12.9"
+    }
+}

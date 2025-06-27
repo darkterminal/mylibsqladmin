@@ -1,0 +1,36 @@
+#!/usr/bin/env php
+<?php
+
+use Libsql3\App;
+use Psy\Configuration;
+use Psy\Shell;
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+$app = new App();
+
+$config = new Configuration([
+    'commands' => array_merge([], $app->getLibsqlCommands()),
+    'theme' => [
+        'prompt' => 'mylibsqladmin@libsql3> '
+    ],
+    'startupMessage' => "
+ __ __ __                         __  ______  
+|  \  \  \                       |  \/      \ 
+| ▓▓\▓▓ ▓▓____   _______  ______ | ▓▓  ▓▓▓▓▓▓\
+| ▓▓  \ ▓▓    \ /       \/      \| ▓▓\▓▓__| ▓▓
+| ▓▓ ▓▓ ▓▓▓▓▓▓▓\  ▓▓▓▓▓▓▓  ▓▓▓▓▓▓\ ▓▓ |     ▓▓
+| ▓▓ ▓▓ ▓▓  | ▓▓\▓▓    \| ▓▓  | ▓▓ ▓▓__\▓▓▓▓▓\
+| ▓▓ ▓▓ ▓▓__/ ▓▓_\▓▓▓▓▓▓\ ▓▓__| ▓▓ ▓▓  \__| ▓▓
+| ▓▓ ▓▓ ▓▓    ▓▓       ▓▓\▓▓    ▓▓ ▓▓\▓▓    ▓▓
+ \▓▓\▓▓\▓▓▓▓▓▓▓ \▓▓▓▓▓▓▓  \▓▓▓▓▓▓▓\▓▓ \▓▓▓▓▓▓ 
+                              | ▓▓            
+                              | ▓▓            
+                               \▓▓            
+
+libsql3 for MylibSQLAdmin by Imam Ali Mustofa
+",
+]);
+
+$psysh = new Shell($config);
+$psysh->run();
