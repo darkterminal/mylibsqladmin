@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\TriggerDatabaseStatsChangeEvent;
 use Lcobucci\JWT\Encoding\JoseEncoder;
 use Lcobucci\JWT\UnencryptedToken;
 use App\Models\GroupDatabaseToken;
@@ -131,12 +130,14 @@ class SubdomainValidationController extends Controller
             return 'none';
         }
 
-        logger()->debug('Access level', [
-            'subdomain' => $subdomain,
-            'full_access_token' => $databaseToken->full_access_token,
-            'read_only_token' => $databaseToken->read_only_token,
-            'access_level' => $databaseToken->full_access_token === $token ? 'full-access' : 'read-only'
-        ]);
+        if (env('APP_DEBUG') === true) {
+            logger()->debug('Access level', [
+                'subdomain' => $subdomain,
+                'full_access_token' => $databaseToken->full_access_token,
+                'read_only_token' => $databaseToken->read_only_token,
+                'access_level' => $databaseToken->full_access_token === $token ? 'full-access' : 'read-only'
+            ]);
+        }
 
         return $databaseToken->full_access_token === $token ? 'full-access' : 'read-only';
     }
@@ -163,7 +164,6 @@ class SubdomainValidationController extends Controller
 
     private function createResponse(string $accessLevel)
     {
-        event(new TriggerDatabaseStatsChangeEvent($this->subdomain, 'web'));
         return response()->noContent(200)->header('X-Access-Level', $accessLevel);
     }
 }

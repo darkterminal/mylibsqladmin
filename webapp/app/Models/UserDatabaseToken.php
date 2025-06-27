@@ -29,4 +29,26 @@ class UserDatabaseToken extends Model
     {
         return $this->belongsTo(UserDatabase::class);
     }
+
+    public static function getTokenByDatabaseName(
+        string $databaseName,
+        string $type = 'full_access_token',
+        int|string|null $userIdentifier = null
+    ): ?string {
+        $query = self::whereHas('database', function ($query) use ($databaseName) {
+            $query->where('database_name', $databaseName);
+        });
+
+        if ($userIdentifier) {
+            if (is_numeric($userIdentifier)) {
+                $query->where('user_id', (int) $userIdentifier);
+            } else {
+                $query->whereHas('user', function ($q) use ($userIdentifier) {
+                    $q->where('username', $userIdentifier);
+                });
+            }
+        }
+
+        return $query->value($type) ?: null;
+    }
 }
