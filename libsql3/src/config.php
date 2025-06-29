@@ -1,9 +1,9 @@
 <?php
 
-$dbPath = getenv('HOME') . DIRECTORY_SEPARATOR . '.mylibsqladmin' . DIRECTORY_SEPARATOR . 'tokens.db';
-const TABLE_NAME = 'auth_tokens';
+$dbPath = getenv('HOME') . DIRECTORY_SEPARATOR . '.mylibsqladmin' . DIRECTORY_SEPARATOR . 'libsql3.db';
+const TOKEN_TABLE = 'auth_tokens';
 
 return [
     'db_path' => $dbPath,
-    'table_name' => TABLE_NAME
+    'token_table' => TOKEN_TABLE
 ];

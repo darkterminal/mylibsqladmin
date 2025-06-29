@@ -6,6 +6,7 @@ use Libsql3\Cmd\AuthLogin;
 use Libsql3\Cmd\AuthLogout;
 use Libsql3\Cmd\DbList;
 use Libsql3\Cmd\DbShell;
+use Libsql3\Cmd\UserList;
 use Libsql3\Cmd\WhoAmI;
 use Psy\Configuration;
 use Psy\Readline\Readline;
@@ -39,12 +40,16 @@ class App extends Application
         $dbList = new DbList();
         $dbList->setAppConfig($this->app_config);
 
+        $userList = new UserList();
+        $userList->setAppConfig($this->app_config);
+
         return [
             $authLogin,
             $authLogout,
             $whoAmI,
             new DbShell(),
-            $dbList
+            $dbList,
+            $userList
         ];
     }
 }

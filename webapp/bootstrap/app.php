@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CheckInvitationExpiration;
 use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\EnsureCliRequest;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -52,6 +53,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'permission' => CheckPermission::class,
             'invitationExpiration' => CheckInvitationExpiration::class,
+            'ensureCliRequest' => EnsureCliRequest::class
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

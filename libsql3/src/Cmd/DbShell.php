@@ -4,6 +4,7 @@ namespace Libsql3\Cmd;
 use Psy\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\Exception\ProcessFailedException;
@@ -17,7 +18,25 @@ class DbShell extends Command
         $this
             ->setName('db:shell')
             ->setDescription('Open interactive shell for Turso database')
-            ->addArgument('url', InputArgument::REQUIRED, 'Turso database URL');
+            ->addArgument('url', InputArgument::REQUIRED, 'Turso database URL')
+            ->addOption(
+                'token',
+                't',
+                InputOption::VALUE_REQUIRED,
+                'Database authentication token',
+                null
+            )
+            ->setHelp(
+                <<<'HELP'
+Examples:
+  <info>db:shell http://db.your-domain.io</info>        - Connect with token from environment
+  <info>db:shell http://db.your-domain.io -t TOKEN</info> - Provide token via command line
+  
+Security Note:
+  Tokens provided via command line may be visible in process lists.
+  Use environment variables for sensitive deployments.
+HELP
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -39,10 +58,12 @@ class DbShell extends Command
                 $output->writeln("\n<info>Turso CLI installed successfully!</info>");
             }
 
-            // Check for auth tokens in environment variables
-            $authToken = $this->getAuthToken();
+            // Get authentication token from various sources
+            $authToken = $this->getAuthToken($input);
+
             if ($authToken) {
                 $url = $this->addAuthTokenToUrl($url, $authToken);
+                $source = $this->getTokenSource($input);
             }
 
             // Run Turso shell
@@ -50,7 +71,7 @@ class DbShell extends Command
             $output->writeln("<info>Opening Turso database shell for: {$this->getSafeUrl($url)}</info>");
 
             if ($authToken) {
-                $output->writeln("<comment>Using authentication token from environment</comment>");
+                $output->writeln("<comment>Using authentication token from {$source}</comment>");
             }
 
             $this->runTursoShell($tursoPath, $url, $output);
@@ -62,11 +83,15 @@ class DbShell extends Command
         }
     }
 
-    private function getAuthToken(): ?string
+    private function getAuthToken(InputInterface $input): ?string
     {
-        // Check environment variables in order of priority
-        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
+        // Priority 1: --token option
+        if ($token = $input->getOption('token')) {
+            return $token;
+        }
 
+        // Priority 2: Environment variables
+        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
         foreach ($envVars as $var) {
             $token = getenv($var);
             if ($token !== false && !empty($token)) {
@@ -75,6 +100,22 @@ class DbShell extends Command
         }
 
         return null;
+    }
+
+    private function getTokenSource(InputInterface $input): string
+    {
+        if ($input->getOption('token')) {
+            return 'command line';
+        }
+
+        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
+        foreach ($envVars as $var) {
+            if (getenv($var)) {
+                return "environment variable {$var}";
+            }
+        }
+
+        return 'unknown source';
     }
 
     private function addAuthTokenToUrl(string $url, string $token): string

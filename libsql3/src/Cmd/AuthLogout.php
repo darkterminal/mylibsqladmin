@@ -68,7 +68,8 @@ class AuthLogout extends Command
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Content-Type: application/json',
-            'Content-Length: ' . strlen($payload)
+            'Content-Length: ' . strlen($payload),
+            'X-Request-Source: CLI',
         ]);
 
         $response = curl_exec($ch);
@@ -89,7 +90,7 @@ class AuthLogout extends Command
     {
         $stmt = $this->getPdo()->prepare("
             SELECT token 
-            FROM " . $this->config['table_name'] . " 
+            FROM " . $this->config['token_table'] . " 
             WHERE username = :username
         ");
         $stmt->execute(['username' => $username]);
@@ -99,7 +100,7 @@ class AuthLogout extends Command
     private function deleteToken(string $username): void
     {
         $pdo = $this->getPdo();
-        $stmt = $pdo->prepare("DELETE FROM " . $this->config['table_name'] . " WHERE username = :username");
+        $stmt = $pdo->prepare("DELETE FROM " . $this->config['token_table'] . " WHERE username = :username");
         $stmt->execute(['username' => $username]);
     }
 }

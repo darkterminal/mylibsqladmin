@@ -86,7 +86,8 @@ class AuthLogin extends Command
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Content-Type: application/json',
-            'Content-Length: ' . strlen($payload)
+            'Content-Length: ' . strlen($payload),
+            'X-Request-Source: CLI',
         ]);
 
         $response = curl_exec($ch);

@@ -97,7 +97,8 @@ class DbList extends Command
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Authorization: Bearer ' . $token,
             'X-User-Identifier: ' . $userIdentifier,
-            'Accept: application/json'
+            'Accept: application/json',
+            'X-Request-Source: CLI',
         ]);
 
         $response = curl_exec($ch);
