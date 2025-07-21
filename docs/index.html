@@ -1,601 +1,1321 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MylibSQLAdmin - Modern libSQL Database Management</title>
-    <meta name="description" content="MylibSQLAdmin is an open-source web GUI for managing libSQL databases built with Laravel React Starter Kit.">
-    <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#eff6ff',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-</head>
-<body class="font-sans antialiased text-gray-900 dark:text-white bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-slate-800 transition-colors duration-300">
-    <!-- Header -->
-    <header class="border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm sticky top-0 z-50 transition-colors duration-300">
-        <div class="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-gradient-to-br from-zinc-600 to-blue-600 rounded-lg flex items-center justify-center">
-                    <img src="https://i.imgur.com/scsdb3d.png" class="w-10 h-10" title="MylibSQLAdmin Logo" />
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>MylibSQLAdmin - Modern libSQL Database Management</title>
+        <meta
+            name="description"
+            content="MylibSQLAdmin is an open-source web GUI for managing libSQL databases built with Laravel React Starter Kit."
+        />
+        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: {
+                                50: "#eff6ff",
+                                500: "#3b82f6",
+                                600: "#2563eb",
+                                700: "#1d4ed8",
+                            },
+                        },
+                    },
+                },
+            };
+        </script>
+    </head>
+    <body
+        class="font-sans antialiased text-gray-900 dark:text-white bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-slate-800 transition-colors duration-300"
+    >
+        <!-- Header -->
+        <header
+            class="border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm sticky top-0 z-50 transition-colors duration-300"
+        >
+            <div
+                class="container mx-auto px-4 py-4 flex items-center justify-between"
+            >
+                <div class="flex items-center space-x-3">
+                    <div
+                        class="w-10 h-10 bg-gradient-to-br from-zinc-600 to-blue-600 rounded-lg flex items-center justify-center"
+                    >
+                        <img
+                            src="https://i.imgur.com/scsdb3d.png"
+                            class="w-10 h-10"
+                            title="MylibSQLAdmin Logo"
+                        />
+                    </div>
+                    <div>
+                        <h1
+                            class="text-xl font-bold text-gray-900 dark:text-white"
+                        >
+                            MylibSQLAdmin
+                        </h1>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">
+                            Modern Database Management
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="text-xl font-bold text-gray-900 dark:text-white">MylibSQLAdmin</h1>
-                    <p class="text-sm text-gray-600 dark:text-gray-300">Modern Database Management</p>
-                </div>
-            </div>
-            <div class="flex items-center space-x-4">
-                <button id="theme-toggle" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                    <svg id="sun-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                    </svg>
-                    <svg id="moon-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-                    </svg>
-                </button>
-                <span class="hidden sm:inline-flex bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-2 py-1 rounded-full text-sm">
-                    <svg class="w-4 h-4 mr-1 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                    </svg>
-                    <span id="header-stars">Loading...</span>
-                </span>
-                <a href="https://github.com/darkterminal/mylibsqladmin" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd"></path>
-                    </svg>
-                    GitHub
-                </a>
-            </div>
-        </div>
-    </header>
-
-    <!-- Hero Section -->
-    <section class="py-20 px-4">
-        <div class="container mx-auto text-center">
-            <div class="max-w-4xl mx-auto">
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 mb-6">
-                    Latest Release v1.4.2 • Open Source
-                </span>
-                <h1 class="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
-                    Modern libSQL Database
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-600"> Management</span>
-                    <br />Made Simple
-                </h1>
-                <p class="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
-                    Open-source web GUI for managing libSQL databases with intuitive tools, secure access control, and comprehensive team management. Built with Laravel React Starter Kit for the modern era.
-                </p>
-                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-                    <button class="inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-105">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                <div class="flex items-center space-x-4">
+                    <button
+                        id="theme-toggle"
+                        class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                        <svg
+                            id="sun-icon"
+                            class="w-5 h-5 hidden"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                            ></path>
                         </svg>
-                        Get Started
-                    </button>
-                    <a href="https://github.com/darkterminal/mylibsqladmin" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors">
-                        View on GitHub
-                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                        </svg>
-                    </a>
-                </div>
-                <div class="flex justify-center items-center space-x-6 text-sm text-gray-600 dark:text-gray-300">
-                    <div class="flex items-center gap-1">
-                        <svg class="w-4 h-4 mr-1 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                        </svg>
-                        <span id="hero-stars">Loading...</span> stars
-                    </div>
-                    <div class="flex items-center gap-1">
-                        <svg class="w-4 h-4 mr-1 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
-                        </svg>
-                        <span id="hero-forks">Loading...</span> forks
-                    </div>
-                    <div class="flex items-center gap-1">
-                        <svg class="w-4 h-4 mr-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                        Apache-2.0 License
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Dashboard Preview -->
-    <section class="py-16 px-4">
-        <div class="container mx-auto">
-            <div class="max-w-6xl mx-auto">
-                <div class="relative">
-                    <div class="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-teal-600/20 rounded-2xl blur-3xl"></div>
-                    <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border dark:border-gray-700">
-                        <img src="https://i.imgur.com/vP5ZL7Q.png" alt="MylibSQLAdmin Dashboard Interface" class="w-full h-auto object-cover" />
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Features Section -->
-    <section class="py-20 px-4 bg-white dark:bg-gray-900 transition-colors duration-300">
-        <div class="container mx-auto">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                    Everything You Need to Manage libSQL Databases
-                </h2>
-                <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-                    Comprehensive tools and features designed to make database management intuitive, secure, and collaborative.
-                </p>
-            </div>
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Feature Cards -->
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-8">
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-teal-600 rounded-lg flex items-center justify-center mb-4">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Database Statistics</h3>
-                    <p class="text-gray-600 dark:text-gray-300">Get quick insights into your database performance with easy-to-understand stats and visual metrics.</p>
-                </div>
-
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-8">
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-teal-600 rounded-lg flex items-center justify-center mb-4">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Database Management</h3>
-                    <p class="text-gray-600 dark:text-gray-300">Create, edit, and manage your databases with intuitive tools and comprehensive controls.</p>
-                </div>
-
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-8">
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-teal-600 rounded-lg flex items-center justify-center mb-4">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Token Management</h3>
-                    <p class="text-gray-600 dark:text-gray-300">Secure and control access to your system using token-based authentication and permissions.</p>
-                </div>
-
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-8">
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-teal-600 rounded-lg flex items-center justify-center mb-4">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Team Management</h3>
-                    <p class="text-gray-600 dark:text-gray-300">Collaborate efficiently by managing teams and their access levels with granular controls.</p>
-                </div>
-
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-8">
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-teal-600 rounded-lg flex items-center justify-center mb-4">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">User Management</h3>
-                    <p class="text-gray-600 dark:text-gray-300">Easily handle user accounts, roles, and activity logs with comprehensive user administration.</p>
-                </div>
-
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-8">
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-teal-600 rounded-lg flex items-center justify-center mb-4">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Member Invitations</h3>
-                    <p class="text-gray-600 dark:text-gray-300">Invite new members and track their onboarding status with ease and automated workflows.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Technology Stack -->
-    <section class="py-20 px-4 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 transition-colors duration-300">
-        <div class="container mx-auto">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">Built with Modern Technologies</h2>
-                <p class="text-xl text-gray-600 dark:text-gray-300">Powered by Laravel React Starter Kit and industry-leading tools</p>
-            </div>
-            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-4xl mx-auto">
-                <div class="text-center bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6">
-                    <img src="https://i.imgur.com/3JwVT7s.png" alt="Laravel React" class="w-16 h-16 mx-auto mb-4 object-contain" />
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Laravel React</h3>
-                    <span class="inline-block bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-sm mb-2">Full Stack</span>
-                </div>
-                
-                <div class="text-center bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6">
-                    <img src="https://i.imgur.com/qbGUg1z.png" alt="TypeScript" class="w-16 h-16 mx-auto mb-4 object-contain" />
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">TypeScript</h3>
-                    <span class="inline-block bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-sm">62.7%</span>
-                </div>
-                
-                <div class="text-center bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6">
-                    <img src="https://i.imgur.com/t6FAexR.png" alt="PHP" class="w-16 h-16 mx-auto mb-4 object-contain" />
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">PHP</h3>
-                    <span class="inline-block bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-sm">34.4%</span>
-                </div>
-                
-                <div class="text-center bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6">
-                    <img src="https://i.imgur.com/PXkgWDb.png" alt="Docker" class="w-16 h-16 mx-auto mb-4 object-contain" />
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Docker</h3>
-                    <span class="inline-block bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-sm">100%</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Laravel React Starter Kit Section -->
-    <section class="py-20 px-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 transition-colors duration-300">
-        <div class="container mx-auto">
-            <div class="max-w-4xl mx-auto text-center">
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 mb-6">
-                    Powered by Laravel React Starter Kit
-                </span>
-                <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-6">
-                    Built with <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">Laravel React Starter Kit</span>
-                </h2>
-                <p class="text-xl text-gray-600 dark:text-gray-300 mb-8">
-                    MylibSQLAdmin leverages the power of Laravel React Starter Kit, providing a robust full-stack foundation that combines Laravel's backend excellence with React's modern frontend capabilities.
-                </p>
-                
-                <div class="grid md:grid-cols-3 gap-8 mb-12">
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 text-center">
-                        <div class="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Full-Stack Integration</h3>
-                        <p class="text-gray-600 dark:text-gray-300">Seamless integration between Laravel backend and React frontend for optimal performance.</p>
-                    </div>
-                    
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 text-center">
-                        <div class="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Enterprise Ready</h3>
-                        <p class="text-gray-600 dark:text-gray-300">Built-in authentication, authorization, and security features for production environments.</p>
-                    </div>
-                    
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 text-center">
-                        <div class="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Modern Architecture</h3>
-                        <p class="text-gray-600 dark:text-gray-300">Clean, maintainable codebase following modern development best practices and patterns.</p>
-                    </div>
-                </div>
-                
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <a href="https://github.com/darkterminal/mylibsqladmin" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium rounded-lg transition-all duration-200">
-                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        Explore the Code
-                    </a>
-                    <button class="inline-flex items-center px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors" onclick="window.open('https://laravel.com/starter-kits', '_blank')">
-                        Learn More About Laravel React
-                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                        <svg
+                            id="moon-icon"
+                            class="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                            ></path>
                         </svg>
                     </button>
+                    <span
+                        class="hidden sm:inline-flex bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-2 py-1 rounded-full text-sm"
+                    >
+                        <svg
+                            class="w-4 h-4 mr-1 text-yellow-500"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                        >
+                            <path
+                                d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
+                            ></path>
+                        </svg>
+                        <span id="header-stars">Loading...</span>
+                    </span>
+                    <a
+                        href="https://github.com/darkterminal/mylibsqladmin"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                        <svg
+                            class="w-4 h-4 mr-2"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"
+                                clip-rule="evenodd"
+                            ></path>
+                        </svg>
+                        GitHub
+                    </a>
                 </div>
             </div>
-        </div>
-    </section>
+        </header>
 
-    <!-- Quick Installation -->
-    <section class="py-20 px-4 bg-white dark:bg-gray-900 transition-colors duration-300">
-        <div class="container mx-auto">
-            <div class="max-w-4xl mx-auto text-center">
-                <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">Quick Installation</h2>
-                <p class="text-xl text-gray-600 dark:text-gray-300 mb-8">Get up and running in seconds with our one-line installer</p>
-                
-                <div class="bg-gray-900 dark:bg-gray-800 rounded-lg p-6 mb-8 relative">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex space-x-2">
-                            <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-                            <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                        </div>
-                        <button id="copy-btn" class="text-gray-400 hover:text-white p-2 rounded transition-colors">
-                            <svg id="copy-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+        <!-- Hero Section -->
+        <section class="py-20 px-4">
+            <div class="container mx-auto text-center">
+                <div class="max-w-4xl mx-auto">
+                    <span
+                        class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 mb-6"
+                    >
+                        Latest Release &nbsp;
+                        <span id="latest-version">vx.x.x</span> &nbsp; • &nbsp;
+                        Open Source
+                    </span>
+                    <h1
+                        class="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight"
+                    >
+                        Modern libSQL Database
+                        <span
+                            class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-600"
+                        >
+                            Management</span
+                        >
+                        <br />Made Simple
+                    </h1>
+                    <p
+                        class="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto"
+                    >
+                        Open-source web GUI for managing libSQL databases with
+                        intuitive tools, secure access control, and
+                        comprehensive team management. Built with Laravel React
+                        Starter Kit for the modern era.
+                    </p>
+                    <div
+                        class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12"
+                    >
+                        <button
+                            class="inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-105"
+                        >
+                            <svg
+                                class="w-5 h-5 mr-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                ></path>
                             </svg>
-                            <svg id="check-icon" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            Get Started
+                        </button>
+                        <a
+                            href="https://github.com/darkterminal/mylibsqladmin"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="inline-flex items-center px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
+                        >
+                            View on GitHub
+                            <svg
+                                class="w-4 h-4 ml-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                ></path>
+                            </svg>
+                        </a>
+                    </div>
+                    <div
+                        class="flex justify-center items-center space-x-6 text-sm text-gray-600 dark:text-gray-300"
+                    >
+                        <div class="flex items-center gap-1">
+                            <svg
+                                class="w-4 h-4 mr-1 text-yellow-500"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                            >
+                                <path
+                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
+                                ></path>
+                            </svg>
+                            <span id="hero-stars">Loading...</span> stars
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <svg
+                                class="w-4 h-4 mr-1 text-gray-500 dark:text-gray-400"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+                                ></path>
+                            </svg>
+                            <span id="hero-forks">Loading...</span> forks
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <svg
+                                class="w-4 h-4 mr-1 text-green-500"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                                ></path>
+                            </svg>
+                            Apache-2.0 License
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard Preview -->
+        <section class="py-16 px-4">
+            <div class="container mx-auto">
+                <div class="max-w-6xl mx-auto">
+                    <div class="relative">
+                        <div
+                            class="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-teal-600/20 rounded-2xl blur-3xl"
+                        ></div>
+                        <div
+                            class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border dark:border-gray-700"
+                        >
+                            <img
+                                src="https://i.imgur.com/vP5ZL7Q.png"
+                                alt="MylibSQLAdmin Dashboard Interface"
+                                class="w-full h-auto object-cover"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section
+            class="py-20 px-4 bg-white dark:bg-gray-900 transition-colors duration-300"
+        >
+            <div class="container mx-auto">
+                <div class="text-center mb-16">
+                    <h2
+                        class="text-4xl font-bold text-gray-900 dark:text-white mb-4"
+                    >
+                        Everything You Need to Manage libSQL Databases
+                    </h2>
+                    <p
+                        class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto"
+                    >
+                        Comprehensive tools and features designed to make
+                        database management intuitive, secure, and
+                        collaborative.
+                    </p>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Feature Cards -->
+                    <div
+                        class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-8"
+                    >
+                        <div
+                            class="w-12 h-12 bg-gradient-to-br from-blue-600 to-teal-600 rounded-lg flex items-center justify-center mb-4"
+                        >
+                            <svg
+                                class="w-6 h-6 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3
+                            class="text-xl font-semibold text-gray-900 dark:text-white mb-3"
+                        >
+                            Database Statistics
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Get quick insights into your database performance
+                            with easy-to-understand stats and visual metrics.
+                        </p>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-8"
+                    >
+                        <div
+                            class="w-12 h-12 bg-gradient-to-br from-blue-600 to-teal-600 rounded-lg flex items-center justify-center mb-4"
+                        >
+                            <svg
+                                class="w-6 h-6 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3
+                            class="text-xl font-semibold text-gray-900 dark:text-white mb-3"
+                        >
+                            Database Management
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Create, edit, and manage your databases with
+                            intuitive tools and comprehensive controls.
+                        </p>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-8"
+                    >
+                        <div
+                            class="w-12 h-12 bg-gradient-to-br from-blue-600 to-teal-600 rounded-lg flex items-center justify-center mb-4"
+                        >
+                            <svg
+                                class="w-6 h-6 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3
+                            class="text-xl font-semibold text-gray-900 dark:text-white mb-3"
+                        >
+                            Token Management
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Secure and control access to your system using
+                            token-based authentication and permissions.
+                        </p>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-8"
+                    >
+                        <div
+                            class="w-12 h-12 bg-gradient-to-br from-blue-600 to-teal-600 rounded-lg flex items-center justify-center mb-4"
+                        >
+                            <svg
+                                class="w-6 h-6 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3
+                            class="text-xl font-semibold text-gray-900 dark:text-white mb-3"
+                        >
+                            Team Management
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Collaborate efficiently by managing teams and their
+                            access levels with granular controls.
+                        </p>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-8"
+                    >
+                        <div
+                            class="w-12 h-12 bg-gradient-to-br from-blue-600 to-teal-600 rounded-lg flex items-center justify-center mb-4"
+                        >
+                            <svg
+                                class="w-6 h-6 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                ></path>
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3
+                            class="text-xl font-semibold text-gray-900 dark:text-white mb-3"
+                        >
+                            User Management
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Easily handle user accounts, roles, and activity
+                            logs with comprehensive user administration.
+                        </p>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-8"
+                    >
+                        <div
+                            class="w-12 h-12 bg-gradient-to-br from-blue-600 to-teal-600 rounded-lg flex items-center justify-center mb-4"
+                        >
+                            <svg
+                                class="w-6 h-6 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3
+                            class="text-xl font-semibold text-gray-900 dark:text-white mb-3"
+                        >
+                            Member Invitations
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Invite new members and track their onboarding status
+                            with ease and automated workflows.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technology Stack -->
+        <section
+            class="py-20 px-4 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 transition-colors duration-300"
+        >
+            <div class="container mx-auto">
+                <div class="text-center mb-16">
+                    <h2
+                        class="text-4xl font-bold text-gray-900 dark:text-white mb-4"
+                    >
+                        Built with Modern Technologies
+                    </h2>
+                    <p class="text-xl text-gray-600 dark:text-gray-300">
+                        Powered by Laravel React Starter Kit and
+                        industry-leading tools
+                    </p>
+                </div>
+                <div
+                    class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-4xl mx-auto"
+                >
+                    <div
+                        class="text-center bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6"
+                    >
+                        <img
+                            src="https://i.imgur.com/3JwVT7s.png"
+                            alt="Laravel React"
+                            class="w-16 h-16 mx-auto mb-4 object-contain"
+                        />
+                        <h3
+                            class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
+                        >
+                            Laravel React
+                        </h3>
+                        <span
+                            class="inline-block bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-sm mb-2"
+                            >Full Stack</span
+                        >
+                    </div>
+
+                    <div
+                        class="text-center bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6"
+                    >
+                        <img
+                            src="https://i.imgur.com/qbGUg1z.png"
+                            alt="TypeScript"
+                            class="w-16 h-16 mx-auto mb-4 object-contain"
+                        />
+                        <h3
+                            class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
+                        >
+                            TypeScript
+                        </h3>
+                        <span
+                            class="inline-block bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-sm"
+                            >62.7%</span
+                        >
+                    </div>
+
+                    <div
+                        class="text-center bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6"
+                    >
+                        <img
+                            src="https://i.imgur.com/t6FAexR.png"
+                            alt="PHP"
+                            class="w-16 h-16 mx-auto mb-4 object-contain"
+                        />
+                        <h3
+                            class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
+                        >
+                            PHP
+                        </h3>
+                        <span
+                            class="inline-block bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-sm"
+                            >34.4%</span
+                        >
+                    </div>
+
+                    <div
+                        class="text-center bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6"
+                    >
+                        <img
+                            src="https://i.imgur.com/PXkgWDb.png"
+                            alt="Docker"
+                            class="w-16 h-16 mx-auto mb-4 object-contain"
+                        />
+                        <h3
+                            class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
+                        >
+                            Docker
+                        </h3>
+                        <span
+                            class="inline-block bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-sm"
+                            >100%</span
+                        >
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Laravel React Starter Kit Section -->
+        <section
+            class="py-20 px-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 transition-colors duration-300"
+        >
+            <div class="container mx-auto">
+                <div class="max-w-4xl mx-auto text-center">
+                    <span
+                        class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 mb-6"
+                    >
+                        Powered by Laravel React Starter Kit
+                    </span>
+                    <h2
+                        class="text-4xl font-bold text-gray-900 dark:text-white mb-6"
+                    >
+                        Built with
+                        <span
+                            class="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600"
+                            >Laravel React Starter Kit</span
+                        >
+                    </h2>
+                    <p class="text-xl text-gray-600 dark:text-gray-300 mb-8">
+                        MylibSQLAdmin leverages the power of Laravel React
+                        Starter Kit, providing a robust full-stack foundation
+                        that combines Laravel's backend excellence with React's
+                        modern frontend capabilities.
+                    </p>
+
+                    <div class="grid md:grid-cols-3 gap-8 mb-12">
+                        <div
+                            class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 text-center"
+                        >
+                            <div
+                                class="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center mb-4 mx-auto"
+                            >
+                                <svg
+                                    class="w-6 h-6 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                    ></path>
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                    ></path>
+                                </svg>
+                            </div>
+                            <h3
+                                class="text-lg font-semibold text-gray-900 dark:text-white mb-3"
+                            >
+                                Full-Stack Integration
+                            </h3>
+                            <p class="text-gray-600 dark:text-gray-300">
+                                Seamless integration between Laravel backend and
+                                React frontend for optimal performance.
+                            </p>
+                        </div>
+
+                        <div
+                            class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 text-center"
+                        >
+                            <div
+                                class="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center mb-4 mx-auto"
+                            >
+                                <svg
+                                    class="w-6 h-6 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                                    ></path>
+                                </svg>
+                            </div>
+                            <h3
+                                class="text-lg font-semibold text-gray-900 dark:text-white mb-3"
+                            >
+                                Enterprise Ready
+                            </h3>
+                            <p class="text-gray-600 dark:text-gray-300">
+                                Built-in authentication, authorization, and
+                                security features for production environments.
+                            </p>
+                        </div>
+
+                        <div
+                            class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 text-center"
+                        >
+                            <div
+                                class="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center mb-4 mx-auto"
+                            >
+                                <svg
+                                    class="w-6 h-6 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                                    ></path>
+                                </svg>
+                            </div>
+                            <h3
+                                class="text-lg font-semibold text-gray-900 dark:text-white mb-3"
+                            >
+                                Modern Architecture
+                            </h3>
+                            <p class="text-gray-600 dark:text-gray-300">
+                                Clean, maintainable codebase following modern
+                                development best practices and patterns.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <a
+                            href="https://github.com/darkterminal/mylibsqladmin"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="inline-flex items-center px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium rounded-lg transition-all duration-200"
+                        >
+                            <svg
+                                class="w-5 h-5 mr-2"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"
+                                    clip-rule="evenodd"
+                                ></path>
+                            </svg>
+                            Explore the Code
+                        </a>
+                        <button
+                            class="inline-flex items-center px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
+                            onclick="window.open('https://laravel.com/starter-kits', '_blank')"
+                        >
+                            Learn More About Laravel React
+                            <svg
+                                class="w-4 h-4 ml-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                ></path>
                             </svg>
                         </button>
                     </div>
-                    <code id="install-command" class="text-green-400 text-left block font-mono text-sm md:text-base break-all">
-                        curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/darkterminal/mylibsqladmin/refs/heads/main/scripts/installer.sh | sh
-                    </code>
-                </div>
-
-                <div class="grid md:grid-cols-2 gap-6 text-left">
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-                        <h3 class="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Requirements</h3>
-                        <ul class="space-y-2 text-gray-600 dark:text-gray-300">
-                            <li>• Docker & Docker Compose</li>
-                            <li>• openssl</li>
-                        </ul>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-                        <h3 class="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Default Access</h3>
-                        <ul class="space-y-2 text-gray-600 dark:text-gray-300">
-                            <li>• Super Admin: <code class="bg-gray-100 dark:bg-gray-700 px-1 rounded">superadmin</code></li>
-                            <li>• Manager: <code class="bg-gray-100 dark:bg-gray-700 px-1 rounded">manager</code></li>
-                            <li>• Member: <code class="bg-gray-100 dark:bg-gray-700 px-1 rounded">member</code></li>
-                        </ul>
-                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Open Source Section -->
-    <section class="py-20 px-4 bg-gradient-to-br from-blue-600 to-teal-600 dark:from-blue-800 dark:to-teal-800 text-white transition-colors duration-300">
-        <div class="container mx-auto text-center">
-            <h2 class="text-4xl font-bold mb-4">Open Source & Community Driven</h2>
-            <p class="text-xl mb-8 opacity-90">Join our growing community of developers and contributors</p>
-            
-            <div class="flex flex-col sm:flex-row gap-8 justify-center items-center mb-12">
-                <div class="text-center">
-                    <div class="text-3xl font-bold mb-2" id="open-source-stars">Loading...</div>
-                    <div class="text-sm opacity-75">GitHub Stars</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-3xl font-bold mb-2" id="open-source-forks">Loading...</div>
-                    <div class="text-sm opacity-75">Forks</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-3xl font-bold mb-2" id="open-source-contributors">Loading...</div>
-                    <div class="text-sm opacity-75">Contributors</div>
-                </div>
-            </div>
+        <!-- Quick Installation -->
+        <section
+            class="py-20 px-4 bg-white dark:bg-gray-900 transition-colors duration-300"
+        >
+            <div class="container mx-auto">
+                <div class="max-w-4xl mx-auto text-center">
+                    <h2
+                        class="text-4xl font-bold text-gray-900 dark:text-white mb-4"
+                    >
+                        Quick Installation
+                    </h2>
+                    <p class="text-xl text-gray-600 dark:text-gray-300 mb-8">
+                        Get up and running in seconds with our one-line
+                        installer
+                    </p>
 
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="https://github.com/darkterminal/mylibsqladmin" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-8 py-3 bg-white text-blue-600 hover:bg-gray-100 font-medium rounded-lg transition-colors">
-                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd"></path>
-                    </svg>
-                    Contribute on GitHub
-                </a>
-                <button class="inline-flex items-center px-6 py-3 border border-white text-white hover:bg-white hover:text-blue-600 dark:hover:text-blue-800 font-medium rounded-lg transition-colors" onclick="window.open('https://github.com/darkterminal/mylibsqladmin', '_blank')">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
-                    </svg>
-                    Star the Project
-                </button>
-            </div>
-        </div>
-    </section>
-
-    <!-- Support Section -->
-    <section class="py-20 px-4 bg-white dark:bg-gray-900 transition-colors duration-300">
-        <div class="container mx-auto text-center">
-            <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">Support the Project</h2>
-            <p class="text-xl text-gray-600 dark:text-gray-300 mb-8">Help us continue developing and maintaining MylibSQLAdmin</p>
-            
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="https://github.com/sponsors/darkterminal" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors">
-                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd"></path>
-                    </svg>
-                    GitHub Sponsors
-                </a>
-                <a href="https://saweria.co/darkterminal" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors">
-                    Saweria (Indonesian)
-                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                    </svg>
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="bg-gray-900 dark:bg-black text-white py-12 px-4 transition-colors duration-300">
-        <div class="container mx-auto">
-            <div class="grid md:grid-cols-4 gap-8">
-                <div class="md:col-span-2">
-                    <div class="flex items-center space-x-3 mb-4">
-                        <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-teal-600 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
-                            </svg>
+                    <div
+                        class="bg-gray-900 dark:bg-gray-800 rounded-lg p-6 mb-8 relative"
+                    >
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex space-x-2">
+                                <div
+                                    class="w-3 h-3 bg-red-500 rounded-full"
+                                ></div>
+                                <div
+                                    class="w-3 h-3 bg-yellow-500 rounded-full"
+                                ></div>
+                                <div
+                                    class="w-3 h-3 bg-green-500 rounded-full"
+                                ></div>
+                            </div>
+                            <button
+                                id="copy-btn"
+                                class="text-gray-400 hover:text-white p-2 rounded transition-colors"
+                            >
+                                <svg
+                                    id="copy-icon"
+                                    class="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                    ></path>
+                                </svg>
+                                <svg
+                                    id="check-icon"
+                                    class="w-4 h-4 hidden"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M5 13l4 4L19 7"
+                                    ></path>
+                                </svg>
+                            </button>
                         </div>
-                        <span class="text-xl font-bold">MylibSQLAdmin</span>
+                        <code
+                            id="install-command"
+                            class="text-green-400 text-left block font-mono text-sm md:text-base break-all"
+                        >
+                            curl --proto '=https' --tlsv1.2 -LsSf
+                            https://raw.githubusercontent.com/darkterminal/mylibsqladmin/refs/heads/main/scripts/installer.sh
+                            | sh
+                        </code>
                     </div>
-                    <p class="text-gray-400 mb-4">
-                        A modern libSQL database management platform built with Laravel React Starter Kit for developers, by developers.
-                    </p>
-                    <p class="text-sm text-gray-500">
-                        Created by <a href="https://github.com/darkterminal" class="text-blue-400 hover:text-blue-300">darkterminal</a> (Imam Ali Mustofa)
-                    </p>
-                </div>
-                
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">Resources</h3>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="https://github.com/darkterminal/mylibsqladmin" class="hover:text-white">Documentation</a></li>
-                        <li><a href="https://github.com/darkterminal/mylibsqladmin/releases" class="hover:text-white">Releases</a></li>
-                        <li><a href="https://github.com/darkterminal/mylibsqladmin/issues" class="hover:text-white">Issues</a></li>
-                    </ul>
-                </div>
-                
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">Community</h3>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="https://github.com/darkterminal/mylibsqladmin" class="hover:text-white">GitHub</a></li>
-                        <li><a href="https://github.com/darkterminal/mylibsqladmin/blob/main/CONTRIBUTING.md" class="hover:text-white">Contributing</a></li>
-                        <li><a href="https://github.com/darkterminal/mylibsqladmin/blob/main/CODE_OF_CONDUCT.md" class="hover:text-white">Code of Conduct</a></li>
-                    </ul>
+
+                    <div class="grid md:grid-cols-2 gap-6 text-left">
+                        <div
+                            class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6"
+                        >
+                            <h3
+                                class="text-lg font-semibold mb-3 text-gray-900 dark:text-white"
+                            >
+                                Requirements
+                            </h3>
+                            <ul
+                                class="space-y-2 text-gray-600 dark:text-gray-300"
+                            >
+                                <li>• Docker & Docker Compose</li>
+                                <li>• openssl</li>
+                            </ul>
+                        </div>
+                        <div
+                            class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6"
+                        >
+                            <h3
+                                class="text-lg font-semibold mb-3 text-gray-900 dark:text-white"
+                            >
+                                Default Access
+                            </h3>
+                            <ul
+                                class="space-y-2 text-gray-600 dark:text-gray-300"
+                            >
+                                <li>
+                                    • Super Admin:
+                                    <code
+                                        class="bg-gray-100 dark:bg-gray-700 px-1 rounded"
+                                        >superadmin</code
+                                    >
+                                </li>
+                                <li>
+                                    • Manager:
+                                    <code
+                                        class="bg-gray-100 dark:bg-gray-700 px-1 rounded"
+                                        >manager</code
+                                    >
+                                </li>
+                                <li>
+                                    • Member:
+                                    <code
+                                        class="bg-gray-100 dark:bg-gray-700 px-1 rounded"
+                                        >member</code
+                                    >
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="border-t border-gray-800 dark:border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-                <p class="text-gray-400 text-sm">
-                    © <span id="current-year">2025</span> MylibSQLAdmin. Licensed under Apache-2.0.
+        </section>
+
+        <!-- Open Source Section -->
+        <section
+            class="py-20 px-4 bg-gradient-to-br from-blue-600 to-teal-600 dark:from-blue-800 dark:to-teal-800 text-white transition-colors duration-300"
+        >
+            <div class="container mx-auto text-center">
+                <h2 class="text-4xl font-bold mb-4">
+                    Open Source & Community Driven
+                </h2>
+                <p class="text-xl mb-8 opacity-90">
+                    Join our growing community of developers and contributors
                 </p>
-                <div class="flex items-center space-x-4 mt-4 md:mt-0">
-                    <a href="https://github.com/darkterminal/mylibsqladmin/blob/main/LICENSE" class="text-gray-400 hover:text-white text-sm">
-                        License
+
+                <div
+                    class="flex flex-col sm:flex-row gap-8 justify-center items-center mb-12"
+                >
+                    <div class="text-center">
+                        <div
+                            class="text-3xl font-bold mb-2"
+                            id="open-source-stars"
+                        >
+                            Loading...
+                        </div>
+                        <div class="text-sm opacity-75">GitHub Stars</div>
+                    </div>
+                    <div class="text-center">
+                        <div
+                            class="text-3xl font-bold mb-2"
+                            id="open-source-forks"
+                        >
+                            Loading...
+                        </div>
+                        <div class="text-sm opacity-75">Forks</div>
+                    </div>
+                    <div class="text-center">
+                        <div
+                            class="text-3xl font-bold mb-2"
+                            id="open-source-contributors"
+                        >
+                            Loading...
+                        </div>
+                        <div class="text-sm opacity-75">Contributors</div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a
+                        href="https://github.com/darkterminal/mylibsqladmin"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-flex items-center px-8 py-3 bg-white text-blue-600 hover:bg-gray-100 font-medium rounded-lg transition-colors"
+                    >
+                        <svg
+                            class="w-5 h-5 mr-2"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"
+                                clip-rule="evenodd"
+                            ></path>
+                        </svg>
+                        Contribute on GitHub
                     </a>
-                    <a href="https://github.com/darkterminal/mylibsqladmin" class="text-gray-400 hover:text-white">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd"></path>
+                    <button
+                        class="inline-flex items-center px-6 py-3 border border-white text-white hover:bg-white hover:text-blue-600 dark:hover:text-blue-800 font-medium rounded-lg transition-colors"
+                        onclick="window.open('https://github.com/darkterminal/mylibsqladmin', '_blank')"
+                    >
+                        <svg
+                            class="w-5 h-5 mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                            ></path>
+                        </svg>
+                        Star the Project
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Support Section -->
+        <section
+            class="py-20 px-4 bg-white dark:bg-gray-900 transition-colors duration-300"
+        >
+            <div class="container mx-auto text-center">
+                <h2
+                    class="text-4xl font-bold text-gray-900 dark:text-white mb-4"
+                >
+                    Support the Project
+                </h2>
+                <p class="text-xl text-gray-600 dark:text-gray-300 mb-8">
+                    Help us continue developing and maintaining MylibSQLAdmin
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a
+                        href="https://github.com/sponsors/darkterminal"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-flex items-center px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+                    >
+                        <svg
+                            class="w-5 h-5 mr-2"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"
+                                clip-rule="evenodd"
+                            ></path>
+                        </svg>
+                        GitHub Sponsors
+                    </a>
+                    <a
+                        href="https://saweria.co/darkterminal"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-flex items-center px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
+                    >
+                        Saweria (Indonesian)
+                        <svg
+                            class="w-4 h-4 ml-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                            ></path>
                         </svg>
                     </a>
                 </div>
             </div>
-        </div>
-    </footer>
+        </section>
 
-    <script>
-        // GitHub API configuration
-        const GITHUB_REPO = 'darkterminal/mylibsqladmin';
-        const GITHUB_API_BASE = 'https://api.github.com';
+        <!-- Footer -->
+        <footer
+            class="bg-gray-900 dark:bg-black text-white py-12 px-4 transition-colors duration-300"
+        >
+            <div class="container mx-auto">
+                <div class="grid md:grid-cols-4 gap-8">
+                    <div class="md:col-span-2">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div
+                                class="w-8 h-8 bg-gradient-to-br from-blue-600 to-teal-600 rounded-lg flex items-center justify-center"
+                            >
+                                <svg
+                                    class="w-5 h-5 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"
+                                    ></path>
+                                </svg>
+                            </div>
+                            <span class="text-xl font-bold">MylibSQLAdmin</span>
+                        </div>
+                        <p class="text-gray-400 mb-4">
+                            A modern libSQL database management platform built
+                            with Laravel React Starter Kit for developers, by
+                            developers.
+                        </p>
+                        <p class="text-sm text-gray-500">
+                            Created by
+                            <a
+                                href="https://github.com/darkterminal"
+                                class="text-blue-400 hover:text-blue-300"
+                                >darkterminal</a
+                            >
+                            (Imam Ali Mustofa)
+                        </p>
+                    </div>
 
-        // Function to fetch GitHub repository data
-        async function fetchGitHubStats() {
-            try {
-                // Fetch repository data
-                const repoResponse = await fetch(`${GITHUB_API_BASE}/repos/${GITHUB_REPO}`);
-                const repoData = await repoResponse.json();
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Resources</h3>
+                        <ul class="space-y-2 text-gray-400">
+                            <li>
+                                <a
+                                    href="https://github.com/darkterminal/mylibsqladmin"
+                                    class="hover:text-white"
+                                    >Documentation</a
+                                >
+                            </li>
+                            <li>
+                                <a
+                                    href="https://github.com/darkterminal/mylibsqladmin/releases"
+                                    class="hover:text-white"
+                                    >Releases</a
+                                >
+                            </li>
+                            <li>
+                                <a
+                                    href="https://github.com/darkterminal/mylibsqladmin/issues"
+                                    class="hover:text-white"
+                                    >Issues</a
+                                >
+                            </li>
+                        </ul>
+                    </div>
 
-                // Fetch contributors data
-                const contributorsResponse = await fetch(`${GITHUB_API_BASE}/repos/${GITHUB_REPO}/contributors`);
-                const contributorsData = await contributorsResponse.json();
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Community</h3>
+                        <ul class="space-y-2 text-gray-400">
+                            <li>
+                                <a
+                                    href="https://github.com/darkterminal/mylibsqladmin"
+                                    class="hover:text-white"
+                                    >GitHub</a
+                                >
+                            </li>
+                            <li>
+                                <a
+                                    href="https://github.com/darkterminal/mylibsqladmin/blob/main/CONTRIBUTING.md"
+                                    class="hover:text-white"
+                                    >Contributing</a
+                                >
+                            </li>
+                            <li>
+                                <a
+                                    href="https://github.com/darkterminal/mylibsqladmin/blob/main/CODE_OF_CONDUCT.md"
+                                    class="hover:text-white"
+                                    >Code of Conduct</a
+                                >
+                            </li>
+                        </ul>
+                    </div>
+                </div>
 
-                const stats = {
-                    stars: repoData.stargazers_count || 0,
-                    forks: repoData.forks_count || 0,
-                    contributors: Array.isArray(contributorsData) ? contributorsData.length : 0
-                };
+                <div
+                    class="border-t border-gray-800 dark:border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center"
+                >
+                    <p class="text-gray-400 text-sm">
+                        © <span id="current-year">2025</span> MylibSQLAdmin.
+                        Licensed under Apache-2.0.
+                    </p>
+                    <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                        <a
+                            href="https://github.com/darkterminal/mylibsqladmin/blob/main/LICENSE"
+                            class="text-gray-400 hover:text-white text-sm"
+                        >
+                            License
+                        </a>
+                        <a
+                            href="https://github.com/darkterminal/mylibsqladmin"
+                            class="text-gray-400 hover:text-white"
+                        >
+                            <svg
+                                class="w-5 h-5"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"
+                                    clip-rule="evenodd"
+                                ></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </footer>
 
-                updateGitHubStats(stats);
-            } catch (error) {
-                console.error('Error fetching GitHub stats:', error);
-                // Fallback to default values if API fails
-                updateGitHubStats({
-                    stars: 37,
-                    forks: 4,
-                    contributors: 2
-                });
+        <script>
+            // GitHub API configuration
+            const GITHUB_REPO = "darkterminal/mylibsqladmin";
+            const GITHUB_API_BASE = "https://api.github.com";
+
+            // Function to fetch GitHub repository data
+            async function fetchGitHubStats() {
+                try {
+                    // Fetch repository data
+                    const repoResponse = await fetch(
+                        `${GITHUB_API_BASE}/repos/${GITHUB_REPO}`
+                    );
+                    const repoData = await repoResponse.json();
+
+                    // Fetch contributors data
+                    const contributorsResponse = await fetch(
+                        `${GITHUB_API_BASE}/repos/${GITHUB_REPO}/contributors`
+                    );
+                    const contributorsData = await contributorsResponse.json();
+
+                    const releaseResponse = await fetch(
+                        `${GITHUB_API_BASE}/repos/${GITHUB_REPO}/releases/latest`
+                    );
+                    const releaseData = await releaseResponse.json();
+
+                    const stats = {
+                        stars: repoData.stargazers_count || 0,
+                        forks: repoData.forks_count || 0,
+                        contributors: Array.isArray(contributorsData)
+                            ? contributorsData.length
+                            : 0,
+                        version: releaseData.tag_name,
+                    };
+
+                    updateGitHubStats(stats);
+                } catch (error) {
+                    console.error("Error fetching GitHub stats:", error);
+                    // Fallback to default values if API fails
+                    updateGitHubStats({
+                        stars: 37,
+                        forks: 4,
+                        contributors: 2,
+                    });
+                }
             }
-        }
 
-        // Function to update all GitHub stats on the page
-        function updateGitHubStats(stats) {
-            // Update header stars
-            const headerStars = document.getElementById('header-stars');
-            if (headerStars) headerStars.textContent = stats.stars;
+            // Function to update all GitHub stats on the page
+            function updateGitHubStats(stats) {
+                // Update header stars
+                const headerStars = document.getElementById("header-stars");
+                if (headerStars) headerStars.textContent = stats.stars;
 
-            // Update hero section stats
-            const heroStars = document.getElementById('hero-stars');
-            if (heroStars) heroStars.textContent = stats.stars;
+                // Update hero section stats
+                const heroStars = document.getElementById("hero-stars");
+                if (heroStars) heroStars.textContent = stats.stars;
 
-            const heroForks = document.getElementById('hero-forks');
-            if (heroForks) heroForks.textContent = stats.forks;
+                const heroForks = document.getElementById("hero-forks");
+                if (heroForks) heroForks.textContent = stats.forks;
 
-            // Update open source section stats
-            const openSourceStars = document.getElementById('open-source-stars');
-            if (openSourceStars) openSourceStars.textContent = stats.stars;
+                // Update open source section stats
+                const openSourceStars =
+                    document.getElementById("open-source-stars");
+                if (openSourceStars) openSourceStars.textContent = stats.stars;
 
-            const openSourceForks = document.getElementById('open-source-forks');
-            if (openSourceForks) openSourceForks.textContent = stats.forks;
+                const openSourceForks =
+                    document.getElementById("open-source-forks");
+                if (openSourceForks) openSourceForks.textContent = stats.forks;
 
-            const openSourceContributors = document.getElementById('open-source-contributors');
-            if (openSourceContributors) openSourceContributors.textContent = stats.contributors;
-        }
+                const openSourceContributors = document.getElementById(
+                    "open-source-contributors"
+                );
+                if (openSourceContributors)
+                    openSourceContributors.textContent = stats.contributors;
 
-        // Function to update the current year in footer
-        function updateCurrentYear() {
-            const currentYear = new Date().getFullYear();
-            const yearElement = document.getElementById('current-year');
-            if (yearElement) {
-                yearElement.textContent = currentYear;
+                // Update the latest version id
+                const latestVersion = document.getElementById("latest-version");
+                if (latestVersion) latestVersion.textContent = stats.version;
             }
-        }
 
-        // Theme toggle functionality
-        const themeToggle = document.getElementById('theme-toggle');
-        const sunIcon = document.getElementById('sun-icon');
-        const moonIcon = document.getElementById('moon-icon');
-        const html = document.documentElement;
+            // Function to update the current year in footer
+            function updateCurrentYear() {
+                const currentYear = new Date().getFullYear();
+                const yearElement = document.getElementById("current-year");
+                if (yearElement) {
+                    yearElement.textContent = currentYear;
+                }
+            }
 
-        // Initialize theme (default to dark)
-        let currentTheme = localStorage.getItem('theme') || 'dark';
-        html.classList.toggle('dark', currentTheme === 'dark');
-        updateThemeIcons();
+            // Theme toggle functionality
+            const themeToggle = document.getElementById("theme-toggle");
+            const sunIcon = document.getElementById("sun-icon");
+            const moonIcon = document.getElementById("moon-icon");
+            const html = document.documentElement;
 
-        themeToggle.addEventListener('click', () => {
-            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            html.classList.toggle('dark', currentTheme === 'dark');
-            localStorage.setItem('theme', currentTheme);
+            // Initialize theme (default to dark)
+            let currentTheme = localStorage.getItem("theme") || "dark";
+            html.classList.toggle("dark", currentTheme === "dark");
             updateThemeIcons();
-        });
 
-        function updateThemeIcons() {
-            if (currentTheme === 'dark') {
-                sunIcon.classList.remove('hidden');
-                moonIcon.classList.add('hidden');
-            } else {
-                sunIcon.classList.add('hidden');
-                moonIcon.classList.remove('hidden');
+            themeToggle.addEventListener("click", () => {
+                currentTheme = currentTheme === "dark" ? "light" : "dark";
+                html.classList.toggle("dark", currentTheme === "dark");
+                localStorage.setItem("theme", currentTheme);
+                updateThemeIcons();
+            });
+
+            function updateThemeIcons() {
+                if (currentTheme === "dark") {
+                    sunIcon.classList.remove("hidden");
+                    moonIcon.classList.add("hidden");
+                } else {
+                    sunIcon.classList.add("hidden");
+                    moonIcon.classList.remove("hidden");
+                }
             }
-        }
 
-        // Copy to clipboard functionality
-        const copyBtn = document.getElementById('copy-btn');
-        const copyIcon = document.getElementById('copy-icon');
-        const checkIcon = document.getElementById('check-icon');
-        const installCommand = document.getElementById('install-command');
+            // Copy to clipboard functionality
+            const copyBtn = document.getElementById("copy-btn");
+            const copyIcon = document.getElementById("copy-icon");
+            const checkIcon = document.getElementById("check-icon");
+            const installCommand = document.getElementById("install-command");
 
-        copyBtn.addEventListener('click', async () => {
-            try {
-                await navigator.clipboard.writeText(installCommand.textContent.trim());
-                copyIcon.classList.add('hidden');
-                checkIcon.classList.remove('hidden');
-                
-                setTimeout(() => {
-                    copyIcon.classList.remove('hidden');
-                    checkIcon.classList.add('hidden');
-                }, 2000);
-            } catch (err) {
-                console.error('Failed to copy text: ', err);
-            }
-        });
+            copyBtn.addEventListener("click", async () => {
+                try {
+                    await navigator.clipboard.writeText(
+                        installCommand.textContent.trim()
+                    );
+                    copyIcon.classList.add("hidden");
+                    checkIcon.classList.remove("hidden");
 
-        // Initialize dynamic content when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchGitHubStats();
-            updateCurrentYear();
-        });
-    </script>
-</body>
+                    setTimeout(() => {
+                        copyIcon.classList.remove("hidden");
+                        checkIcon.classList.add("hidden");
+                    }, 2000);
+                } catch (err) {
+                    console.error("Failed to copy text: ", err);
+                }
+            });
+
+            // Initialize dynamic content when page loads
+            document.addEventListener("DOMContentLoaded", () => {
+                fetchGitHubStats();
+                updateCurrentYear();
+            });
+        </script>
+    </body>
 </html>
