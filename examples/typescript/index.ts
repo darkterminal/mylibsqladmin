@@ -1,26 +1,13 @@
 import { createClient } from "@libsql/client";
 
 export const turso = createClient({
-    url: "file:local.db",
-    syncUrl: process.env.TURSO_DATABASE_URL,
-    authToken: process.env.TURSO_AUTH_TOKEN,
-    syncInterval: 60000,
+    url: 'http://foo.localhost:8080',
 });
 
-const name = `Iku_${Math.random()}`;
+const txn = await turso.transaction("read");
 
-await turso.batch(
-    [
-        "CREATE TABLE IF NOT EXISTS users (name TEXT)",
-        {
-            sql: "INSERT INTO users(name) VALUES (?)",
-            args: [name],
-        },
-    ],
-    "write",
-);
+await txn.execute('ATTACH "bar" AS bar');
 
-const data = await turso.execute("SELECT * FROM users");
-console.log(data.toJSON());
+const rs = await txn.execute("SELECT * FROM bar.bar_table");
 
-turso.sync();
+console.log(rs.rows);
