@@ -49,6 +49,6 @@ class UserDatabaseToken extends Model
             }
         }
 
-        return $query->value($type) ?: null;
+        return $query->latest()->value($type) ?: null;
     }
 }
