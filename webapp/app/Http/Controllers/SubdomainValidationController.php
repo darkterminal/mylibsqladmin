@@ -31,9 +31,7 @@ class SubdomainValidationController extends Controller
         $this->subdomain = $request->header('X-Subdomain');
         $token = $this->extractToken($request);
 
-        // logger()->debug('Validating subdomain', ['subdomain' => $subdomain, 'token' => $token]);
-
-        if (empty($token)) {
+        if (empty($token) || $token === 'Bearer') {
             return $this->handleEmptyToken($this->subdomain);
         }
 
@@ -124,7 +122,7 @@ class SubdomainValidationController extends Controller
         $databaseToken = UserDatabaseToken::with('database')
             ->whereHas('database', fn($q) => $q->where('database_name', $subdomain))
             ->where('user_id', $this->uid)
-            ->first();
+            ->latest()->first();
 
         if (!$databaseToken) {
             return 'none';
