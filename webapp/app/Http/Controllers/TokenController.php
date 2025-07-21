@@ -47,16 +47,16 @@ class TokenController extends Controller
             ->when(!auth()->user()->hasRole('Super Admin'), fn($q) => $q->where('user_id', $userId))
             ->paginate(10)
             ->through(function ($token) {
-                $expirationDate = now()->addDays($token->expiration_day);
+                $expirationDate = $token->expiration_day !== 0 ? now()->addDays($token->expiration_day) : null;
 
                 // Get team from filtered groups
                 $team = $token->database->groups->first()?->team;
 
                 return [
                     ...$token->toArray(),
-                    'expiration_day' => now()->isAfter($expirationDate)
-                        ? "Expired"
-                        : $expirationDate->format('Y-m-d'),
+                    'expiration_day' => $expirationDate
+                        ? now()->isAfter($expirationDate) ? "Expired" : $expirationDate->format('Y-m-d')
+                        : "Never",
                     'groups' => $token->database->groups->map(fn($group) => [
                         'id' => $group->id,
                         'name' => $group->name,
@@ -109,10 +109,6 @@ class TokenController extends Controller
                 [
                     'user_id' => auth()->id(),
                     'database_id' => $validated['databaseId'],
-                    'name' => $validated['name'],
-                    'full_access_token' => $tokenGenerator['full_access_token'],
-                    'read_only_token' => $tokenGenerator['read_only_token'],
-                    'expiration_day' => $validated['expiration'],
                 ],
                 $formData
             );
