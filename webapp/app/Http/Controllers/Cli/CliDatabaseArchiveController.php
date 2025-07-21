@@ -7,7 +7,7 @@ use App\Models\User;
 use App\Models\UserDatabase;
 use Illuminate\Http\Request;
 
-class CliDatabaseListController extends Controller
+class CliDatabaseArchiveController extends Controller
 {
     /**
      * Handle the incoming request.
@@ -25,7 +25,8 @@ class CliDatabaseListController extends Controller
             return response()->json(['error' => 'User not found'], 404);
         }
 
-        $databases = UserDatabase::where('user_id', $user->id)
+        $databases = UserDatabase::onlyTrashed()
+            ->where('user_id', $user->id)
             ->orWhereHas('groups.members', function ($query) use ($user) {
                 $query->where('user_id', $user->id);
             })
@@ -42,7 +43,9 @@ class CliDatabaseListController extends Controller
                 'owner' => $userIdentifier,
                 'created_at' => $db->created_at->format('Y-m-d H:i:s'),
                 'updated_at' => $db->updated_at->format('Y-m-d H:i:s'),
-            ]);
+                'deleted_at' => $db->deleted_at,
+            ])
+            ->filter(fn($db) => $db['deleted_at'] !== null);
 
         return response()->json([
             'status' => 'success',
@@ -54,3 +57,5 @@ class CliDatabaseListController extends Controller
         ], 200);
     }
 }
+
+

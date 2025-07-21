@@ -15,7 +15,7 @@ trait CliStore
         try {
             $stmt = $this->getPdo()->prepare("
                 SELECT token, expires_at 
-                FROM " . $this->config['token_table'] . " 
+                FROM " . config('tables.tokens') . " 
                 WHERE username = :username 
                 ORDER BY expires_at DESC 
                 LIMIT 1
@@ -37,7 +37,7 @@ trait CliStore
         try {
             $stmt = $this->getPdo()->prepare("
             SELECT username 
-            FROM " . $this->config['token_table'] . " 
+            FROM " . config('tables.tokens') . " 
             WHERE expires_at > datetime('now', 'localtime')
             ORDER BY expires_at DESC 
             LIMIT 1
@@ -58,14 +58,14 @@ trait CliStore
         try {
             // Delete expired tokens for this user
             $stmt = $pdo->prepare("
-                DELETE FROM " . $this->config['token_table'] . " 
+                DELETE FROM " . config('tables.tokens') . " 
                 WHERE username = :username
             ");
             $stmt->execute(['username' => $username]);
 
             // Insert new token
             $stmt = $pdo->prepare("
-                INSERT INTO " . $this->config['token_table'] . " 
+                INSERT INTO " . config('tables.tokens') . " 
                 (username, token, expires_at) 
                 VALUES (:username, :token, :expires_at)
             ");
@@ -88,7 +88,7 @@ trait CliStore
         try {
             $stmt = $this->getPdo()->prepare("
                 SELECT token 
-                FROM " . $this->config['token_table'] . " 
+                FROM " . config('tables.tokens') . " 
                 WHERE username = :username 
                   AND expires_at > datetime('now', 'localtime')
                 ORDER BY expires_at DESC 
@@ -106,7 +106,7 @@ trait CliStore
         try {
             $stmt = $this->getPdo()->prepare("
                 SELECT expires_at 
-                FROM " . $this->config['token_table'] . " 
+                FROM " . config('tables.tokens') . " 
                 WHERE username = :username 
                   AND expires_at > datetime('now', 'localtime')
                 ORDER BY expires_at DESC 
@@ -130,18 +130,18 @@ trait CliStore
     private function initializeDatabase(): void
     {
         // Create storage directory if needed
-        $dbDir = dirname($this->config['db_path']);
+        $dbDir = dirname(config('db_path'));
         if (!is_dir($dbDir)) {
             mkdir($dbDir, 0700, true);
         }
 
         try {
-            $this->pdo = new PDO('sqlite:' . $this->config['db_path']);
+            $this->pdo = use_database();
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            // Create table if not exists
+            // Database Migrations
             $this->pdo->exec("
-                CREATE TABLE IF NOT EXISTS " . $this->config['token_table'] . " (
+                CREATE TABLE IF NOT EXISTS " . config('tables.tokens') . " (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT NOT NULL,
                     token TEXT NOT NULL,
@@ -153,7 +153,17 @@ trait CliStore
             // Create index for faster lookups
             $this->pdo->exec("
                 CREATE INDEX IF NOT EXISTS idx_username 
-                ON " . $this->config['token_table'] . " (username)
+                ON " . config('tables.tokens') . " (username)
+            ");
+
+            // Create table for storing configuration
+            $this->pdo->exec("
+                CREATE TABLE IF NOT EXISTS " . config('tables.config') . " (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    key TEXT NOT NULL,
+                    value TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
             ");
 
             $this->dbInitialized = true;

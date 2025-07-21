@@ -8,11 +8,11 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
 
-class DbList extends Command implements Configurable
+class DbArchive extends Command implements Configurable
 {
     use CliStore;
 
-    protected static $defaultName = 'db:list';
+    protected static $defaultName = 'db:archive';
     public array $config = [];
 
     public function setAppConfig(array $config)
@@ -23,8 +23,8 @@ class DbList extends Command implements Configurable
     protected function configure(): void
     {
         $this
-            ->setName('db:list')
-            ->setDescription('List databases accessible to the current user');
+            ->setName('db:archive')
+            ->setDescription('List all archived databases accessible to the current user');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -89,7 +89,7 @@ class DbList extends Command implements Configurable
 
     private function fetchDatabases(string $userIdentifier, string $token): array
     {
-        $pathUrl = '/api/cli/db/lists';
+        $pathUrl = '/api/cli/db/archives';
 
         $request = http_request($pathUrl, 'GET', null, [
             "X-User-Identifier: $userIdentifier",
@@ -115,10 +115,10 @@ class DbList extends Command implements Configurable
     private function renderDatabaseTable(OutputInterface $output, array $databases): void
     {
         $user = $this->getCurrentLoggedInUser() ?: 'Unknown';
-        $output->writeln("\n<info>Databases for $user</info>");
+        $output->writeln("\n<info>Archived Databases for $user</info>");
 
         $table = new Table($output);
-        $table->setHeaders(['Name', 'Type', 'Group', 'Owner', 'Created At', 'Updated At']);
+        $table->setHeaders(['Name', 'Type', 'Group', 'Owner', 'Created At', 'Delete At']);
 
         foreach ($databases as $db) {
             $table->addRow([
@@ -127,7 +127,7 @@ class DbList extends Command implements Configurable
                 $db['group_name'] ?? 'default',
                 $db['owner'] ?? 'Unknown',
                 $db['created_at'] ?? 'Unknown',
-                $db['updated_at'] ?? 'Unknown',
+                $db['deleted_at'] ?? 'Unknown',
             ]);
         }
 

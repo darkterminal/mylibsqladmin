@@ -1,12 +1,13 @@
 <?php
 namespace Libsql3\Cmd;
 
+use Libsql3\Contracts\Configurable;
 use Libsql3\Internal\CliStore;
 use Psy\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class AuthLogout extends Command
+class AuthLogout extends Command implements Configurable
 {
     use CliStore;
 
@@ -58,23 +59,12 @@ class AuthLogout extends Command
 
     private function callLogoutApi(string $token): void
     {
-        $apiUrl = 'http://localhost:8000/api/cli/logout';
-        $payload = json_encode(['token' => $token]);
+        $apiUrl = '/api/cli/logout';
+        $payload = ['token' => $token];
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $apiUrl);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'Content-Length: ' . strlen($payload),
-            'X-Request-Source: CLI',
-        ]);
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        $request = http_request($apiUrl, 'POST', $payload);
+        $response = $request['raw'];
+        $httpCode = $request['status'];
 
         if ($httpCode !== 200) {
             $message = "API returned status $httpCode";
@@ -90,7 +80,7 @@ class AuthLogout extends Command
     {
         $stmt = $this->getPdo()->prepare("
             SELECT token 
-            FROM " . $this->config['token_table'] . " 
+            FROM " . config('tables.tokens') . " 
             WHERE username = :username
         ");
         $stmt->execute(['username' => $username]);
@@ -100,7 +90,7 @@ class AuthLogout extends Command
     private function deleteToken(string $username): void
     {
         $pdo = $this->getPdo();
-        $stmt = $pdo->prepare("DELETE FROM " . $this->config['token_table'] . " WHERE username = :username");
+        $stmt = $pdo->prepare("DELETE FROM " . config('tables.tokens') . " WHERE username = :username");
         $stmt->execute(['username' => $username]);
     }
 }

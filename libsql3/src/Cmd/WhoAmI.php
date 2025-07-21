@@ -1,12 +1,13 @@
 <?php
 namespace Libsql3\Cmd;
 
+use Libsql3\Contracts\Configurable;
 use Libsql3\Internal\CliStore;
 use Psy\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class WhoAmI extends Command
+class WhoAmI extends Command implements Configurable
 {
     use CliStore;
     protected static $defaultName = 'whoami';

@@ -23,14 +23,18 @@ class CliLogoutController extends Controller
 
         if (!$token) {
             return response()->json([
-                'message' => 'Invalid token'
+                'status' => 'error',
+                'message' => 'Invalid token',
+                'data' => []
             ], 401);
         }
 
         // Verify token hasn't expired
         if ($token->expires_at && now()->gt($token->expires_at)) {
             return response()->json([
-                'message' => 'Token already expired'
+                'status' => 'error',
+                'message' => 'Token already expired',
+                'data' => []
             ], 401);
         }
 
@@ -38,8 +42,11 @@ class CliLogoutController extends Controller
         $token->delete();
 
         return response()->json([
+            'status' => 'success',
             'message' => 'Successfully logged out',
-            'revoked_token' => $request->token
+            'data' => [
+                'revoked_token' => $request->token
+            ]
         ]);
     }
 }

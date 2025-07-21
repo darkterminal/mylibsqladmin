@@ -1,6 +1,7 @@
 <?php
 namespace Libsql3\Cmd;
 
+use Libsql3\Internal\CliStore;
 use Psy\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
@@ -11,40 +12,45 @@ use Symfony\Component\Process\Exception\ProcessFailedException;
 
 class DbShell extends Command
 {
+    use CliStore;
+
     protected static $defaultName = 'db:shell';
 
     protected function configure(): void
     {
         $this
             ->setName('db:shell')
-            ->setDescription('Open interactive shell for Turso database')
-            ->addArgument('url', InputArgument::REQUIRED, 'Turso database URL')
-            ->addOption(
-                'token',
-                't',
-                InputOption::VALUE_REQUIRED,
-                'Database authentication token',
-                null
-            )
-            ->setHelp(
-                <<<'HELP'
-Examples:
-  <info>db:shell http://db.your-domain.io</info>        - Connect with token from environment
-  <info>db:shell http://db.your-domain.io -t TOKEN</info> - Provide token via command line
-  
-Security Note:
-  Tokens provided via command line may be visible in process lists.
-  Use environment variables for sensitive deployments.
-HELP
-            );
+            ->setDescription('Open interactive shell for libSQL database')
+            ->addArgument('database_name', InputArgument::REQUIRED, 'Database name');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $url = $input->getArgument('url');
+        $dbName = $input->getArgument('database_name');
+        $dbEndpoint = parse_url(config_get('LIBSQL_DATABASE_ENDPOINT'));
+        $url = $dbEndpoint['scheme'] . '://' . $dbName . '.' . $dbEndpoint['host'] . ':' . $dbEndpoint['port'];
         $tursoPath = $this->getTursoPath();
 
+        // Get current user identifier from environment
+        $userIdentifier = $this->getCurrentLoggedInUser() ?: null;
+
+        if (!$userIdentifier) {
+            $output->writeln('<error>There is no active session</error>');
+            $output->writeln('<comment>Loggin first using auth:login <username> command</comment>');
+            return 1;
+        }
+
         try {
+
+            // Get authentication token
+            $token = $this->getTokenForUser($userIdentifier);
+
+            if (!$token) {
+                $output->writeln('<error>No valid authentication token found</error>');
+                $output->writeln('<comment>Please login first using auth:login command</comment>');
+                return 2;
+            }
+
             // Install Turso CLI if not found
             if (!$tursoPath) {
                 $output->writeln('<info>Turso CLI not found. Installing now...</info>');
@@ -58,12 +64,12 @@ HELP
                 $output->writeln("\n<info>Turso CLI installed successfully!</info>");
             }
 
-            // Get authentication token from various sources
-            $authToken = $this->getAuthToken($input);
+            // Get database authentication token
+            $authToken = $this->getDatabaseToken($dbName, $userIdentifier, $token);
 
             if ($authToken) {
                 $url = $this->addAuthTokenToUrl($url, $authToken);
-                $source = $this->getTokenSource($input);
+                $source = 'command line';
             }
 
             // Run Turso shell
@@ -83,39 +89,44 @@ HELP
         }
     }
 
-    private function getAuthToken(InputInterface $input): ?string
+    private function getDatabaseToken(string $databaseName, string $userIdentifier, string $token): ?string
     {
-        // Priority 1: --token option
-        if ($token = $input->getOption('token')) {
+        $request = http_request('/api/cli/db/token/' . urlencode($databaseName), 'GET', null, [
+            "Authorization: Bearer " . $token,
+            "X-User-Identifier: " . $userIdentifier
+        ]);
+
+        $response = $request['raw'];
+        $httpCode = $request['status'];
+
+        if ($httpCode !== 200) {
+            throw new \Exception("API returned status $httpCode: " . substr($response, 0, 200));
+        }
+
+        $body = json_decode($response, true);
+
+        return $body['data']['token'];
+    }
+
+    private function getTokenForUser(string $userIdentifier): ?string
+    {
+        // Try to get token from local store
+        $token = $this->getToken($userIdentifier);
+
+        if ($token) {
             return $token;
         }
 
-        // Priority 2: Environment variables
+        // Fallback to environment variables
         $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
         foreach ($envVars as $var) {
             $token = getenv($var);
-            if ($token !== false && !empty($token)) {
+            if ($token) {
                 return $token;
             }
         }
 
         return null;
-    }
-
-    private function getTokenSource(InputInterface $input): string
-    {
-        if ($input->getOption('token')) {
-            return 'command line';
-        }
-
-        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
-        foreach ($envVars as $var) {
-            if (getenv($var)) {
-                return "environment variable {$var}";
-            }
-        }
-
-        return 'unknown source';
     }
 
     private function addAuthTokenToUrl(string $url, string $token): string
@@ -184,6 +195,7 @@ HELP
 
     private function runTursoShell(string $tursoPath, string $url, OutputInterface $output): void
     {
+        echo $url . PHP_EOL;
         // Start interactive shell
         $descriptorSpec = [
             0 => STDIN,
@@ -209,3 +221,4 @@ HELP
         }
     }
 }
+

@@ -1,6 +1,7 @@
 <?php
 namespace Libsql3\Cmd;
 
+use Libsql3\Contracts\Configurable;
 use Libsql3\Internal\CliStore;
 use Psy\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -9,7 +10,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-class UserList extends Command
+class UserList extends Command implements Configurable
 {
     use CliStore;
 
@@ -137,34 +138,27 @@ class UserList extends Command
 
     private function fetchUsers(string $userIdentifier, string $token): array
     {
-        $apiUrl = 'http://localhost:8000/api/cli/user/lists';
+        $apiUrl = '/api/cli/user/lists';
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $apiUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            "Authorization: Bearer $token",
+        $request = http_request($apiUrl, 'GET', null, [
             "X-User-Identifier: $userIdentifier",
-            'Accept: application/json',
-            'X-Request-Source: CLI',
+            "Authorization: Bearer $token"
         ]);
 
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        curl_close($ch);
+        $response = $request['raw'];
+        $httpCode = $request['status'];
 
         if ($httpCode !== 200) {
             throw new \Exception("API returned status $httpCode: " . substr($response, 0, 100));
         }
 
-        $data = json_decode($response, true);
+        $body = json_decode($response, true);
 
-        if (!isset($data['users']) || !is_array($data['users'])) {
+        if (!isset($body['data']['users']) || !is_array($body['data']['users'])) {
             throw new \Exception("Invalid API response format");
         }
 
-        return $data['users'];
+        return $body['data']['users'];
     }
 
     private function renderUserTable(SymfonyStyle $io, array $users, bool $showEmail = false): void

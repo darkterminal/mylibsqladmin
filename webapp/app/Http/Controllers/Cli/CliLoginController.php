@@ -33,9 +33,14 @@ class CliLoginController extends Controller
         );
 
         return response()->json([
-            'token' => $token->plainTextToken,
-            'expires_at' => $token->accessToken->expires_at->toIso8601String(),
-            'expires_in' => $token->accessToken->expires_at->diffInSeconds(now())
+            'status' => 'success',
+            'message' => 'Token created successfully',
+            'data' => [
+                'token' => $token->plainTextToken,
+                'expires_at' => $token->accessToken->expires_at->toIso8601String(),
+                'expires_in' => $token->accessToken->expires_at->diffInSeconds(now()),
+                'app_url' => env('APP_URL')
+            ]
         ]);
     }
 }

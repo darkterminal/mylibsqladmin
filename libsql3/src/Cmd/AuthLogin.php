@@ -1,6 +1,7 @@
 <?php
 namespace Libsql3\Cmd;
 
+use Libsql3\Contracts\Configurable;
 use Libsql3\Internal\CliStore;
 use Psy\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -8,7 +9,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 
-class AuthLogin extends Command
+class AuthLogin extends Command implements Configurable
 {
     use CliStore;
 
@@ -37,6 +38,7 @@ class AuthLogin extends Command
         // Get password securely
         $password = $input->getArgument('password');
         if (null === $password) {
+            /** @var \Symfony\Component\Console\Helper\QuestionHelper $helper */
             $helper = $this->getHelper('question');
             $question = new Question('Enter password: ');
             $question->setHidden(true);
@@ -76,36 +78,34 @@ class AuthLogin extends Command
             return 1;
         }
 
-        $apiUrl = 'http://localhost:8000/api/cli/login';
-        $payload = json_encode(['username' => $username, 'password' => $password]);
+        $pathUrl = '/api/cli/login';
+        $payload = ['username' => $username, 'password' => $password];
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $apiUrl);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'Content-Length: ' . strlen($payload),
-            'X-Request-Source: CLI',
-        ]);
+        $request = http_request($pathUrl, 'POST', $payload);
 
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        if ($httpCode !== 200) {
-            throw new \Exception("API returned status $httpCode");
+        if ($request['status'] !== 200) {
+            throw new \Exception("API returned status {$request['status']}");
         }
 
-        $data = json_decode($response, true);
-        if (!isset($data['token']) || !isset($data['expires_at'])) {
+        $body = json_decode($request['raw'], true);
+        if (!isset($body['data']['token']) || !isset($body['data']['expires_at'])) {
             throw new \Exception("Invalid API response");
         }
 
+        if (isset($body['data']['app_url'])) {
+            config_set('LIBSQL_API_ENDPOINT', $body['data']['app_url']);
+
+            if (str_contains($body['data']['app_url'], 'localhost')) {
+                $databaseEndpoint = str_replace('8000', '8080', $body['data']['app_url']);
+                config_set('LIBSQL_DATABASE_ENDPOINT', $databaseEndpoint);
+            } else {
+                config_set('LIBSQL_DATABASE_ENDPOINT', "{$body['data']['app_url']}:8080");
+            }
+        }
+
         return [
-            'token' => $data['token'],
-            'expires_at' => $data['expires_at']
+            'token' => $body['data']['token'],
+            'expires_at' => $body['data']['expires_at']
         ];
     }
 }

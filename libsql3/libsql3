@@ -7,6 +7,41 @@ use Psy\Shell;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
+// Turn off displaying errors to users
+// ini_set('display_errors', '1');
+error_reporting(E_ALL); // Or E_ERROR | E_PARSE in stricter production
+
+// Global error handler
+set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline) {
+    // Log actual error to file
+    error_log("[ERROR] $errstr in $errfile on line $errline");
+
+    // Display generic message to user
+    http_response_code(500);
+    echo "Something went wrong. Please try again later." . PHP_EOL;
+    exit;
+});
+
+// Global exception handler
+set_exception_handler(function (Throwable $e) {
+    // Log exception details
+    error_log("[EXCEPTION] {$e->getMessage()} in {$e->getFile()} on line {$e->getLine()}");
+
+    // Display friendly error
+    http_response_code(500);
+    echo "Oops! An unexpected error occurred. Please contact support." . PHP_EOL;
+    exit;
+});
+
+register_shutdown_function(function () {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        error_log("[FATAL] {$error['message']} in {$error['file']} on line {$error['line']}");
+        http_response_code(500);
+        echo "A critical error occurred. Please try again later." . PHP_EOL;
+    }
+});
+
 $app = new App();
 
 $config = new Configuration([

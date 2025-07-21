@@ -4,6 +4,9 @@
     "type": "library",
     "license": "MIT",
     "autoload": {
+        "files": [
+            "src/helpers.php"
+        ],
         "psr-4": {
             "Libsql3\\": "src/"
         }

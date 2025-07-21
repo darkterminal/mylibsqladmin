@@ -1,9 +1,12 @@
 <?php
 
 $dbPath = getenv('HOME') . DIRECTORY_SEPARATOR . '.mylibsqladmin' . DIRECTORY_SEPARATOR . 'libsql3.db';
-const TOKEN_TABLE = 'auth_tokens';
 
 return [
+    'api_endpoint' => getenv('LIBSQL_API_ENDPOINT'),
     'db_path' => $dbPath,
-    'token_table' => TOKEN_TABLE
+    'tables' => [
+        'tokens' => 'auth_tokens',
+        'config' => 'configuration'
+    ]
 ];
