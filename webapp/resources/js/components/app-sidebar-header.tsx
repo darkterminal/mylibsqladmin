@@ -110,8 +110,8 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                             onCreateGroup={handleCreateGroup}
                         >
                             <AppTooltip text='Create new database'>
-                                <Button variant={'outline'} size="sm" className="h-8 w-8 p-0">
-                                    <CirclePlusIcon className='h-4 w-4' />
+                                <Button variant={'outline'} size="default">
+                                    <CirclePlusIcon className='h-4 w-4' /> New Database
                                 </Button>
                             </AppTooltip>
                         </ModalCreateDatabase>
