@@ -8,5 +8,5 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('app:stats-fetcher')->hourly();
+Schedule::command('app:stats-fetcher')->everyTenMinutes();
 Schedule::command('activities:cleanup')->daily();
