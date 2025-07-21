@@ -55,8 +55,8 @@ export function ModalCreateToken({
     const flash = props.flash as FlashMessageProps;
     const [isOpen, setOpen] = useState(false);
     const { data, setData, post, processing, errors, reset } = useForm<CreateTokenProps>({
-        name: '',
-        expiration: 30,
+        name: `token-${Math.floor(Math.random() * Date.now())}`,
+        expiration: 0,
         databaseId: Number(selectedDatabase)
     });
 
@@ -168,21 +168,6 @@ export function ModalCreateToken({
                         </Select>
                     </div>
                     <div className="flex flex-col w-full space-y-2">
-                        <Label htmlFor="name">Token Name</Label>
-                        <Input
-                            type="text"
-                            id="name"
-                            name="name"
-                            value={data.name}
-                            onChange={(e) => setData('name', String(e.target.value))}
-                            placeholder="Token Name"
-                            className="w-full"
-                            autoFocus
-                            tabIndex={1}
-                            required
-                        />
-                    </div>
-                    <div className="flex flex-col w-full space-y-2">
                         <Label htmlFor="expiration">Expiration</Label>
                         <Input
                             type="number"
@@ -192,9 +177,13 @@ export function ModalCreateToken({
                             onChange={(e) => setData('expiration', Number(e.target.value))}
                             placeholder="Expiration in a day"
                             className="w-full"
+                            min={0}
                             tabIndex={2}
                             required
                         />
+                        <span className="text-muted-foreground text-xs">
+                            Note: Use 0 for no expiration
+                        </span>
                     </div>
                     <Button variant={'default'} type="submit" disabled={processing || !data.name}>Generate Token</Button>
                 </form>

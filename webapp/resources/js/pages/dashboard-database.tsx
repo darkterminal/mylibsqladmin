@@ -3,6 +3,7 @@ import ButtonCopyFullAccessToken from "@/components/button-actions/action-copy-f
 import ButtonCopyReadOnlyToken from "@/components/button-actions/action-copy-read-only-token"
 import ButtonDelete from "@/components/button-actions/action-delete"
 import ButtonOpenDatabaseStudio from "@/components/button-actions/action-open-database-studio"
+import { ButtonSDks } from "@/components/button-actions/action-sdks"
 import { ModalCreateToken } from "@/components/modals/modal-create-token"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -206,6 +207,7 @@ function DatabaseActions({ database }: { database: Databases }) {
     return (
         <div className="flex items-center gap-2">
             <ButtonOpenDatabaseStudio databaseName={database.name} text="Studio" />
+            <ButtonSDks />
             {database.token && (
                 <>
                     <ButtonCopyFullAccessToken token={database.token.full_access_token} />
