@@ -20,7 +20,7 @@ class UserDatabaseController extends Controller
         $query = UserDatabase::with([
             'groups.team:id,name,description',
             'user:id,name',
-            'tokens' => fn($q) => $q->where('user_id', $userId)
+            'tokens' => fn($q) => $q->where('user_id', $userId)->latest()
         ])->withCount(['queryMetrics as total_queries'])
             ->withSum('queryMetrics as rows_read', 'rows_read_count')
             ->withSum('queryMetrics as rows_written', 'rows_written_count')
@@ -100,7 +100,7 @@ class UserDatabaseController extends Controller
         $query = UserDatabase::onlyTrashed()->with([
             'groups.team:id,name,description',
             'user:id,name',
-            'tokens' => fn($q) => $q->where('user_id', $userId)
+            'tokens' => fn($q) => $q->where('user_id', $userId)->latest()
         ])->withCount(['queryMetrics as total_queries'])
             ->withSum('queryMetrics as rows_read', 'rows_read_count')
             ->withSum('queryMetrics as rows_written', 'rows_written_count')
