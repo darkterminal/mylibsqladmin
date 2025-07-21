@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\UserDatabase;
-use App\Models\UserDatabaseToken;
+use Illuminate\Support\Str;
 use Lcobucci\JWT\JwtFacade;
 use Lcobucci\JWT\Signer\Eddsa;
 use Lcobucci\JWT\Signer\Key\InMemory;
@@ -59,10 +59,11 @@ class DatabaseTokenGenerator
     public function generateToken(
         int|string $databaseId,
         int|null $userOrGroupId = null,
-        int $tokenExpiration = 30,
+        int $tokenExpiration = 0,
         bool $isGroup = false
     ): array|false {
-        $tokenExpiration = $tokenExpiration ?: $this->tokenExpiration;
+
+        $tokenExpiration = $tokenExpiration === 0 ? "100 years" : "{$tokenExpiration} days";
 
         if (is_string($databaseId) && !is_numeric($databaseId)) {
             $fullAccessToken = (new JwtFacade())->issue(
@@ -80,7 +81,7 @@ class DatabaseTokenGenerator
                     ->expiresAt(
                         $issuedAt
                             ->setTimezone(new \DateTimeZone(env('APP_TIMEZONE', 'UTC')))
-                            ->modify("+{$tokenExpiration} days")
+                            ->modify("+{$tokenExpiration}")
                     )
             );
 
@@ -100,7 +101,7 @@ class DatabaseTokenGenerator
                     ->expiresAt(
                         $issuedAt
                             ->setTimezone(new \DateTimeZone(env('APP_TIMEZONE', 'UTC')))
-                            ->modify("+{$tokenExpiration} days")
+                            ->modify("+{$tokenExpiration}")
                     )
             );
         } else {
@@ -121,7 +122,7 @@ class DatabaseTokenGenerator
                     ->expiresAt(
                         $issuedAt
                             ->setTimezone(new \DateTimeZone(env('APP_TIMEZONE', 'UTC')))
-                            ->modify("+{$tokenExpiration} days")
+                            ->modify("+{$tokenExpiration}")
                     )
             );
 
@@ -141,7 +142,7 @@ class DatabaseTokenGenerator
                     ->expiresAt(
                         $issuedAt
                             ->setTimezone(new \DateTimeZone(env('APP_TIMEZONE', 'UTC')))
-                            ->modify("+{$tokenExpiration} days")
+                            ->modify("+{$tokenExpiration}")
                     )
             );
         }
@@ -149,7 +150,7 @@ class DatabaseTokenGenerator
         return [
             'full_access_token' => $fullAccessToken->toString(),
             'read_only_token' => $readOnlyToken->toString(),
-            'expiration_day' => $tokenExpiration,
+            'expiration_day' => Str::of($tokenExpiration)->contains('days') ? Str::of($tokenExpiration)->replace(' days', '') : $tokenExpiration,
         ];
     }
 }
