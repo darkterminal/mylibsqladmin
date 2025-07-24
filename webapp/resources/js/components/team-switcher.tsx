@@ -32,6 +32,7 @@ import { usePermission } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 import { SharedData, Team } from "@/types"
 import { router, useForm, usePage } from "@inertiajs/react"
+import { toast } from "sonner"
 
 type PopoverTriggerProps = React.ComponentPropsWithoutRef<typeof PopoverTrigger>
 
@@ -41,7 +42,7 @@ export const teamSignal = createSignal<Team | null>(null)
 
 export function TeamSwitcher({ className }: TeamSwitcherProps) {
     const { auth, csrfToken } = usePage<SharedData>().props
-    const [currentTeamId, setCurrentTeamId] = useLocalStorage<number | null>('currentTeamId', auth.user.teams[0]?.id || null)
+    const [currentTeamId, setCurrentTeamId] = useLocalStorage<number | null | undefined>('currentTeamId', auth.user.teams[0]?.id || null)
 
     const getInitials = useInitials();
     const { can } = usePermission();
@@ -58,12 +59,42 @@ export function TeamSwitcher({ className }: TeamSwitcherProps) {
         e.preventDefault()
         post(route('team.create'), {
             preserveScroll: true,
-            onSuccess: () => {
+            onSuccess: (page) => {
+                setSelectedTeam(null)
+                setCurrentTeamId(page.props.flash.newTeam)
                 setShowNewTeamDialog(false)
                 setData({ name: '', description: '' })
-                router.visit(window.location.href, {
-                    preserveScroll: true
-                })
+                if (page.props.flash.success) {
+                    toast.success(page.props.flash.success, {
+                        position: 'bottom-center',
+                        duration: 2500,
+                        onAutoClose: () => {
+                            router.visit(window.location.href, {
+                                preserveScroll: true
+                            })
+                        },
+                        onDismiss: () => {
+                            router.visit(window.location.href, {
+                                preserveScroll: true
+                            })
+                        }
+                    })
+                } else {
+                    toast.error('Team failed to be created', {
+                        position: 'bottom-center',
+                        duration: 2500,
+                        onAutoClose: () => {
+                            router.visit(window.location.href, {
+                                preserveScroll: true
+                            })
+                        },
+                        onDismiss: () => {
+                            router.visit(window.location.href, {
+                                preserveScroll: true
+                            })
+                        }
+                    })
+                }
             }
         })
     }
