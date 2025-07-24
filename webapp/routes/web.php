@@ -103,8 +103,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('team.delete')
             ->can('delete', Team::class);
 
+        Route::put('restore/{team}', [TeamController::class, 'restoreTeam'])
+            ->name('team.restore')
+            ->can('delete', Team::class)
+            ->withTrashed();
+
         Route::delete('{team}/users/{user}/remove', [TeamController::class, 'deleteTeamMember'])
             ->name('teams.members.delete')
+            ->can('delete', Team::class);
+
+        Route::get('/archives', [TeamController::class, 'archiveTeam'])
+            ->name('teams.archives')
             ->can('delete', Team::class);
 
         Route::post('{team}/invitations', [TeamController::class, 'invite'])

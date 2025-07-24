@@ -10,7 +10,7 @@ import AppLayout from "@/layouts/app-layout"
 import { usePermission } from "@/lib/auth"
 import { BreadcrumbItem, Team, TeamForm } from "@/types"
 import { Head, router } from "@inertiajs/react"
-import { Grid3X3, List, Search, Trash, Users } from "lucide-react"
+import { ArrowLeft, Grid3X3, List, Search, Users } from "lucide-react"
 import { useEffect, useState } from "react"
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -21,6 +21,10 @@ const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Teams',
         href: '/dashboard/teams',
+    },
+    {
+        title: 'Team Archives',
+        href: '/dashboard/teams/archives',
     }
 ];
 
@@ -57,12 +61,12 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Teams" />
+            <Head title="Teams Archives" />
             <div className="container mx-auto p-6 space-y-6">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Team Dashboard</h1>
-                        <p className="text-muted-foreground">Manage your teams, groups, and databases</p>
+                        <h1 className="text-3xl font-bold tracking-tight">Team Archives</h1>
+                        <p className="text-muted-foreground">List of archived teams</p>
                     </div>
                     <div className="flex items-center gap-2 w-full md:w-auto">
                         <div className="relative w-full md:w-[300px]">
@@ -95,19 +99,17 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
                                     onSave={handleOnSave}
                                     validate={(team) => team.name.length < 3 ? "Name must be at least 3 characters" : null}
                                 />
-                                {can('delete-teams') && (
-                                    <Button onClick={() => router.visit(route('teams.archives'))}>
-                                        <Trash className="h-4 w-4" />
-                                        Team Archives
-                                    </Button>
-                                )}
+                                <Button onClick={() => router.visit(route('dashboard.teams'))}>
+                                    <ArrowLeft className="h-4 w-4" />
+                                    Team Dashboard
+                                </Button>
                             </>
                         )}
                     </div>
                 </div>
 
                 {viewMode === "table" ? (
-                    <TeamsTable teams={sortedAndFilteredTeams} />
+                    <TeamsTable teams={sortedAndFilteredTeams} isArchived={true} />
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {sortedAndFilteredTeams.map((team) => (
@@ -116,6 +118,7 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
                                 team={team}
                                 isCurrent={String(team.id) === currentTeamId}
                                 totalTeams={teams.length}
+                                isArchived={true}
                             />
                         ))}
                     </div>

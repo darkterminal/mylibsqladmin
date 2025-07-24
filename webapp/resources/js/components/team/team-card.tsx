@@ -3,7 +3,7 @@ import { apiFetch } from "@/lib/api";
 import { usePermission } from "@/lib/auth";
 import { MemberForm, SharedData, TeamCardProps, TeamForm } from "@/types";
 import { router, usePage } from "@inertiajs/react";
-import { Activity, CheckCircle, CirclePlusIcon, FolderClosed, MoreHorizontal, Users } from "lucide-react";
+import { Activity, CheckCircle, CirclePlusIcon, FolderClosed, MoreHorizontal, RefreshCcw, Users } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AppTooltip } from "../app-tooltip";
@@ -21,7 +21,7 @@ import { ScrollArea } from "../ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { GroupTree } from "./group-tree";
 
-export default function TeamCard({ team, isCurrent, totalTeams: totalTeams }: TeamCardProps) {
+export default function TeamCard({ team, isCurrent, totalTeams: totalTeams, isArchived = false }: TeamCardProps) {
     const getInitials = useInitials();
     const { can } = usePermission();
 
@@ -214,13 +214,27 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams }: Te
             }
         });
 
-        if (response.ok) {
-            router.visit(window.location.href, {
-                preserveScroll: true,
-            });
+        if (!response.ok) {
+            toast.error('Failed to delete team');
+            return;
         }
 
-        toast.error('Failed to delete team');
+        const data = await response.json();
+
+        toast.success(data.message, {
+            duration: 2500,
+            position: 'top-center',
+            onAutoClose: () => {
+                router.visit(window.location.href, {
+                    preserveScroll: true,
+                });
+            },
+            onDismiss: () => {
+                router.visit(window.location.href, {
+                    preserveScroll: true,
+                });
+            }
+        });
     }
 
     const handleRemoveMember = async (userId: number, teamId: number) => {
@@ -272,7 +286,7 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams }: Te
                     </div>
                     {(can('manage-teams') || can('manage-team-members') || can('view-team-members')) && (
                         <div className="flex gap-2">
-                            {can('create-databases') && (
+                            {can('create-databases') && !isArchived && (
                                 <ModalCreateDatabase
                                     existingDatabases={databases}
                                     onSubmit={handleDatabaseSubmit}
@@ -287,79 +301,93 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams }: Te
                                     </AppTooltip>
                                 </ModalCreateDatabase>
                             )}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                        <span className="sr-only">Open menu</span>
+                            {isArchived ? (
+                                <AppTooltip text="Restore team">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => alert("Restore team")}
+                                    >
+                                        <RefreshCcw className="h-4 w-4" />
+                                        <span className="sr-only">Restore team</span>
                                     </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    {can('update-teams') && (
-                                        <DropdownMenuItem asChild>
-                                            <ModalEditTeam
-                                                trigger={
-                                                    <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
-                                                        Edit team
-                                                    </Button>
-                                                }
-                                                onSave={(team) => handleEditTeamOnSave(team)}
-                                                initValues={team}
-                                            />
-                                        </DropdownMenuItem>
-                                    )}
-                                    {(can('view-team-members') || can('manage-team-members')) && (
-                                        <DropdownMenuItem asChild>
-                                            <ModalManageMembers
-                                                teamName={team.name}
-                                                trigger={
-                                                    <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
-                                                        Manage members
-                                                    </Button>
-                                                }
-                                                members={team.team_members}
-                                                pendingInvitation={team.pending_invitations}
-                                                onAddMember={(member) => handleAddMember(member)}
-                                                onRemoveMember={(memberId) => handleRemoveMember(memberId, team.id)}
-                                                onUpdateRole={(memberId, role) => handleUpdateRole(memberId, role)}
-                                            />
-                                        </DropdownMenuItem>
-                                    )}
-                                    {can('create-groups') && (
-                                        <DropdownMenuItem asChild>
-                                            <ModalCreateGroupOnly
-                                                trigger={
-                                                    <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
-                                                        Add group
-                                                    </Button>
-                                                }
-                                                onSave={(group) => {
-                                                    group.teamId = team.id;
-                                                    handleCreateGroupSubmit(group)
-                                                }}
-                                            />
-                                        </DropdownMenuItem>
-                                    )}
-                                    {can('delete-teams') && (
-                                        <>
-                                            <DropdownMenuSeparator />
+                                </AppTooltip>
+                            ) : (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                            <span className="sr-only">Open menu</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        {can('update-teams') && (
                                             <DropdownMenuItem asChild>
-                                                <Button
-                                                    variant="destructive"
-                                                    size={"sm"}
-                                                    className="flex w-full justify-start"
-                                                    disabled={totalTeams === 1}
-                                                    onClick={() => handleDeleteTeam(team.id)}
-                                                >
-                                                    Delete team
-                                                </Button>
+                                                <ModalEditTeam
+                                                    trigger={
+                                                        <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
+                                                            Edit team
+                                                        </Button>
+                                                    }
+                                                    onSave={(team) => handleEditTeamOnSave(team)}
+                                                    initValues={team}
+                                                />
                                             </DropdownMenuItem>
-                                        </>
-                                    )}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                                        )}
+                                        {(can('view-team-members') || can('manage-team-members')) && (
+                                            <DropdownMenuItem asChild>
+                                                <ModalManageMembers
+                                                    teamName={team.name}
+                                                    trigger={
+                                                        <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
+                                                            Manage members
+                                                        </Button>
+                                                    }
+                                                    members={team.team_members}
+                                                    pendingInvitation={team.pending_invitations}
+                                                    onAddMember={(member) => handleAddMember(member)}
+                                                    onRemoveMember={(memberId) => handleRemoveMember(memberId, team.id)}
+                                                    onUpdateRole={(memberId, role) => handleUpdateRole(memberId, role)}
+                                                />
+                                            </DropdownMenuItem>
+                                        )}
+                                        {can('create-groups') && (
+                                            <DropdownMenuItem asChild>
+                                                <ModalCreateGroupOnly
+                                                    trigger={
+                                                        <Button variant="ghost" size={"sm"} className="flex w-full justify-start">
+                                                            Add group
+                                                        </Button>
+                                                    }
+                                                    onSave={(group) => {
+                                                        group.teamId = team.id;
+                                                        handleCreateGroupSubmit(group)
+                                                    }}
+                                                />
+                                            </DropdownMenuItem>
+                                        )}
+                                        {can('delete-teams') && (
+                                            <>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem asChild>
+                                                    <Button
+                                                        variant="destructive"
+                                                        size={"sm"}
+                                                        className="flex w-full justify-start"
+                                                        disabled={totalTeams === 1}
+                                                        onClick={() => handleDeleteTeam(team.id)}
+                                                    >
+                                                        Delete team
+                                                    </Button>
+                                                </DropdownMenuItem>
+                                            </>
+                                        )}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
                         </div>
                     )}
                 </div>
@@ -378,7 +406,7 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams }: Te
                     </TabsList>
                     <TabsContent value="groups" className="flex-grow mt-4 space-y-4">
                         <ScrollArea className="h-[250px]">
-                            <GroupTree groups={team.groups} team={team} />
+                            <GroupTree groups={team.groups} team={team} isArchived={isArchived} />
                         </ScrollArea>
                     </TabsContent>
                     <TabsContent value="activity" className="flex-grow mt-4">

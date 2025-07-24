@@ -104,6 +104,7 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn() => $request->session()->get('success'),
                 'error' => fn() => $request->session()->get('error'),
                 'newToken' => fn() => $request->session()->get('newToken'),
+                'newTeam' => fn() => $request->session()->get('newTeam'),
                 'updatedGroup' => fn() => $request->session()->get('updatedGroup'),
                 'databaseGroups' => fn() => $request->session()->get('databaseGroups'),
                 'databaseNotInGroup' => fn() => $request->Session()->get('databaseNotInGroup'),

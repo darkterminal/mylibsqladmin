@@ -18,6 +18,26 @@ class UserDatabase extends Model
         'created_by',
     ];
 
+    protected static function booted()
+    {
+        static::deleting(function ($database) {
+            if ($database->isForceDeleting()) {
+                $database->tokens()->forceDelete();
+                $database->groups()->detach();
+                $database->queryMetrics()->forceDelete();
+            } else {
+                $database->tokens()->delete();
+            }
+        });
+
+        // Add this restoring handler
+        static::restoring(function ($database) {
+            UserDatabaseToken::onlyTrashed()
+                ->where('database_id', $database->id)
+                ->restore();
+        });
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

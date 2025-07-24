@@ -17,6 +17,25 @@ class GroupDatabase extends Model
         'created_by'
     ];
 
+    protected static function booted()
+    {
+        static::deleting(function ($group) {
+            if ($group->isForceDeleting()) {
+                $group->tokens()->forceDelete();
+                $group->members()->detach();
+            } else {
+                $group->tokens()->delete();
+            }
+        });
+
+        // Add this restoring handler
+        static::restoring(function ($group) {
+            GroupDatabaseToken::onlyTrashed()
+                ->where('group_id', $group->id)
+                ->restore();
+        });
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

@@ -11,6 +11,34 @@ class Team extends Model
 
     protected $fillable = ['name', 'description'];
 
+    protected static function booted()
+    {
+        static::deleting(function ($team) {
+            if ($team->isForceDeleting()) {
+                // Permanent deletion logic
+                $team->members()->detach();
+                $team->invitations()->forceDelete();
+                $team->groups()->forceDelete();
+                UserDatabase::where('team_id', $team->id)->forceDelete();
+                $team->recentActivities()->forceDelete();
+            } else {
+                // Soft deletion logic
+                $team->invitations()->delete();
+                $team->groups()->delete();
+                UserDatabase::where('team_id', $team->id)->delete();
+                $team->recentActivities()->delete();
+            }
+        });
+
+        static::restoring(function ($team) {
+            // Use direct model queries for restoration
+            Invitation::onlyTrashed()->where('team_id', $team->id)->restore();
+            GroupDatabase::onlyTrashed()->where('team_id', $team->id)->restore();
+            UserDatabase::onlyTrashed()->where('team_id', $team->id)->restore();
+            ActivityLog::onlyTrashed()->where('team_id', $team->id)->restore();
+        });
+    }
+
     public function members()
     {
         return $this->belongsToMany(User::class)
@@ -25,8 +53,7 @@ class Team extends Model
 
     public function invitations()
     {
-        return $this->hasMany(Invitation::class)
-            ->with('inviter');
+        return $this->hasMany(Invitation::class)->withoutTrashed()->with('inviter');
     }
 
     public function groups()

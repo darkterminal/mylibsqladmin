@@ -139,7 +139,10 @@ class TeamController extends Controller
                 ]
             );
 
-            return redirect()->back()->with('success', 'Team created successfully');
+            return redirect()->back()->with([
+                'success' => 'Team created successfully',
+                'newTeam' => $team->id
+            ]);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
@@ -211,13 +214,120 @@ class TeamController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Team deleted successfully'
+                'message' => "Team {$teamName} deleted successfully"
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
             ], $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ? 404 : 500);
+        }
+    }
+
+    public function archiveTeam(Request $request)
+    {
+        $user = auth()->user();
+
+        $teamsQuery = Team::onlyTrashed()->with([
+            'members',
+            'groups' => function ($query) {
+                $query->onlyTrashed();
+            },
+            'invitations.inviter',
+            'groups.members' => function ($query) {
+                $query->onlyTrashed()->with(['latestActivity', 'user'])
+                    ->select('id', 'database_name', 'is_schema', 'user_id', 'created_at');
+            },
+            'recentActivities.user'
+        ]);
+
+        if ($user->hasRole('Super Admin')) {
+            $teams = $teamsQuery->get();
+        } elseif ($user->hasPermission('manage-teams')) {
+            $teams = $teamsQuery->whereHas('members', fn($q) => $q->where('user_id', $user->id))->get();
+        } else {
+            $teams = $teamsQuery->whereHas('members', fn($q) => $q->where('user_id', $user->id))->get();
+        }
+
+        $teamData = $teams->map(function ($team) use ($user) {
+            $isTeamMember = $team->members->contains('id', $user->id);
+            $canAccessDatabases = $user->hasRole('Super Admin') ||
+                ($user->hasPermission('manage-teams') || $isTeamMember);
+
+            $pendingInvitations = $team->invitations
+                ->where('expires_at', '>', now())
+                ->map(fn($invite) => [
+                    'id' => $invite->id,
+                    'name' => $invite->name,
+                    'email' => $invite->email,
+                    'inviter' => $invite->inviter->name,
+                    'expires_at' => $invite->expires_at->diffForHumans(),
+                    'permission_level' => $invite->permission_level,
+                    'sent_at' => $invite->created_at->format('M d, Y H:i')
+                ]);
+
+            return [
+                'id' => $team->id,
+                'name' => $team->name,
+                'description' => $team->description,
+                'members' => $team->members->count(),
+                'team_members' => $team->members->map(fn($member) => [
+                    'id' => $member->id,
+                    'name' => $member->name,
+                    'email' => $member->email,
+                    'role' => $member->pivot->permission_level,
+                ]),
+                'pending_invitations' => $pendingInvitations,
+                'groups' => $canAccessDatabases ? $team->groups->map(fn($group) => [
+                    'id' => $group->id,
+                    'name' => $group->name,
+                    'databases' => $group->members->map(fn($database) => [
+                        'id' => $database->id,
+                        'name' => $database->database_name,
+                        'type' => $this->determineDatabaseType($database->is_schema),
+                        'lastActivity' => $database->latestActivity?->created_at->diffForHumans() ?? 'No activity'
+                    ])
+                ]) : [],
+                'recentActivity' => $canAccessDatabases ? $team->recentActivities->map(fn($activity) => [
+                    'id' => $activity->id,
+                    'user' => $activity->user->name,
+                    'action' => $activity->action,
+                    'database' => $activity->database?->database_name,
+                    'time' => $activity->created_at->diffForHumans()
+                ]) : []
+            ];
+        });
+
+        return Inertia::render('dashboard-team-archives', [
+            'teams' => $teamData
+        ]);
+    }
+
+    public function restoreTeam(Request $request, Team $team)
+    {
+        try {
+            $team->restore();
+
+            Team::setTeamDatabases(auth()->id(), $team->id);
+
+            $location = get_ip_location($request->ip());
+            $user = auth()->user();
+
+            log_user_activity(
+                $user,
+                ActivityType::TEAM_MEMBER_DELETE,
+                "Team member {$user->name} deleted from {$request->ip()}",
+                [
+                    'ip' => $request->ip(),
+                    'device' => $request->userAgent(),
+                    'country' => $location['country'],
+                    'city' => $location['city'],
+                ]
+            );
+
+            return redirect()->back()->with('success', "Team {$team->name} restored successfully");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 

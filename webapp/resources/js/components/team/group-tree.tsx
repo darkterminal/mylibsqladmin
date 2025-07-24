@@ -5,7 +5,7 @@ import { useState } from "react";
 import ButtonOpenDatabaseStudio from "../button-actions/action-open-database-studio";
 import { Badge } from "../ui/badge";
 
-export function GroupTree({ groups, team }: { groups: Group[], team?: Team }) {
+export function GroupTree({ groups, team, isArchived = false }: { groups: Group[], team?: Team, isArchived?: boolean }) {
     const [expandedGroups, setExpandedGroups] = useState<{
         [groupId: number]: boolean;
     }>(
@@ -66,7 +66,7 @@ export function GroupTree({ groups, team }: { groups: Group[], team?: Team }) {
                                     >
                                         {db.type}
                                     </Badge>
-                                    <ButtonOpenDatabaseStudio databaseName={db.name} team={team} />
+                                    {!isArchived && <ButtonOpenDatabaseStudio databaseName={db.name} team={team} />}
                                 </div>
                             </div>
                         ))}

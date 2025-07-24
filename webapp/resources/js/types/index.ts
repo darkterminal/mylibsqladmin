@@ -62,6 +62,7 @@ export interface FlashMessageProps {
     success?: string;
     error?: string;
     newToken?: UserDatabaseTokenProps;
+    newTeam?: number | null;
     [key: string]: unknown;
 }
 
@@ -301,6 +302,7 @@ export interface TeamCardProps {
     team: Team
     isCurrent?: boolean
     totalTeams?: number
+    isArchived?: boolean
 }
 
 export type TeamForm = {
