@@ -76,7 +76,7 @@ export function DatabaseCommand({ databases, onSelect, triggerShortcut = "ctrl+k
                                         {dbType === "schema" && (
                                             <File className="mr-2 h-4 w-4 text-primary" />
                                         )}
-                                        {dbType === "0" && (
+                                        {dbType === "standalone" && (
                                             <Cylinder className="mr-2 h-4 w-4 text-primary" />
                                         )}
                                         {dbType === database.is_schema && (
