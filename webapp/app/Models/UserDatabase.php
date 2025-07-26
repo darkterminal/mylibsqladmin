@@ -75,8 +75,15 @@ class UserDatabase extends Model
                 $query->whereHas('groups.team', function ($q) use ($teamId) {
                     $q->where('id', $teamId);
                 });
-            })
-            ->limit(10);
+            });
+
+        $hasManageDatabasePermisson = auth()->user()->hasPermission('manage-teams') || auth()->user()->hasRole('Super Admin');
+
+        if (!$hasManageDatabasePermisson) {
+            $query->whereHas('tokens', function ($q) {
+                $q->where('user_id', auth()->id());
+            });
+        }
 
         $mostUsedDatabases = $query->get();
 

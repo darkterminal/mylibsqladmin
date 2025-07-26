@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import AppLayout from "@/layouts/app-layout";
 import {
+    AllowedUser,
     PaginatedResults,
     type BreadcrumbItem,
     type MostUsedDatabaseProps,
@@ -26,10 +27,12 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function DatabaseToken({
+    allUsers,
     mostUsedDatabases,
     isAllTokenized,
     userDatabaseTokens
 }: {
+    allUsers: AllowedUser[],
     mostUsedDatabases: MostUsedDatabaseProps[],
     isAllTokenized: boolean,
     userDatabaseTokens: PaginatedResults<UserDatabaseTokenProps>
@@ -41,7 +44,7 @@ export default function DatabaseToken({
                 <Card className="flex-1">
                     <CardHeader className="flex flex-row gap-1.5 justify-between items-center">
                         <h2 className="text-2xl font-semibold tracking-tight">Database Token Management</h2>
-                        <ModalCreateToken mostUsedDatabases={mostUsedDatabases} onCreateSuccess={() => router.reload()}>
+                        <ModalCreateToken mostUsedDatabases={mostUsedDatabases} users={allUsers} onCreateSuccess={() => router.reload()}>
                             <Button variant={'default'} disabled={isAllTokenized}>
                                 <AppTooltip text={isAllTokenized ? 'All databases are tokenized' : 'Generate New Token'}>
                                     <>

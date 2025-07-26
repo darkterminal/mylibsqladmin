@@ -88,6 +88,9 @@ class GroupDatabase extends Model
                 $q->where('team_id', $teamId)
                     ->whereHas('team.members', function ($query) use ($user) {
                         $query->where('user_id', $user->id);
+                    })
+                    ->whereHas('members.tokens', function ($query) use ($user) {
+                        $query->where('user_id', $user->id);
                     });
             });
         }

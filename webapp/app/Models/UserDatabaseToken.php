@@ -18,6 +18,7 @@ class UserDatabaseToken extends Model
         'full_access_token',
         'read_only_token',
         'expiration_day',
+        'created_by',
     ];
 
     public function user()

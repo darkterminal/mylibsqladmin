@@ -111,13 +111,28 @@ class Team extends Model
 
         $team->touch();
 
+        $user = User::find($userId);
+        $hasManageDatabasePermisson = $user->hasRole('Super Admin') || $user->hasPermission('manage-teams');
+
         // Format data
-        $databases = $team->groups->flatMap(fn($group) => $group->members->map(fn($member) => [
+        $userGroups = GroupDatabase::where('team_id', $teamId)
+            ->whereHas('members', function ($q) use ($userId) {
+                $q->whereHas('tokens', function ($q) use ($userId) {
+                    $q->where('user_id', $userId);
+                });
+            })->get();
+
+        $databases = $hasManageDatabasePermisson ? $team->groups->flatMap(fn($group) => $group->members->map(fn($member) => [
             'id' => $member->id,
             'user_id' => $member->user_id,
             'database_name' => $member->database_name,
             'is_schema' => $member->is_schema,
-        ]));
+        ])) : $userGroups->flatMap(fn($group) => $group->members->map(fn($member) => [
+                        'id' => $member->id,
+                        'user_id' => $member->user_id,
+                        'database_name' => $member->database_name,
+                        'is_schema' => $member->is_schema,
+                    ]));
 
         // Store in session
         session([

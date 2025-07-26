@@ -19,7 +19,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
 
     const { can } = usePermission();
     const { csrfToken } = usePage<SharedData>().props
-    const { databases, groups: databaseGroups, auth } = usePage<SharedData>().props;
+    const { databases, groups: databaseGroups } = usePage<SharedData>().props;
     const database = getQuery('database', 'No database selected');
     const groupedDatabases = (databaseGroups || [])
         .map?.(group => ({

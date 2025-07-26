@@ -39,7 +39,7 @@ class UserDatabaseController extends Controller
                         fn($q) => $q
                             ->where('user_id', $userId)
                             ->when(
-                                !$user->hasPermission('access-team-databases'),
+                                !$user->hasPermission('manage-teams'),
                                 fn($q) => $q->where('permission_level', '<=', 3)
                             )
                     );
@@ -119,7 +119,7 @@ class UserDatabaseController extends Controller
                         fn($q) => $q
                             ->where('user_id', $userId)
                             ->when(
-                                !$user->hasPermission('access-team-databases'),
+                                !$user->hasPermission('manage-teams'),
                                 fn($q) => $q->where('permission_level', '<=', 3)
                             )
                     );

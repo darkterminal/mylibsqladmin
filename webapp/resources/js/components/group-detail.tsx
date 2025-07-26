@@ -192,13 +192,15 @@ export default function GroupDetail({
                         {(group.has_token && tokenExpirationDate !== 'expired') && (
                             <ButtonActionGroupToken group_token={group.group_token} />
                         )}
-                        <ModalCreateGroupToken groupId={group.id} onSuccess={handleOnSuccess}>
-                            <AppTooltip text={group.has_token ? "Revoke Group Token" : "Create Group Token"}>
-                                <Button variant="default">
-                                    <KeyIcon className="h-4 w-4" />
-                                </Button>
-                            </AppTooltip>
-                        </ModalCreateGroupToken>
+                        {can('manage-group-tokens') && (
+                            <ModalCreateGroupToken groupId={group.id} onSuccess={handleOnSuccess}>
+                                <AppTooltip text={group.has_token ? "Revoke Group Token" : "Create Group Token"}>
+                                    <Button variant="default">
+                                        <KeyIcon className="h-4 w-4" />
+                                    </Button>
+                                </AppTooltip>
+                            </ModalCreateGroupToken>
+                        )}
                         {can('manage-groups') && (
                             <ModalAddDatabaseToGroup groupId={group.id} databases={availableDatabases}>
                                 <AppTooltip text="Add Database to Group">
@@ -232,12 +234,14 @@ export default function GroupDetail({
                                             Active
                                         </Badge>
                                         {can('delete-databases') && <ButtonDelete handleDelete={() => handleDeleteDatabase(database.id)} text="Delete Database" />}
-                                        {token ? (
+                                        {token && (
                                             <>
                                                 <ButtonCopyReadOnlyToken token={token} />
                                                 <ButtonCopyFullAccessToken token={token} />
+                                                <ButtonOpenDatabaseStudio databaseName={database.database_name} />
                                             </>
-                                        ) : (
+                                        )}
+                                        {can('manage-group-tokens') && (
                                             <ModalCreateToken
                                                 mostUsedDatabases={[{
                                                     database_id: database.id,
@@ -253,7 +257,6 @@ export default function GroupDetail({
                                                 </AppTooltip>
                                             </ModalCreateToken>
                                         )}
-                                        <ButtonOpenDatabaseStudio databaseName={database.database_name} />
                                     </div>
                                 )
                             })}

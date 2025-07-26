@@ -66,6 +66,15 @@ export interface FlashMessageProps {
     [key: string]: unknown;
 }
 
+export interface AllowedUser {
+    id: number;
+    name: string;
+    roles: {
+        id: number;
+        name: string;
+    }[];
+}
+
 export interface User {
     id: number;
     name: string;
@@ -166,6 +175,17 @@ export interface OpenModalStateChangeProps {
     parentDatabase: string
 }
 
+export interface Group {
+    id: number;
+    name: string;
+}
+
+export interface Team {
+    id: number;
+    name: string;
+    description: string;
+}
+
 export interface UserDatabaseTokenProps {
     id: number;
     user_id: number;
@@ -174,20 +194,15 @@ export interface UserDatabaseTokenProps {
     full_access_token: string;
     read_only_token: string;
     expiration_day: number;
+    created_by: string;
     database: LibSQLDatabases;
     user: User;
     groups: {
         id: number;
         name: string;
-        team: {
-            id: number;
-            name: string;
-        };
+        team: Team;
     },
-    team: {
-        id: number;
-        name: string;
-    }
+    team: Team
 }
 
 export interface DatabaseInGroupProps {
@@ -219,16 +234,6 @@ export interface GroupDatabaseProps {
     database_tokens: UserDatabaseTokenProps[];
     has_token: boolean;
     group_token: GroupDatabaseTokenProps
-}
-
-export enum AccessPermissions {
-    MANAGE_TEAMS = 'manage-teams',
-    CREATE_TEAMS = 'create-teams',
-    MANAGE_GROUP_DATABASES = 'manage-group-databases',
-    MANAGE_GROUP_DATABASE_TOKENS = 'manage-group-database-tokens',
-    MANAGE_DATABASE_TOKENS = 'manage-database-tokens',
-    MANAGE_TEAM_GROUPS = 'manage-team-groups',
-    ACCESS_TEAM_DATABASES = 'access-team-databases'
 }
 
 export interface Member {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\ActivityType;
 use App\Models\GroupDatabase;
+use App\Models\User;
 use App\Models\UserDatabase;
 use App\Models\UserDatabaseToken;
 use App\Services\DatabaseTokenGenerator;
@@ -52,8 +53,11 @@ class TokenController extends Controller
                 // Get team from filtered groups
                 $team = $token->database->groups->first()?->team;
 
+                $created_by = User::find($token->created_by)->first('name');
+
                 return [
                     ...$token->toArray(),
+                    'created_by' => $created_by->name,
                     'expiration_day' => $expirationDate
                         ? now()->isAfter($expirationDate) ? "Expired" : $expirationDate->format('Y-m-d')
                         : "Never",
@@ -69,7 +73,10 @@ class TokenController extends Controller
                 ];
             });
 
+        $allUsers = User::select('id', 'name')->with('roles')->get();
+
         return Inertia::render('dashboard-token', [
+            'allUsers' => $allUsers,
             'mostUsedDatabases' => $databases,
             'isAllTokenized' => $databases->every('is_tokenized'),
             'userDatabaseTokens' => $userDatabaseTokens
@@ -82,11 +89,12 @@ class TokenController extends Controller
             'name' => 'required|string',
             'databaseId' => 'required|integer',
             'expiration' => 'required|integer',
+            'userId' => 'required|integer|exists:users,id'
         ]);
 
         $tokenGenerator = (new DatabaseTokenGenerator())->generateToken(
             $validated['databaseId'],
-            auth()->id(),
+            $validated['userId'],
             $validated['expiration']
         );
 
@@ -96,18 +104,19 @@ class TokenController extends Controller
         }
 
         $formData = [
-            'user_id' => auth()->id(),
+            'user_id' => $validated['userId'],
             'database_id' => $validated['databaseId'],
             'name' => $validated['name'],
             'full_access_token' => $tokenGenerator['full_access_token'],
             'read_only_token' => $tokenGenerator['read_only_token'],
             'expiration_day' => $validated['expiration'],
+            'created_by' => auth()->id()
         ];
 
         try {
             UserDatabaseToken::updateOrCreate(
                 [
-                    'user_id' => auth()->id(),
+                    'user_id' => $validated['userId'],
                     'database_id' => $validated['databaseId'],
                 ],
                 $formData

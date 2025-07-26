@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { databaseGroupType } from "@/lib/utils";
 import {
+    AllowedUser,
     type MostUsedDatabaseMinimalProps,
     type MostUsedDatabaseProps,
     type UserDatabaseTokenProps
@@ -30,6 +31,7 @@ import {
 type CreateTokenProps = {
     name: string;
     expiration: number;
+    userId: number;
     databaseId: number | undefined;
 }
 
@@ -41,28 +43,40 @@ type FlashMessageProps = {
 
 export function ModalCreateToken({
     children,
+    users = [],
     mostUsedDatabases,
     onCreateSuccess
 }: {
     children: React.ReactNode,
+    users?: AllowedUser[],
     mostUsedDatabases: MostUsedDatabaseProps[] | MostUsedDatabaseMinimalProps[],
     onCreateSuccess?: () => void
 }) {
 
-    const [selectedDatabase, setSelectedDatabase] = useState<string | undefined>(mostUsedDatabases.length > 0 ? String(mostUsedDatabases[0].database_id) : undefined)
-    const { standaloneDatabases, parentDatabases, childDatabases } = databaseGroupType(mostUsedDatabases)
     const { props } = usePage();
+
+    const defaultUserId = users ? users.find((user) => user.id === props.auth.user.id)?.id : props.auth.user.id
+    const [selectedDatabase, setSelectedDatabase] = useState<string | undefined>(mostUsedDatabases.length > 0 ? String(mostUsedDatabases[0].database_id) : undefined)
+    const [selectedUser, setSelectedUser] = useState<string | undefined>(String(defaultUserId))
+    const { standaloneDatabases, parentDatabases, childDatabases } = databaseGroupType(mostUsedDatabases)
     const flash = props.flash as FlashMessageProps;
     const [isOpen, setOpen] = useState(false);
     const { data, setData, post, processing, errors, reset } = useForm<CreateTokenProps>({
         name: `token-${Math.floor(Math.random() * Date.now())}`,
         expiration: 0,
+        userId: Number(defaultUserId),
         databaseId: Number(selectedDatabase)
     });
 
     const handleSelectChange = (value: string) => {
         setSelectedDatabase(value)
         setData({ ...data, databaseId: Number(value) })
+    }
+
+    const handleSelectedUserChange = (value: string) => {
+        setSelectedUser(value)
+        const user = users.find((user) => user.id === Number(value))
+        setData({ ...data, userId: Number(value), name: `${user?.name.replaceAll(' ', '-').toLowerCase()}-token` })
     }
 
     const submit: FormEventHandler = (e) => {
@@ -168,7 +182,22 @@ export function ModalCreateToken({
                         </Select>
                     </div>
                     <div className="flex flex-col w-full space-y-2">
-                        <Label htmlFor="expiration">Expiration</Label>
+                        <Label htmlFor="granted-to">Select User</Label>
+                        <Select value={selectedUser} onValueChange={handleSelectedUserChange}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select user" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {users && users.map((user) => (
+                                    <SelectItem key={user.id} value={String(user.id)}>
+                                        {user.name} - {user.roles[0].name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex flex-col w-full space-y-2">
+                        <Label htmlFor="expiration">Expiration (days)</Label>
                         <Input
                             type="number"
                             id="expiration"

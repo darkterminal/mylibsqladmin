@@ -6,6 +6,7 @@ use App\ActivityType;
 use App\Events\TeamDatabasesRequested;
 use App\Jobs\SendTeamInvitation;
 use App\Models\ActivityLog;
+use App\Models\GroupDatabase;
 use App\Models\Invitation;
 use App\Models\Role;
 use App\Models\Team;
@@ -31,19 +32,21 @@ class TeamController extends Controller
             'recentActivities.user'
         ]);
 
+        $userTeams = $user->teams->pluck('id');
+
         if ($user->hasRole('Super Admin')) {
             $teams = $teamsQuery->get();
         } elseif ($user->hasPermission('manage-teams')) {
             $teams = $teamsQuery->whereHas('members', fn($q) => $q->where('user_id', $user->id))->get();
         } else {
-            $teams = $teamsQuery->whereHas('members', fn($q) => $q->where('user_id', $user->id))->get();
+            $teams = $teamsQuery->whereIn('id', $userTeams)
+                ->whereHas('members', function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })->get();
         }
 
         $teamData = $teams->map(function ($team) use ($user) {
-            $isTeamMember = $team->members->contains('id', $user->id);
-            $canAccessDatabases = $user->hasRole('Super Admin') ||
-                ($user->hasPermission('manage-teams') || $isTeamMember);
-
+            $hasManageDatabasePermisson = $user->hasRole('Super Admin') || $user->hasPermission('manage-teams');
             $pendingInvitations = $team->invitations
                 ->where('expires_at', '>', now())
                 ->map(fn($invite) => [
@@ -55,6 +58,48 @@ class TeamController extends Controller
                     'permission_level' => $invite->permission_level,
                     'sent_at' => $invite->created_at->format('M d, Y H:i')
                 ]);
+
+            $userGroups = GroupDatabase::where('team_id', $team->id)
+                ->whereHas('members', function ($q) use ($user) {
+                    $q->whereHas('tokens', function ($q) use ($user) {
+                        $q->where('user_id', $user->id);
+                    });
+                })->get();
+
+            $groups = $hasManageDatabasePermisson ? $team->groups->map(fn($group) => [
+                'id' => $group->id,
+                'name' => $group->name,
+                'databases' => $group->members->map(fn($database) => [
+                    'id' => $database->id,
+                    'name' => $database->database_name,
+                    'type' => $this->determineDatabaseType($database->is_schema),
+                    'lastActivity' => $database->latestActivity?->created_at->diffForHumans() ?? 'No activity'
+                ])
+            ]) : $userGroups->map(fn($group) => [
+                            'id' => $group->id,
+                            'name' => $group->name,
+                            'databases' => $group->members->map(fn($database) => [
+                                'id' => $database->id,
+                                'name' => $database->database_name,
+                                'type' => $this->determineDatabaseType($database->is_schema),
+                                'lastActivity' => $database->latestActivity?->created_at->diffForHumans() ?? 'No activity'
+                            ])
+                        ]);
+
+            $recentActivity = $hasManageDatabasePermisson ? $team->recentActivities->map(fn($activity) => [
+                'id' => $activity->id,
+                'user' => $activity->user->name,
+                'action' => $activity->action,
+                'database' => $activity->database?->database_name,
+                'time' => $activity->created_at->diffForHumans()
+            ]) : $team->recentActivities()
+                    ->whereHas('user', fn($q) => $q->where('id', $user->id))->get()->map(fn($activity) => [
+                        'id' => $activity->id,
+                        'user' => $activity->user->name,
+                        'action' => $activity->action,
+                        'database' => $activity->database?->database_name,
+                        'time' => $activity->created_at->diffForHumans()
+                    ]);
 
             return [
                 'id' => $team->id,
@@ -68,23 +113,8 @@ class TeamController extends Controller
                     'role' => $member->pivot->permission_level,
                 ]),
                 'pending_invitations' => $pendingInvitations,
-                'groups' => $canAccessDatabases ? $team->groups->map(fn($group) => [
-                    'id' => $group->id,
-                    'name' => $group->name,
-                    'databases' => $group->members->map(fn($database) => [
-                        'id' => $database->id,
-                        'name' => $database->database_name,
-                        'type' => $this->determineDatabaseType($database->is_schema),
-                        'lastActivity' => $database->latestActivity?->created_at->diffForHumans() ?? 'No activity'
-                    ])
-                ]) : [],
-                'recentActivity' => $canAccessDatabases ? $team->recentActivities->map(fn($activity) => [
-                    'id' => $activity->id,
-                    'user' => $activity->user->name,
-                    'action' => $activity->action,
-                    'database' => $activity->database?->database_name,
-                    'time' => $activity->created_at->diffForHumans()
-                ]) : []
+                'groups' => $groups,
+                'recentActivity' => $recentActivity
             ];
         });
 

@@ -25,7 +25,7 @@ class GroupDatabaseController extends Controller
             $databaseGroups = GroupDatabase::databaseGroups($user->id, $teamId);
         } elseif ($user->hasRole('Team Manager')) {
             $databaseGroups = GroupDatabase::databaseGroups($user->id, $teamId);
-        } elseif ($user->hasPermission('access-team-databases')) {
+        } elseif ($user->hasPermission('manage-teams') || $user->hasPermission('view-groups')) {
             $databaseGroups = GroupDatabase::databaseGroups($user->id, $teamId);
         } else {
             $databaseGroups = GroupDatabase::databaseGroups($user->id, null);

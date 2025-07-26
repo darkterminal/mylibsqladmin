@@ -10,6 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use App\Notifications\TeamInvitation;
+use Illuminate\Support\Facades\Notification;
 
 class SendTeamInvitation implements ShouldQueue
 {
@@ -22,13 +23,19 @@ class SendTeamInvitation implements ShouldQueue
 
     public function handle()
     {
+        logger()->debug('Sending team invitation notification', $this->invitation->toArray());
         $user = User::where('email', $this->invitation->email)->first();
 
+        $notification = new TeamInvitation(
+            $this->invitation->team,
+            $this->invitation
+        );
+
         if ($user) {
-            $user->notify(new TeamInvitation(
-                $this->invitation->team,
-                $this->invitation
-            ));
+            $user->notify($notification);
+        } else {
+            Notification::route('mail', $this->invitation->email)
+                ->notify($notification);
         }
     }
 }

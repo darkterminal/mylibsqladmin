@@ -18,7 +18,6 @@ export default function TableTokenManagement({
 }: {
     userDatabaseTokens: PaginatedResults<UserDatabaseTokenProps>
 }) {
-    console.log(userDatabaseTokens);
     return (
         <Table>
             <TableHeader>
@@ -43,7 +42,7 @@ export default function TableTokenManagement({
                             <TableCell>{token.database?.database_name}</TableCell>
                             <TableCell>{token.name}</TableCell>
                             <TableCell>{token.expiration_day}</TableCell>
-                            <TableCell>{token.user.name}</TableCell>
+                            <TableCell>{token.created_by}</TableCell>
                             <TableCell className="flex gap-2">
                                 <ButtonDeleteToken token={token} />
                                 <ButtonCopyReadOnlyToken token={token} />
