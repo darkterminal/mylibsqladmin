@@ -40,6 +40,11 @@ class User extends Authenticatable
         ];
     }
 
+    public function grant()
+    {
+        return $this->hasMany(GrantedDatabse::class, 'user_id');
+    }
+
     public function activityLogs()
     {
         return $this->hasMany(UserActivityLog::class);

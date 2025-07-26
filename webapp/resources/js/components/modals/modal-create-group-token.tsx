@@ -30,7 +30,7 @@ export function ModalCreateGroupToken({
 }) {
     const [isOpen, setOpen] = useState(false);
     const { data, setData, post, processing, errors, reset } = useForm<CreateGroupTokenProps>({
-        name: '',
+        name: `#GT${groupId}-` + Math.floor(Math.random() * Date.now()),
         expiration: 30,
         group_id: groupId
     });
@@ -61,17 +61,6 @@ export function ModalCreateGroupToken({
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={submit} className="space-y-4" autoComplete="off">
-                    <div className="space-y-2">
-                        <Label htmlFor="name">Token Name</Label>
-                        <Input
-                            id="name"
-                            value={data.name}
-                            onChange={(e) => setData('name', e.target.value)}
-                            placeholder="Group Token Name"
-                            required
-                        />
-                    </div>
-
                     <div className="space-y-2">
                         <Label htmlFor="expiration">Expiration (Days)</Label>
                         <Input

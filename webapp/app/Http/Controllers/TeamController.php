@@ -21,32 +21,62 @@ class TeamController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
+        $userId = $user->id;
+        $isCanManage = $user->hasRole('Super Admin') || $user->hasRole('Team Manager');
+        $hasManageTeamsPermission = $user->hasPermission('manage-teams');
+        $canViewAll = $isCanManage || $hasManageTeamsPermission;
 
-        $teamsQuery = Team::with([
+        // Start building the query for teams
+        $teamsQuery = Team::query();
+
+        // Define the relationships to be loaded with conditional constraints
+        $teamsQuery->with([
             'members',
             'invitations.inviter',
-            'groups.members' => function ($query) {
-                $query->with(['latestActivity', 'user'])
-                    ->select('id', 'database_name', 'is_schema', 'user_id', 'created_at');
-            },
-            'recentActivities.user'
+            'recentActivities.user',
+            // Conditionally load the 'groups.members' relationship
+            'groups' => function ($groupQuery) use ($canViewAll, $userId) {
+                // If the user can view everything, load all members of the group
+                if ($canViewAll) {
+                    $groupQuery->with([
+                        'members' => function ($memberQuery) {
+                            $memberQuery->with(['latestActivity', 'user'])
+                                ->select('id', 'database_name', 'is_schema', 'user_id', 'created_at');
+                        }
+                    ]);
+                } else {
+                    // For regular users, only load groups where they have granted access
+                    $groupQuery->whereHas('members.grant', function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    })->with([
+                                // And within those groups, ONLY load the members (databases) granted to them
+                                'members' => function ($memberQuery) use ($userId) {
+                                $memberQuery->whereHas('grant', function ($q) use ($userId) {
+                                    $q->where('user_id', $userId);
+                                })->with(['latestActivity', 'user'])
+                                    ->select('id', 'database_name', 'is_schema', 'user_id', 'created_at');
+                            }
+                            ]);
+                }
+            }
         ]);
 
-        $userTeams = $user->teams->pluck('id');
-
-        if ($user->hasRole('Super Admin')) {
-            $teams = $teamsQuery->get();
-        } elseif ($user->hasPermission('manage-teams')) {
-            $teams = $teamsQuery->whereHas('members', fn($q) => $q->where('user_id', $user->id))->get();
-        } else {
-            $teams = $teamsQuery->whereIn('id', $userTeams)
-                ->whereHas('members', function ($q) use ($user) {
-                    $q->where('user_id', $user->id);
-                })->get();
+        // Apply top-level query constraints based on user role
+        if (!$isCanManage) {
+            // Both team managers and regular members should only see teams they belong to.
+            $teamsQuery->whereHas('members', fn($q) => $q->where('user_id', $userId));
         }
 
-        $teamData = $teams->map(function ($team) use ($user) {
-            $hasManageDatabasePermisson = $user->hasRole('Super Admin') || $user->hasPermission('manage-teams');
+        // Execute the query
+        $teams = $teamsQuery->get();
+
+        // Map the results for the frontend
+        $teamData = $teams->map(function ($team) use ($user, $canViewAll) {
+
+            $databaseMemberCount = $team->groups->flatMap(function ($group) {
+                return $group->members;
+            })->count();
+
             $pendingInvitations = $team->invitations
                 ->where('expires_at', '>', now())
                 ->map(fn($invite) => [
@@ -59,14 +89,8 @@ class TeamController extends Controller
                     'sent_at' => $invite->created_at->format('M d, Y H:i')
                 ]);
 
-            $userGroups = GroupDatabase::where('team_id', $team->id)
-                ->whereHas('members', function ($q) use ($user) {
-                    $q->whereHas('tokens', function ($q) use ($user) {
-                        $q->where('user_id', $user->id);
-                    });
-                })->get();
-
-            $groups = $hasManageDatabasePermisson ? $team->groups->map(fn($group) => [
+            // The 'groups' relationship is already correctly filtered by the main query
+            $groups = $team->groups->map(fn($group) => [
                 'id' => $group->id,
                 'name' => $group->name,
                 'databases' => $group->members->map(fn($database) => [
@@ -75,37 +99,26 @@ class TeamController extends Controller
                     'type' => $this->determineDatabaseType($database->is_schema),
                     'lastActivity' => $database->latestActivity?->created_at->diffForHumans() ?? 'No activity'
                 ])
-            ]) : $userGroups->map(fn($group) => [
-                            'id' => $group->id,
-                            'name' => $group->name,
-                            'databases' => $group->members->map(fn($database) => [
-                                'id' => $database->id,
-                                'name' => $database->database_name,
-                                'type' => $this->determineDatabaseType($database->is_schema),
-                                'lastActivity' => $database->latestActivity?->created_at->diffForHumans() ?? 'No activity'
-                            ])
-                        ]);
+            ]);
 
-            $recentActivity = $hasManageDatabasePermisson ? $team->recentActivities->map(fn($activity) => [
+            // Filter recent activity based on permissions
+            $recentActivityQuery = $team->recentActivities();
+            if (!$canViewAll) {
+                $recentActivityQuery->where('user_id', $user->id);
+            }
+            $recentActivity = $recentActivityQuery->get()->map(fn($activity) => [
                 'id' => $activity->id,
                 'user' => $activity->user->name,
                 'action' => $activity->action,
                 'database' => $activity->database?->database_name,
                 'time' => $activity->created_at->diffForHumans()
-            ]) : $team->recentActivities()
-                    ->whereHas('user', fn($q) => $q->where('id', $user->id))->get()->map(fn($activity) => [
-                        'id' => $activity->id,
-                        'user' => $activity->user->name,
-                        'action' => $activity->action,
-                        'database' => $activity->database?->database_name,
-                        'time' => $activity->created_at->diffForHumans()
-                    ]);
+            ]);
 
             return [
                 'id' => $team->id,
                 'name' => $team->name,
                 'description' => $team->description,
-                'members' => $team->members->count(),
+                'members' => $databaseMemberCount,
                 'team_members' => $team->members->map(fn($member) => [
                     'id' => $member->id,
                     'name' => $member->name,

@@ -37,7 +37,7 @@ const mainNavItems: NavItem[] = [
         url: route('dashboard.databases'),
         icon: DatabaseIcon,
         isAllowed: ({ can }) =>
-            can('manage-databases'),
+            can('manage-databases') || can('view-databases'),
     },
     {
         title: 'Tokens',

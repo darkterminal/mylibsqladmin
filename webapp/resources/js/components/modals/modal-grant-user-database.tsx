@@ -18,7 +18,6 @@ import { Cylinder, Database, GitBranch } from "lucide-react";
 import React, { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import {
     Select,
@@ -28,11 +27,9 @@ import {
     SelectValue
 } from "../ui/select";
 
-type CreateTokenProps = {
-    name: string;
-    expiration: number;
+type GrantUserDatabase = {
     userId: number;
-    databaseId: number | undefined;
+    databaseId: number;
 }
 
 type FlashMessageProps = {
@@ -41,27 +38,24 @@ type FlashMessageProps = {
     newToken?: UserDatabaseTokenProps;
 }
 
-export function ModalCreateToken({
+export function ModalGrantUserDatabase({
     children,
     users = [],
     mostUsedDatabases,
-    onCreateSuccess
 }: {
     children: React.ReactNode,
-    users?: AllowedUser[],
+    users: AllowedUser[],
     mostUsedDatabases: MostUsedDatabaseProps[] | MostUsedDatabaseMinimalProps[],
-    onCreateSuccess?: () => void
 }) {
 
     const { props } = usePage();
+
     const [selectedDatabase, setSelectedDatabase] = useState<string | undefined>(mostUsedDatabases.length > 0 ? String(mostUsedDatabases[0].database_id) : undefined)
-    const [selectedUser, setSelectedUser] = useState<string | undefined>(String(props.auth.user.role != "Database Maintainer" ? users.find((user) => user.id === props.auth.user.id)?.id : users[0]?.id))
+    const [selectedUser, setSelectedUser] = useState<string | undefined>(String(users.length > 0 ? users[0].id : undefined))
     const { standaloneDatabases, parentDatabases, childDatabases } = databaseGroupType(mostUsedDatabases)
     const flash = props.flash as FlashMessageProps;
     const [isOpen, setOpen] = useState(false);
-    const { data, setData, post, processing, errors, reset } = useForm<CreateTokenProps>({
-        name: `token-${Math.floor(Math.random() * Date.now())}`,
-        expiration: 0,
+    const { data, setData, post, processing, errors, reset } = useForm<GrantUserDatabase>({
         userId: Number(selectedUser),
         databaseId: Number(selectedDatabase)
     });
@@ -73,8 +67,7 @@ export function ModalCreateToken({
 
     const handleSelectedUserChange = (value: string) => {
         setSelectedUser(value)
-        const user = users.find((user) => user.id === Number(value))
-        setData({ ...data, userId: Number(value), name: `${user?.name.replaceAll(' ', '-').toLowerCase()}-token` })
+        setData({ ...data, userId: Number(value) })
     }
 
     const submit: FormEventHandler = (e) => {
@@ -85,12 +78,13 @@ export function ModalCreateToken({
             return;
         }
 
-        post(route('token.create'), {
+        post(route('database.grant-access'), {
             preserveScroll: true,
             onSuccess: () => {
                 setOpen(false);
-                reset('name', 'expiration');
+                reset('userId', 'databaseId');
                 setSelectedDatabase(undefined);
+                setSelectedUser(undefined);
 
                 if (flash.success) {
                     toast.success(flash.success, {
@@ -111,13 +105,8 @@ export function ModalCreateToken({
                 }
 
                 router.visit(window.location.href, {
-                    only: ['databaseGroups', 'databaseNotInGroup'],
-                    replace: true,
                     preserveScroll: true
                 });
-            },
-            onFinish: () => {
-                onCreateSuccess?.();
             }
         });
     }
@@ -127,9 +116,9 @@ export function ModalCreateToken({
             <DialogTrigger asChild onClick={() => setOpen(true)}>{children}</DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Generate New Database Token</DialogTitle>
+                    <DialogTitle>Grant Database Access</DialogTitle>
                     <DialogDescription>
-                        Enter the name of the database token you want to create.
+                        Grant a user access to a database
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={submit} autoComplete="off" className="flex flex-col gap-4">
@@ -188,31 +177,13 @@ export function ModalCreateToken({
                             <SelectContent>
                                 {users && users.map((user) => (
                                     <SelectItem key={user.id} value={String(user.id)}>
-                                        {user.name === props.auth.user.name ? `Me - ${user.roles[0].name}` : <span>{user.name} - {user.roles[0].name}</span>}
+                                        {user.name} - {user.roles[0].name}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex flex-col w-full space-y-2">
-                        <Label htmlFor="expiration">Expiration (days)</Label>
-                        <Input
-                            type="number"
-                            id="expiration"
-                            name="expiration"
-                            value={data.expiration}
-                            onChange={(e) => setData('expiration', Number(e.target.value))}
-                            placeholder="Expiration in a day"
-                            className="w-full"
-                            min={0}
-                            tabIndex={2}
-                            required
-                        />
-                        <span className="text-muted-foreground text-xs">
-                            Note: Use 0 for no expiration
-                        </span>
-                    </div>
-                    <Button variant={'default'} type="submit" disabled={processing || !data.name}>Generate Token</Button>
+                    <Button variant={'default'} type="submit" disabled={processing || !data.databaseId || !data.userId}>Grant Access</Button>
                 </form>
             </DialogContent>
         </Dialog>

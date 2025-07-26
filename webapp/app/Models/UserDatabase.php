@@ -38,6 +38,11 @@ class UserDatabase extends Model
         });
     }
 
+    public function grant()
+    {
+        return $this->hasMany(GrantedDatabse::class, 'database_id');
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -77,10 +82,10 @@ class UserDatabase extends Model
                 });
             });
 
-        $hasManageDatabasePermisson = auth()->user()->hasPermission('manage-teams') || auth()->user()->hasRole('Super Admin');
+        $hasManageDatabasePermisson = auth()->user()->hasPermission('manage-teams') || auth()->user()->hasRole('Super Admin') || auth()->user()->hasRole('Team Manager');
 
         if (!$hasManageDatabasePermisson) {
-            $query->whereHas('tokens', function ($q) {
+            $query->whereHas('grant', function ($q) {
                 $q->where('user_id', auth()->id());
             });
         }

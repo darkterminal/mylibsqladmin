@@ -45,7 +45,7 @@ class TokenController extends Controller
             'user:id,name'
         ])
             ->whereHas('database.groups.team', fn($q) => $q->where('id', $teamId))
-            ->when(!auth()->user()->hasRole('Super Admin'), fn($q) => $q->where('user_id', $userId))
+            ->when(!auth()->user()->hasRole('Super Admin') && !auth()->user()->hasRole('Team Manager'), fn($q) => $q->where('user_id', $userId))
             ->paginate(10)
             ->through(function ($token) {
                 $expirationDate = $token->expiration_day !== 0 ? now()->addDays($token->expiration_day) : null;
@@ -73,7 +73,10 @@ class TokenController extends Controller
                 ];
             });
 
-        $allUsers = User::select('id', 'name')->with('roles')->get();
+        $allUsers = User::select('id', 'name')
+            ->with('roles')
+            ->when(auth()->user()->hasRole('Database Maintainer'), fn($q) => $q->whereHas('roles', fn($q) => $q->whereIn('name', ['Member', 'Database Maintainer'])))
+            ->get();
 
         return Inertia::render('dashboard-token', [
             'allUsers' => $allUsers,

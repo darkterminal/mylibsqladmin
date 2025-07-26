@@ -29,12 +29,12 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function DatabaseToken({
     allUsers,
     mostUsedDatabases,
-    isAllTokenized,
+    isAllTokenized = false,
     userDatabaseTokens
 }: {
     allUsers: AllowedUser[],
     mostUsedDatabases: MostUsedDatabaseProps[],
-    isAllTokenized: boolean,
+    isAllTokenized?: boolean,
     userDatabaseTokens: PaginatedResults<UserDatabaseTokenProps>
 }) {
     return (
@@ -45,11 +45,11 @@ export default function DatabaseToken({
                     <CardHeader className="flex flex-row gap-1.5 justify-between items-center">
                         <h2 className="text-2xl font-semibold tracking-tight">Database Token Management</h2>
                         <ModalCreateToken mostUsedDatabases={mostUsedDatabases} users={allUsers} onCreateSuccess={() => router.reload()}>
-                            <Button variant={'default'} disabled={isAllTokenized}>
-                                <AppTooltip text={isAllTokenized ? 'All databases are tokenized' : 'Generate New Token'}>
+                            <Button variant={'default'}>
+                                <AppTooltip text={'Generate New Token'}>
                                     <>
                                         <Plus className="h-4 w-4" />
-                                        <span>{mostUsedDatabases.length === 0 ? 'There is no database' : mostUsedDatabases.length > 0 && isAllTokenized ? 'All databases are tokenized' : 'Generate New Token'}</span>
+                                        <span>{'Generate New Token'}</span>
                                     </>
                                 </AppTooltip>
                             </Button>

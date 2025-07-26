@@ -65,42 +65,63 @@ class GroupDatabase extends Model
 
     public static function databaseGroups(int $userId, ?int $teamId = null)
     {
-        $query = self::withCount('members')
-            ->with([
-                'user:id,name',
-                'members' => function ($query) {
-                    $query->with('tokens');
-                },
-                'team:id,name'
-            ]);
-
         $user = User::find($userId);
+        $isCanManage = $user->hasRole('Super Admin') || $user->hasRole('Team Manager');
 
-        // For Super Admin: Show all groups in the specified team
-        if ($user->hasRole('Super Admin')) {
+        $query = self::query();
+
+        // Base query with essential relationships
+        $query->with(['user:id,name', 'team:id,name']);
+
+        // For Super Admin: Show all groups in the specified team and load all members
+        if ($isCanManage) {
             if ($teamId) {
                 $query->where('team_id', $teamId);
             }
+            // Super Admin sees all members, so we load them all and their tokens
+            $query->with([
+                'members' => function ($query) {
+                    $query->with(['tokens', 'grant']);
+                }
+            ]);
         }
-        // For other roles: Show groups in team that user has access to
+        // For other roles: Show groups where the user is a team member and has granted access to at least one database
         else {
-            $query->where(function ($q) use ($user, $teamId) {
-                $q->where('team_id', $teamId)
-                    ->whereHas('team.members', function ($query) use ($user) {
-                        $query->where('user_id', $user->id);
-                    })
-                    ->whereHas('members.tokens', function ($query) use ($user) {
-                        $query->where('user_id', $user->id);
-                    });
-            });
+            $query->where('team_id', $teamId)
+                ->whereHas('team.members', function ($q) use ($userId) {
+                    $q->where('user_id', $userId);
+                })
+                // Filter groups to only those containing databases granted to the user
+                ->whereHas('members.grant', function ($q) use ($userId) {
+                    $q->where('user_id', $userId);
+                })
+                // Eager load ONLY the members (databases) that are granted to this specific user
+                ->with([
+                    'members' => function ($query) use ($userId) {
+                        $query->whereHas('grant', function ($q) use ($userId) {
+                            $q->where('user_id', $userId);
+                        })->with(['tokens', 'grant']); // Also load tokens for the granted databases
+                    }
+                ]);
         }
 
-        return $query->orderBy('created_at', 'desc')
-            ->get()
-            ->map(fn($group) => [
+        // Execute the query
+        $groups = $query->orderBy('created_at', 'desc')->get();
+
+        // For Super Admins, we still need to get the total count of all members in the group.
+        if ($isCanManage) {
+            $groups->loadCount('members');
+        }
+
+        return $groups->map(function ($group) use ($user, $isCanManage, $userId) {
+            // For non-Super Admins, the count is the size of the filtered 'members' collection.
+            // For Super Admins, the count is from the 'members_count' attribute loaded via loadCount.
+            $membersCount = $isCanManage ? $group->members_count : $group->members->count();
+
+            return [
                 'id' => $group->id,
                 'name' => $group->name,
-                'members_count' => $group->members_count,
+                'members_count' => $membersCount,
                 'user' => $group->user,
                 'team' => $group->team,
                 'members' => $group->members->map(fn($m) => [
@@ -121,13 +142,14 @@ class GroupDatabase extends Model
                 ),
                 'has_token' => $group->tokens()->exists(),
                 'group_token' => $group->tokens()->first(),
-                'can_manage' => $user->hasRole('Super Admin') ||
+                'can_manage' => $isCanManage ||
                     $user->can('manage-groups') ||
                     $group->user_id === $userId,
-                'can_manage_tokens' => $user->hasRole('Super Admin') ||
+                'can_manage_tokens' => $isCanManage ||
                     $user->can('manage-tokens') ||
                     $group->user_id === $userId
-            ]);
+            ];
+        })->values();
     }
 
     private static function countMemberTokens()

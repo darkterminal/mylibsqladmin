@@ -117,7 +117,7 @@ class Team extends Model
         // Format data
         $userGroups = GroupDatabase::where('team_id', $teamId)
             ->whereHas('members', function ($q) use ($userId) {
-                $q->whereHas('tokens', function ($q) use ($userId) {
+                $q->whereHas('grant', function ($q) use ($userId) {
                     $q->where('user_id', $userId);
                 });
             })->get();

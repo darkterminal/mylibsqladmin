@@ -5,6 +5,7 @@ import ButtonDelete from "@/components/button-actions/action-delete"
 import ButtonOpenDatabaseStudio from "@/components/button-actions/action-open-database-studio"
 import { ButtonSDks } from "@/components/button-actions/action-sdks"
 import { ModalCreateToken } from "@/components/modals/modal-create-token"
+import { ModalGrantUserDatabase } from "@/components/modals/modal-grant-user-database"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Column, DataTable, LaravelPagination } from "@/components/ui/data-table/data-table"
@@ -12,9 +13,9 @@ import AppLayout from "@/layouts/app-layout"
 import { apiFetch } from "@/lib/api"
 import { usePermission } from "@/lib/auth"
 import { databaseType, formatBytes, getQuery } from "@/lib/utils"
-import { BreadcrumbItem, SharedData, Team } from "@/types"
+import { AllowedUser, BreadcrumbItem, SharedData, Team } from "@/types"
 import { Head, router, usePage } from "@inertiajs/react"
-import { Cylinder, DatabaseIcon, File, GitBranch, Handshake, KeyIcon, LockIcon, Trash2Icon, Users } from "lucide-react"
+import { Cylinder, DatabaseIcon, File, GitBranch, Handshake, KeyIcon, LockIcon, Plus, Trash2Icon, Users } from "lucide-react"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
 
@@ -42,7 +43,8 @@ interface Databases {
         rows_written: number
         queries: number
         storage: number
-    }
+    },
+    allUsers: AllowedUser[]
 }
 
 const databaseColumns: Column<Databases>[] = [
@@ -214,21 +216,39 @@ function DatabaseActions({ database }: { database: Databases }) {
                     <ButtonCopyReadOnlyToken token={database.token.read_only_token} />
                 </>
             )}
-            {can('manage-database-tokens') && (
+            {can('create-database-tokens') && (
+                <ModalCreateToken
+                    mostUsedDatabases={[{
+                        database_id: database.id,
+                        database_name: database.name,
+                        is_schema: database.is_schema
+                    }]}
+                >
+                    <AppTooltip text={database.tokenized ? "Revoke Token" : "Generate Token"}>
+                        <Button variant={database.tokenized ? "outline" : "default"} size="sm">
+                            {database.tokenized ? <LockIcon className="h-4 w-4" /> : <KeyIcon className="h-4 w-4" />}
+                        </Button>
+                    </AppTooltip>
+                </ModalCreateToken>
+            )}
+            {can('delete-databases') && (
                 <>
-                    <ModalCreateToken
+                    <ModalGrantUserDatabase
                         mostUsedDatabases={[{
                             database_id: database.id,
                             database_name: database.name,
                             is_schema: database.is_schema
                         }]}
-                    >
-                        <AppTooltip text={database.tokenized ? "Revoke Token" : "Generate Token"}>
-                            <Button variant={database.tokenized ? "outline" : "default"} size="sm">
-                                {database.tokenized ? <LockIcon className="h-4 w-4" /> : <KeyIcon className="h-4 w-4" />}
-                            </Button>
-                        </AppTooltip>
-                    </ModalCreateToken>
+                        users={database.allUsers}>
+                        <Button variant={'default'}>
+                            <AppTooltip text="Grant User Access">
+                                <>
+                                    <Plus className="h-4 w-4" />
+                                    <span>Grant</span>
+                                </>
+                            </AppTooltip>
+                        </Button>
+                    </ModalGrantUserDatabase>
                     <ButtonDelete handleDelete={() => handleDeleteDatabase(database.name)} text="Delete Database" />
                 </>
             )}

@@ -451,7 +451,7 @@ function TeamTableRow({ team, isCurrent, totalTeams: totalTeams, isArchived = fa
                         <DropdownMenuContent className="w-80" align="start">
                             <DropdownMenuLabel className="flex items-center gap-2">
                                 <Database className="h-4 w-4 text-primary" />
-                                All Databases ({databases.length})
+                                All Databases ({allDatabases.length})
                             </DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             {allDatabases.length > 0 ? (

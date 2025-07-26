@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\GrantedDatabse;
 use App\Models\QueryMetric;
 use App\Models\Team;
+use App\Models\User;
 use App\Models\UserDatabase;
 use App\Services\SqldService;
 use Illuminate\Http\Request;
@@ -20,7 +22,8 @@ class UserDatabaseController extends Controller
         $query = UserDatabase::with([
             'groups.team:id,name,description',
             'user:id,name',
-            'tokens' => fn($q) => $q->where('user_id', $userId)->latest()
+            'tokens' => fn($q) => $q->where('user_id', $userId)->latest(),
+            'grant'
         ])->withCount(['queryMetrics as total_queries'])
             ->withSum('queryMetrics as rows_read', 'rows_read_count')
             ->withSum('queryMetrics as rows_written', 'rows_written_count')
@@ -31,19 +34,8 @@ class UserDatabaseController extends Controller
             $query->whereHas('groups.team', fn($q) => $q->where('id', $teamId));
         }
 
-        if (!auth()->user()->hasRole('Super Admin')) {
-            $query->where(function ($q) use ($userId, $user) {
-                $q->where('user_id', $userId)
-                    ->orWhereHas(
-                        'groups.team.members',
-                        fn($q) => $q
-                            ->where('user_id', $userId)
-                            ->when(
-                                !$user->hasPermission('manage-teams'),
-                                fn($q) => $q->where('permission_level', '<=', 3)
-                            )
-                    );
-            });
+        if (!$user->hasRole('Super Admin') && !$user->hasRole('Team Manager')) {
+            $query->whereHas('grant', fn($q) => $q->where('user_id', $userId));
         }
 
         if ($search = request('search')) {
@@ -84,12 +76,36 @@ class UserDatabaseController extends Controller
                 'rows_written' => $database->rows_written ?: 0,
                 'queries' => $database->total_queries,
                 'storage' => $database->storage_bytes ?: 0
-            ]
+            ],
+            'allUsers' => User::with('roles')->select('id', 'name')->whereNot('id', $userId)->get()
         ]);
 
         return Inertia::render('dashboard-database', [
             'listOfDatabases' => $databases
         ]);
+    }
+
+    public function grantUserDatabase(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'userId' => 'required|integer|exists:users,id',
+                'databaseId' => 'required|integer|exists:user_databases,id',
+            ]);
+
+            GrantedDatabse::updateOrCreate(
+                [
+                    'user_id' => $validated['userId'],
+                    'database_id' => $validated['databaseId']
+                ]
+            );
+
+            return redirect()->back()->with([
+                'success' => 'Database granted successfully'
+            ]);
+        } catch (\Throwable $th) {
+            return redirect()->back()->with(['error' => 'Database grant failed']);
+        }
     }
 
     public function archived()

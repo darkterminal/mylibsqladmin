@@ -6,6 +6,7 @@ import {
     TableHeader,
     TableRow
 } from "@/components/ui/table";
+import { usePermission } from "@/lib/auth";
 import { PaginatedResults, type UserDatabaseTokenProps } from "@/types";
 import ButtonCopyFullAccessToken from "../button-actions/action-copy-full-access-token";
 import ButtonCopyReadOnlyToken from "../button-actions/action-copy-read-only-token";
@@ -18,6 +19,8 @@ export default function TableTokenManagement({
 }: {
     userDatabaseTokens: PaginatedResults<UserDatabaseTokenProps>
 }) {
+    const { can } = usePermission();
+
     return (
         <Table>
             <TableHeader>
@@ -44,11 +47,15 @@ export default function TableTokenManagement({
                             <TableCell>{token.expiration_day}</TableCell>
                             <TableCell>{token.created_by}</TableCell>
                             <TableCell className="flex gap-2">
-                                <ButtonDeleteToken token={token} />
-                                <ButtonCopyReadOnlyToken token={token} />
-                                <ButtonCopyFullAccessToken token={token} />
+                                {can('delete-database-tokens') && <ButtonDeleteToken token={token} />}
+                                {can('view-database-tokens') && (
+                                    <>
+                                        <ButtonCopyReadOnlyToken token={token} />
+                                        <ButtonCopyFullAccessToken token={token} />
+                                        <ButtonCopyShellCommand token={token} />
+                                    </>
+                                )}
                                 <ButtonOpenDatabaseStudio databaseName={token.database?.database_name} />
-                                <ButtonCopyShellCommand token={token} />
                             </TableCell>
                         </TableRow>
                     ))
