@@ -14,7 +14,7 @@ import { usePermission } from "@/lib/auth"
 import { databaseType, formatBytes, getQuery } from "@/lib/utils"
 import { AllowedUser, BreadcrumbItem, SharedData, Team } from "@/types"
 import { Head, router, usePage } from "@inertiajs/react"
-import { Cylinder, DatabaseIcon, File, GitBranch, Handshake, Trash2Icon, UserPen, Users } from "lucide-react"
+import { Cylinder, DatabaseIcon, File, GitBranch, Handshake, Shield, Trash2Icon, UserPen, Users } from "lucide-react"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
 
@@ -22,6 +22,7 @@ interface Databases {
     id: number
     name: string
     is_schema: string
+    granted_users_count: number
     owner: string
     groups: {
         id: number
@@ -62,12 +63,13 @@ const databaseColumns: Column<Databases>[] = [
         label: "Type",
         render: (database) => {
             const dbType = databaseType(String(database.is_schema))
+            console.log(dbType)
             return (
                 <div className="flex items-center">
                     {dbType === "schema" && (
                         <File className="mr-2 h-4 w-4 text-primary" />
                     )}
-                    {dbType === "0" && (
+                    {dbType === "standalone" && (
                         <Cylinder className="mr-2 h-4 w-4 text-primary" />
                     )}
                     {dbType === database.is_schema && (
@@ -76,7 +78,7 @@ const databaseColumns: Column<Databases>[] = [
                     {dbType === "schema" && (
                         <span className="text-xs text-muted-foreground">schema</span>
                     )}
-                    {dbType === "0" && (
+                    {dbType === "standalone" && (
                         <span className="text-xs text-muted-foreground">standalone</span>
                     )}
                     {dbType === database.is_schema && (
@@ -87,8 +89,24 @@ const databaseColumns: Column<Databases>[] = [
         }
     },
     {
+        key: "granted_users_count",
+        label: "Granted Users",
+        render: (database) => (
+            <div className="flex items-center gap-2">
+                <UserPen className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{database.granted_users_count} users</span>
+            </div>
+        )
+    },
+    {
         key: "owner",
         label: "Owner",
+        render: (database) => (
+            <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{database.owner}</span>
+            </div>
+        )
     },
     {
         key: "teams",

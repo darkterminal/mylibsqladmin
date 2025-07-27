@@ -38,9 +38,14 @@ class UserDatabase extends Model
         });
     }
 
+    public function grantedUsers()
+    {
+        return $this->belongsToMany(User::class, 'granted_user_databases', 'database_id', 'user_id');
+    }
+
     public function grant()
     {
-        return $this->hasMany(GrantedDatabse::class, 'database_id');
+        return $this->hasMany(GrantedDatabase::class, 'database_id');
     }
 
     public function user()
@@ -73,7 +78,7 @@ class UserDatabase extends Model
     {
         $teamId = session('team_databases.team_id') ?? null;
 
-        $query = self::withCount('queryMetrics')
+        $query = self::withCount(['queryMetrics', 'grantedUsers'])
             ->select('user_databases.*')
             ->withSum('queryMetrics', 'query_count')
             ->when($teamId, function ($query) use ($teamId) {
@@ -104,6 +109,7 @@ class UserDatabase extends Model
                 ]),
                 'database_name' => $db->database_name,
                 'is_schema' => $db->is_schema,
+                'granted_users_count' => $db->granted_users_count,
                 'query_metrics_sum_query_count' => $db->query_metrics_sum_query_count,
                 'query_metrics_count' => $db->query_count,
                 'created_at' => $db->created_at ? $db->created_at->format('Y-m-d H:i:s') : '',

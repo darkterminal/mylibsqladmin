@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\GrantedDatabse;
+use App\Models\GrantedDatabase;
 use App\Models\QueryMetric;
 use App\Models\Team;
 use App\Models\User;
@@ -24,7 +24,7 @@ class UserDatabaseController extends Controller
             'user:id,name',
             'tokens' => fn($q) => $q->where('user_id', $userId)->latest(),
             'grant'
-        ])->withCount(['queryMetrics as total_queries'])
+        ])->withCount(['queryMetrics as total_queries', 'grantedUsers'])
             ->withSum('queryMetrics as rows_read', 'rows_read_count')
             ->withSum('queryMetrics as rows_written', 'rows_written_count')
             ->withSum('queryMetrics as storage_bytes', 'storage_bytes_used');
@@ -47,6 +47,7 @@ class UserDatabaseController extends Controller
             'name' => $database->database_name,
             'is_schema' => $database->is_schema,
             'owner' => $database->user->name,
+            'granted_users_count' => $database->granted_users_count,
             'groups' => $database->groups->map(fn($group) => [
                 'id' => $group->id,
                 'name' => $group->name,
@@ -93,7 +94,7 @@ class UserDatabaseController extends Controller
                 'databaseId' => 'required|integer|exists:user_databases,id',
             ]);
 
-            GrantedDatabse::updateOrCreate(
+            GrantedDatabase::updateOrCreate(
                 [
                     'user_id' => $validated['userId'],
                     'database_id' => $validated['databaseId']
