@@ -8,6 +8,8 @@ use App\Models\Team;
 use App\Models\User;
 use App\Services\UserActivityLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class UserController extends Controller
@@ -120,40 +122,79 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
-        $request->validate([
+        // 1. More specific and robust validation
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            "username" => ["required", "string", "max:255", "unique:users,username,{$user->id}"],
-            "email" => ["required", "email", "max:255", "unique:users,email,{$user->id}"],
-            'teamSelections' => ['array'],
-            'teamPermissions' => ['array'],
-            'roleSelections' => ['required', 'integer'],
+            'username' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('users')->ignore($user->id),
+            ],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users')->ignore($user->id),
+            ],
+            // Validate that the role ID actually exists in the database
+            'roleSelections' => ['required', 'integer', 'exists:roles,id'],
+            // Validate team selections
+            'teamSelections' => ['present', 'array'],
+            'teamSelections.*' => ['integer', 'exists:teams,id'], // Each team must exist
+            // Validate team permissions
+            'teamPermissions' => ['present', 'array'],
+            'teamPermissions.*' => ['required', 'string', Rule::in(['super-admin', 'team-manager', 'database-maintainer', 'member'])],
         ]);
 
-        $user->update($request->only('name', 'username', 'email'));
+        try {
+            // 2. Use a database transaction for data integrity
+            DB::transaction(function () use ($user, $validated) {
+                // Update user details from validated data
+                $user->update([
+                    'name' => $validated['name'],
+                    'username' => $validated['username'],
+                    'email' => $validated['email'],
+                ]);
 
-        $teamsWithPermissions = collect($request->teamSelections)->mapWithKeys(fn($teamId) => [
-            $teamId => ['permission_level' => $request->teamPermissions[$teamId]]
-        ])->toArray();
+                // 3. Safer and cleaner way to build the sync data for teams
+                $teamsWithPermissions = [];
+                foreach ($validated['teamSelections'] as $teamId) {
+                    // Ensure the permission for this team was actually sent
+                    if (isset($validated['teamPermissions'][$teamId])) {
+                        $teamsWithPermissions[$teamId] = [
+                            'permission_level' => $validated['teamPermissions'][$teamId]
+                        ];
+                    }
+                }
 
-        $user->teams()->sync($teamsWithPermissions);
+                // Sync teams and roles
+                $user->teams()->sync($teamsWithPermissions);
+                $user->roles()->sync([$validated['roleSelections']]);
+            });
 
-        $user->roles()->sync([$request->roleSelections]);
+            // 4. Move success-dependent logic outside the transaction
+            $location = get_ip_location($request->ip());
+            log_user_activity(
+                auth()->user(),
+                ActivityType::USER_UPDATE,
+                "User {$user->name} updated from " . $request->ip(),
+                [
+                    'ip' => $request->ip(),
+                    'device' => $request->userAgent(),
+                    'country' => $location['country'] ?? 'Unknown',
+                    'city' => $location['city'] ?? 'Unknown',
+                ]
+            );
 
-        $location = get_ip_location(request()->ip());
+            // 5. Add a success message for better user feedback
+            return redirect()->route('user.show', $user->id)->with('success', 'User updated successfully.');
 
-        log_user_activity(
-            auth()->user(),
-            ActivityType::USER_UPDATE,
-            "User {$user->name} updated from " . request()->ip(),
-            [
-                'ip' => request()->ip(),
-                'device' => request()->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
-        );
-
-        return redirect()->route('user.show', $user->id);
+        } catch (\Throwable $th) {
+            // Log the actual error for debugging purposes
+            \Log::error('User update failed: ' . $th->getMessage());
+            return back()->with('error', 'An unexpected error occurred. Please try again.');
+        }
     }
 
     public function destroy(User $user)

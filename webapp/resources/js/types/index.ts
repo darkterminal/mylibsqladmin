@@ -90,6 +90,13 @@ export interface Team {
     id: number;
     name: string;
     description: string;
+    pivot: {
+        team_id: number;
+        user_id: number;
+        permission_level: string;
+        created_at: string;
+        updated_at: string;
+    }
     [key: string]: unknown;
 }
 

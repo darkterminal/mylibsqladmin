@@ -52,16 +52,28 @@ export type RoleAttributes =
 // Check basic permissions
 export function usePermission() {
     const { auth } = usePage<SharedData>().props;
+    const currentTeamId = localStorage.getItem('currentTeamId');
+    const teamRole = auth.user.teams.map(team => team.id === Number(currentTeamId) ? getRole(team.pivot.permission_level) : auth.user.role);
 
     return {
         can: (permission: PermissionAttributes) => {
             return auth?.permissions?.abilities.includes(permission) ?? false;
         },
         hasRole: (role: RoleAttributes) => {
-            return auth?.user.role === role;
+            return (auth?.user.role === role || teamRole.includes(role)) ?? false;
         },
         hasAnyRole: (...roles: RoleAttributes[]) => {
             return roles.includes(auth?.user.role as RoleAttributes) ?? false;
         }
     }
+}
+
+export function getRole(role: string) {
+    const roles = {
+        'super-admin': 'Super Admin',
+        'team-manager': 'Team Manager',
+        'database-maintainer': 'Database Maintainer',
+        'member': 'Member'
+    } as Record<string, string>;
+    return roles[role] ?? role;
 }

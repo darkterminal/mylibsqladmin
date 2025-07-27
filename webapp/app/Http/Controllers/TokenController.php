@@ -95,6 +95,8 @@ class TokenController extends Controller
             'userId' => 'required|integer|exists:users,id'
         ]);
 
+        $user = User::find($validated['userId']);
+
         $tokenGenerator = (new DatabaseTokenGenerator())->generateToken(
             $validated['databaseId'],
             $validated['userId'],
@@ -109,7 +111,7 @@ class TokenController extends Controller
         $formData = [
             'user_id' => $validated['userId'],
             'database_id' => $validated['databaseId'],
-            'name' => $validated['name'],
+            'name' => "Token for {$user->name}",
             'full_access_token' => $tokenGenerator['full_access_token'],
             'read_only_token' => $tokenGenerator['read_only_token'],
             'expiration_day' => $validated['expiration'],

@@ -86,7 +86,7 @@ class User extends Authenticatable
     public function assignRole(string $roleName): void
     {
         $role = Role::where('name', $roleName)->firstOrFail();
-        $this->roles()->syncWithoutDetaching($role);
+        $this->roles()->sync($role);
     }
 
     public function getRoleAttribute()

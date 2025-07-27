@@ -36,15 +36,15 @@ const mainNavItems: NavItem[] = [
         title: 'Databases',
         url: route('dashboard.databases'),
         icon: DatabaseIcon,
-        isAllowed: ({ can }) =>
-            can('manage-databases') || can('view-databases'),
+        isAllowed: ({ can, hasRole }) =>
+            can('manage-databases') || can('view-databases') || hasRole('Database Maintainer'),
     },
     {
         title: 'Tokens',
         url: route('dashboard.tokens'),
         icon: Fingerprint,
-        isAllowed: ({ can }) =>
-            can('manage-database-tokens') || can('manage-group-tokens'),
+        isAllowed: ({ can, hasRole }) =>
+            can('manage-database-tokens') || can('manage-group-tokens') || hasRole('Database Maintainer'),
     },
     {
         title: 'Groups',
@@ -58,7 +58,7 @@ const mainNavItems: NavItem[] = [
         url: route('dashboard.teams'),
         icon: Handshake,
         isAllowed: ({ can, hasRole }) =>
-            can('view-teams') || (hasRole('Super Admin') || can('manage-teams')),
+            can('view-teams') || (hasRole('Super Admin') || hasRole('Team Manager')),
     },
     {
         title: 'User Management',

@@ -18,7 +18,6 @@ import ButtonOpenDatabaseStudio from "./button-actions/action-open-database-stud
 import ModalAddDatabaseToGroup from "./modals/modal-add-database-to-group"
 import { CreateDatabaseProps, ModalCreateDatabase } from "./modals/modal-create-database"
 import { ModalCreateGroupToken } from "./modals/modal-create-group-token"
-import { ModalCreateToken } from "./modals/modal-create-token"
 import { Button } from "./ui/button"
 import { ComboboxOption } from "./ui/combobox"
 import { ScrollArea } from "./ui/scroll-area"
@@ -240,22 +239,6 @@ export default function GroupDetail({
                                                 <ButtonCopyFullAccessToken token={token} />
                                                 <ButtonOpenDatabaseStudio databaseName={database.database_name} />
                                             </>
-                                        )}
-                                        {can('manage-group-tokens') && (
-                                            <ModalCreateToken
-                                                mostUsedDatabases={[{
-                                                    database_id: database.id,
-                                                    database_name: database.database_name,
-                                                    is_schema: database.is_schema
-                                                }]}
-                                            >
-                                                <AppTooltip text={`Create Database Token for ${database.database_name}`}>
-                                                    <Button variant="default" size="sm">
-                                                        <KeyIcon className="h-4 w-4" />
-                                                        <span>Create Token</span>
-                                                    </Button>
-                                                </AppTooltip>
-                                            </ModalCreateToken>
                                         )}
                                     </div>
                                 )

@@ -27,6 +27,15 @@ const breadcrumbs: BreadcrumbItem[] = [
     }
 ]
 
+export type UserFormProps = Record<string, any> & {
+    name: string,
+    username: string,
+    email: string,
+    teamSelections: number[],
+    teamPermissions: Record<string, string>,
+    roleSelections: string
+}
+
 export default function EditUserForm({
     user,
     availableTeams,
@@ -38,7 +47,7 @@ export default function EditUserForm({
     availableRoles: { id: number, name: string, created_at: string }[],
     permissionLevels: { id: string, name: string }[]
 }) {
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, put, processing, errors } = useForm<UserFormProps>({
         name: user.name,
         username: user.username,
         email: user.email,
@@ -49,9 +58,9 @@ export default function EditUserForm({
                 ...acc,
                 [team.id]: level?.id || 'member'
             };
-        }, {} as Record<string, string>),
-        roleSelection: user.roles[0].id,
-    })
+        }, {}),
+        roleSelections: String(user.roles[0].id),
+    });
 
     const getInitials = (name: string) => {
         return name
@@ -61,7 +70,7 @@ export default function EditUserForm({
             .toUpperCase()
     }
 
-    const handleSubmit = (e: { preventDefault: () => void }) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         put(route('user.update', user.id), {
             preserveScroll: true,
@@ -78,7 +87,7 @@ export default function EditUserForm({
         })
     }
 
-    const handleTeamSelection = (teamId: number, checked: string | boolean) => {
+    const handleTeamSelection = (teamId: number, checked: boolean) => {
         const selections = [...data.teamSelections]
         const defaultPermission = permissionLevels.find(l => l.name === 'Member')?.id || 'member'
 
@@ -177,3 +186,4 @@ export default function EditUserForm({
         </AppLayout>
     )
 }
+

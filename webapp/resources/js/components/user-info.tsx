@@ -1,9 +1,15 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
+import { getRole } from '@/lib/auth';
 import { type User } from '@/types';
 
 export function UserInfo({ user, showEmail = false }: { user: User; showEmail?: boolean }) {
     const getInitials = useInitials();
+    const currentTeamId = localStorage.getItem('currentTeamId');
+
+    const currentRole = user.teams.find((team) => team.id === Number(currentTeamId));
+    const userRole = currentRole ? getRole(currentRole?.pivot.permission_level || '') : user.role;
+    user.role = userRole;
 
     return (
         <>

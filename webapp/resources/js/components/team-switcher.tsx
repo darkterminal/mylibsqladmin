@@ -110,7 +110,7 @@ export function TeamSwitcher({ className }: TeamSwitcherProps) {
             }
         })
         if (response.ok) {
-            router.visit(window.location.href, {
+            router.visit(route('dashboard'), {
                 preserveScroll: true,
             })
         }

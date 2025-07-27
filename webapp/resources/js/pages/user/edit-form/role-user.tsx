@@ -1,5 +1,5 @@
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function UserRoleForm({
     availableRoles,
@@ -12,14 +12,13 @@ export default function UserRoleForm({
     setData: any,
     errors: any
 }) {
-    console.log(data.roleSelection)
     return (
         <div className="space-y-4 mb-3">
             <h3 className="text-lg font-medium">User Roles</h3>
 
             <RadioGroup
-                value={data.roleSelection.toString()}
-                onValueChange={(value) => setData('roleSelection', Number(value))}
+                value={data.roleSelections.toString()}
+                onValueChange={(value) => setData('roleSelections', Number(value))}
                 className="grid grid-cols-1 md:grid-cols-2 gap-4"
             >
                 {availableRoles.map(role => (
@@ -37,7 +36,7 @@ export default function UserRoleForm({
                     </div>
                 ))}
             </RadioGroup>
-            {errors.roleSelection && <p className="text-sm text-red-600">{errors.roleSelection}</p>}
+            {errors.roleSelections && <p className="text-sm text-red-600">{errors.roleSelections}</p>}
         </div>
-    )
+    );
 }
