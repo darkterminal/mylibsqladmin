@@ -99,11 +99,24 @@ class Team extends Model
         return $this->getPermissionLevel($user) === 'super-admin';
     }
 
-    public static function setTeamDatabases(int $userId, int|string $teamId)
+    public static function setTeamDatabases(int $userId, int|string|null $teamId = null)
     {
-        if ($teamId === 'null') {
-            $team = Team::whereHas('members', fn($q) => $q->where('user_id', $userId))->latest()->first();
-            $teamId = $team->id;
+        if ($teamId === null || $teamId === 'null' || $teamId === '') {
+            $teamId = Team::whereHas('members', fn ($q) => $q->where('user_id', $userId))->latest()->first()?->id;
+            if ($teamId === null) {
+                // User belongs to no team yet — write an empty payload so
+                // callers never explode on a missing membership.
+                session([
+                    'team_databases' => [
+                        'team_id' => null,
+                        'databases' => [],
+                        'groups' => [],
+                        'expires_at' => now()->addHours(2),
+                    ],
+                ]);
+
+                return;
+            }
         }
 
         $team = Team::with(['groups.members.user'])

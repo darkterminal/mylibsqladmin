@@ -7,10 +7,9 @@ import {
 } from "lucide-react"
 import * as React from "react"
 
-function Pagination({ className, ...props }: React.ComponentProps<"nav"> & { asChild?: boolean }) {
-  const Comp = props.asChild ? React.Fragment : "nav"
+function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
   return (
-    <Comp
+    <nav
       role="navigation"
       aria-label="pagination"
       data-slot="pagination"
@@ -53,7 +52,9 @@ function PaginationLink({
   ...props
 }: PaginationLinkProps) {
   if (asChild) {
-    return React.cloneElement(React.Children.only(children as React.ReactElement), {
+    return React.cloneElement(
+      React.Children.only(children) as React.ReactElement<Record<string, unknown>>,
+      {
       className: cn(
         buttonVariants({
           variant: isActive ? "outline" : "ghost",

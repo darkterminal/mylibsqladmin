@@ -20,7 +20,6 @@ export default function ModalCreateGroup({
         name: "",
         databases: [] as string[],
     })
-    const { props } = usePage<{ databaseGroups: DatabaseInGroupProps[] }>()
 
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.replace(/[^a-zA-Z0-9-_]/g, "")

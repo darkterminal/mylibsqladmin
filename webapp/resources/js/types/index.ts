@@ -132,7 +132,7 @@ export interface QueriesInMatrictsProps {
     created_at: number;
     count: number;
     stats: QueriesInMatrictsStatsProps[];
-    elapsed: any;
+    elapsed: unknown;
 }
 
 export interface QueryMetrics {

@@ -60,7 +60,7 @@ export function ModalCreateDatabase({
     const [processing, setProcessing] = useState(false)
 
     const getGroupOptions = (): ComboboxOption[] => {
-        let options: ComboboxOption[] = currentTeam?.groups
+        const options: ComboboxOption[] = currentTeam?.groups
             ? currentTeam.groups.map(g => ({
                 label: g.name,
                 value: g.id.toString()
