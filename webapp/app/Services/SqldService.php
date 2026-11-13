@@ -87,9 +87,12 @@ class SqldService
 
             if (empty($allDatabases)) {
                 logger()->debug("No databases found, performing health checks");
-                $userDatabases = UserDatabase::where('user_id', auth()->user()->id)
-                    ->whereNotIn('database_name', ['default'])
-                    ->get();
+                $currentUserId = auth()->user()?->id;
+                $userDatabases = $currentUserId === null
+                    ? collect()
+                    : UserDatabase::where('user_id', $currentUserId)
+                        ->whereNotIn('database_name', ['default'])
+                        ->get();
 
                 $retryMetrics = self::performHealthChecks($host, $request, $userDatabases);
                 if ($retryMetrics->successful()) {

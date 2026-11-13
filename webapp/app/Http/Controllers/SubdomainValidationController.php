@@ -57,21 +57,9 @@ class SubdomainValidationController extends Controller
 
     private function handleEmptyToken(string $subdomain)
     {
-        if ($this->subdomainHasAssociatedTokens($subdomain)) {
-            return $this->createResponse('none');
-        }
-
-        return $this->createResponse('full-access');
-    }
-
-    private function subdomainHasAssociatedTokens(string $subdomain): bool
-    {
-        if (!UserDatabase::where('database_name', $subdomain)->exists()) {
-            return true;
-        }
-
-        return GroupDatabaseToken::whereHas('group', fn($q) => $q->whereHas('members', fn($q) => $q->where('database_name', $subdomain)))->exists()
-            || UserDatabaseToken::whereHas('database', fn($q) => $q->where('database_name', $subdomain))->exists();
+        // Default-deny: a database with zero published tokens is not reachable
+        // for unauthenticated use. Accessors must hold an issued token.
+        return $this->createResponse('none');
     }
 
     private function parseJwtToken(string $token): UnencryptedToken
@@ -151,9 +139,14 @@ class SubdomainValidationController extends Controller
     private function validateSubdomainWithBridge(string $subdomain): bool
     {
         try {
-            $allDatabases = SqldService::getDatabases(config('mylibsqladmin.local_instance'));
-            $names = Arr::pluck($allDatabases, 'name');
-            return in_array($subdomain, $names);
+            $allDatabases = config('mylibsqladmin.local_instance')
+                ? SqldService::getLocalDatabases()
+                : SqldService::getRemoteDatabases();
+            // Rows are DB records (database_name) locally and remote API
+            // objects (name) remotely — support either.
+            $names = Arr::pluck($allDatabases, 'database_name', null);
+            $names = array_filter(array_merge($names, Arr::pluck($allDatabases, 'name')));
+            return in_array($subdomain, $names, true);
         } catch (\Exception $e) {
             logger()->error('Bridge service error: ' . $e->getMessage());
             return false;

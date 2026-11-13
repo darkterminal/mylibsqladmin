@@ -39,7 +39,6 @@ services:
     ports:
       - '8080:8080'
       - '5001:5001'
-      - '8081:8081'
     networks:
       - app-network
     restart: always
