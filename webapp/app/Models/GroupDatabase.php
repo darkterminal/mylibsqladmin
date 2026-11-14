@@ -133,15 +133,15 @@ class GroupDatabase extends Model
                     fn($member) => $member->tokens->map(fn($token) => [
                         'id' => $token->id,
                         'name' => $token->name,
-                        'full_access_token' => $token->full_access_token,
-                        'read_only_token' => $token->read_only_token,
+                        'full_access_token' => '••••••••' . substr((string) $token->full_access_token, -8),
+                        'read_only_token' => '••••••••' . substr((string) $token->read_only_token, -8),
                         'expiration_day' => $token->expiration_day,
                         'database_id' => $token->database_id,
                         'user_id' => $token->user_id,
                     ])
                 ),
                 'has_token' => $group->tokens()->exists(),
-                'group_token' => $group->tokens()->first(),
+                'group_token' => self::sanitisedGroupToken($group),
                 'can_manage' => $isCanManage ||
                     $user->can('manage-groups') ||
                     $group->user_id === $userId,
@@ -150,6 +150,23 @@ class GroupDatabase extends Model
                     $group->user_id === $userId
             ];
         })->values();
+    }
+
+    private static function sanitisedGroupToken(self $group): ?array
+    {
+        $token = $group->tokens()->first();
+
+        return $token === null
+            ? null
+            : [
+                'id' => $token->id,
+                'group_id' => $token->group_id,
+                'name' => $token->name,
+                'full_access_token' => '••••••••' . substr((string) $token->full_access_token, -8),
+                'read_only_token' => '••••••••' . substr((string) $token->read_only_token, -8),
+                'expiration_day' => $token->expiration_day,
+                'created_at' => $token->created_at,
+            ];
     }
 
     private static function countMemberTokens()

@@ -85,5 +85,9 @@ export function calculateExpirationDate(createdAt: string, expirationDays: numbe
 }
 
 export function isTokenHash(value: string): boolean {
-    return /^[a-f0-9]{64}$/i.test(value);
+    if (!value) {
+        return true; // missing token material — never usable, always disabled
+    }
+    // Stored hash shape: strict 64-hex — or server-side fingerprint "••••••••<hex>"
+    return /^[a-f0-9]{64}$/i.test(value) || value.startsWith('••••••••');
 }

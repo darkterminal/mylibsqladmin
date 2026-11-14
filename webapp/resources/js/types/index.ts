@@ -222,10 +222,11 @@ export interface DatabaseInGroupProps {
 export interface GroupDatabaseTokenProps {
     id: number;
     group_id: number;
-    database_id: number;
+    database_id?: number;
     name: string;
     full_access_token: string;
     read_only_token: string;
+    fingerprint?: string;
     expiration_day: number;
     created_at: string
 }
