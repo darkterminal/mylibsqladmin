@@ -195,7 +195,7 @@ class DbShell extends Command
 
     private function runTursoShell(string $tursoPath, string $url, OutputInterface $output): void
     {
-        echo $url . PHP_EOL;
+        echo $this->getSafeUrl($url) . PHP_EOL;
         // Start interactive shell
         $descriptorSpec = [
             0 => STDIN,

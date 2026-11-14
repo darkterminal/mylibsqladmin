@@ -130,19 +130,14 @@ if (!function_exists('http_request')) {
         $maxRetries = 2;
         $response = null;
 
+        $retries = 0;
+        $maxRetries = 2;
         $response = try_request($url, $method, $payload, $headers, $okCodes);
 
-        if (str_starts_with($url, 'https://')) {
-            do {
-                $scheme = ($retries > 0) ? 'http' : 'https';
-                $url = str_replace(['http://', 'https://'], $scheme . '://', $url);
-
-                $response = try_request($url, $method, $payload, $headers, $okCodes);
-
-                if ($response === null) {
-                    $retries++;
-                }
-            } while ($retries < $maxRetries && $response === null);
+        while ($response === null && $retries < $maxRetries) {
+            $retries++;
+            usleep(250000 * $retries); // 250ms, 500ms backoff
+            $response = try_request($url, $method, $payload, $headers, $okCodes);
         }
 
         if ($response === null) {

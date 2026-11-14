@@ -26,8 +26,7 @@ class AuthLogin extends Command implements Configurable
         $this
             ->setName('auth:login')
             ->setDescription('Authenticate and store API token')
-            ->addArgument('username', InputArgument::REQUIRED, 'Your username')
-            ->addArgument('password', InputArgument::OPTIONAL, 'Your password (will be hidden)');
+            ->addArgument('username', InputArgument::REQUIRED, 'Your username');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -36,7 +35,7 @@ class AuthLogin extends Command implements Configurable
         $username = $input->getArgument('username');
 
         // Get password securely
-        $password = $input->getArgument('password');
+        $password = null;
         if (null === $password) {
             /** @var \Symfony\Component\Console\Helper\QuestionHelper $helper */
             $helper = $this->getHelper('question');
