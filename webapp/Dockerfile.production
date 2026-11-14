@@ -1,7 +1,6 @@
 FROM dunglas/frankenphp:1.4-php8.4-bookworm
 
 ARG APP_ENV=production
-ARG ENV_FILE
 
 # Environment variables
 ENV APP_ENV=${APP_ENV} \
@@ -48,14 +47,11 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
 
 WORKDIR /var/www/html
 
-# Copy application files
+# Copy application files — no .env inside the image; environment is provided
+# at container runtime (compose env / docker run -e), never baked in.
 COPY . .
 
-# Copy environment file
-COPY ${ENV_FILE} .env
-
 RUN mkdir -p /var/www/html/database && \
-    touch /var/www/html/database/database.sqlite && \
     rm -rf public/build
 
 # Install Turso PHP extension
@@ -66,15 +62,9 @@ RUN turso-php-installer install -n --thread-safe
 
 # Install dependencies
 RUN composer install --optimize-autoloader --no-dev --no-interaction \
-    && php artisan migrate:fresh --seed --force \
-    && php artisan sqld:remove-database-except-default \
     && php artisan config:clear \
     && php artisan route:clear \
     && php artisan view:clear \
-    && rm -rf database/migrations \
-    && rm -rf database/seeders \
-    && rm -rf database/factories \
-    && rm -rf database/libsql-data \
     && npm ci --omit=dev \
     && npm run build \
     && rm -f public/hot
