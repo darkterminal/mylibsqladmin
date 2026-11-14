@@ -21,9 +21,13 @@ class SqldService
                 $host = env('LIBSQL_LOCAL_INSTANCE') === true ? env('LIBSQL_HOST') : $host;
                 $port = config('mylibsqladmin.libsql.api.port');
 
-                return "http://{$host}" . ($port === null ? '' : ":{$port}");
+                $scheme = filter_var(env('LIBSQL_API_USE_HTTPS', false), FILTER_VALIDATE_BOOLEAN) ? 'https' : 'http';
+
+                return "{$scheme}://{$host}" . ($port === null ? '' : ":{$port}");
             case 'bridge':
-                return 'http://' . config('mylibsqladmin.bridge.host') . ':' . config('mylibsqladmin.bridge.port');
+                $scheme = filter_var(env('LIBSQL_API_USE_HTTPS', false), FILTER_VALIDATE_BOOLEAN) ? 'https' : 'http';
+
+                return $scheme . '://' . config('mylibsqladmin.bridge.host') . ':' . config('mylibsqladmin.bridge.port');
             default:
                 return false;
         }
