@@ -370,26 +370,29 @@ class GroupDatabaseController extends Controller
 
     public function deleteDatabaseFromGroup(UserDatabase $database)
     {
-        if (!SqldService::archiveDatabase($database->database_name)) {
-            return redirect()->back()->with(['error' => 'Database deletion failed']);
-        }
+        // "Remove from group" means detach the pivot row. It must never
+        // archive/delete the database itself.
+        $removed = DB::table('group_database_members')
+            ->where('database_id', $database->id)
+            ->delete();
 
         $location = get_ip_location(request()->ip());
 
         log_user_activity(
             auth()->user(),
             ActivityType::GROUP_DATABASE_UPDATE,
-            "Group update from " . request()->ip(),
+            "Database {$database->database_name} removed from group(s) from " . request()->ip(),
             [
                 'ip' => request()->ip(),
                 'device' => request()->userAgent(),
                 'country' => $location['country'],
                 'city' => $location['city'],
+                'pivot_rows_removed' => $removed,
             ]
         );
 
         return redirect()->back()->with([
-            'success' => 'Database removed successfully'
+            'success' => 'Database removed from group successfully'
         ]);
     }
 }
