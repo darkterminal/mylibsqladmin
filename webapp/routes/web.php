@@ -53,7 +53,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::delete('delete/{database}', [UserDatabaseController::class, 'deleteDatabase'])
             ->name('database.delete')
-            ->can('delete', UserDatabase::class);
+            ->middleware('can:delete,database');
 
         Route::post('restore', [UserDatabaseController::class, 'restoreDatabase'])
             ->name('database.restore')
@@ -61,7 +61,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::delete('force-delete/{database}', [UserDatabaseController::class, 'forceDeleteDatabase'])
             ->name('database.force-delete')
-            ->can('delete', UserDatabase::class);
+            ->middleware('can:delete,database');
 
         Route::post('grant-access', [UserDatabaseController::class, 'grantUserDatabase'])
             ->name('database.grant-access')
@@ -80,12 +80,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::group(['prefix' => 'groups'], function () {
         Route::post('create', [GroupDatabaseController::class, 'createGroup'])
             ->name('group.create');
-        Route::delete('delete/{groupId}', [GroupDatabaseController::class, 'deleteGroup'])
-            ->name('group.delete');
+        Route::delete('delete/{group}', [GroupDatabaseController::class, 'deleteGroup'])
+            ->name('group.delete')
+            ->middleware('can:delete,group');
         Route::post('{group}/add-databases', [GroupDatabaseController::class, 'addDatabasesToGroup'])
-            ->name('group.add-databases');
+            ->name('group.add-databases')
+            ->middleware('can:update,group');
         Route::delete('delete-database/{database}', [GroupDatabaseController::class, 'deleteDatabaseFromGroup'])
-            ->name('group.delete-databases');
+            ->name('group.delete-databases')
+            ->middleware('can:update,group');
         Route::post('{group}/tokens', [GroupDatabaseController::class, 'createGroupToken'])
             ->middleware('permission:create-group-tokens')
             ->name('group.token.create');
@@ -99,26 +102,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('team.create')
             ->can('create', Team::class);
 
-        Route::put('update/{teamId}', [TeamController::class, 'updateTeam'])
+        Route::put('update/{team}', [TeamController::class, 'updateTeam'])
             ->name('team.update')
-            ->can('update', Team::class);
+            ->middleware('can:update,team');
 
         Route::put('/teams/{team}/users/{user}/role', [TeamController::class, 'updateTeamMemberRole'])
             ->name('teams.members.update-role')
-            ->can('update', Team::class);
+            ->middleware('can:update,team');
 
-        Route::delete('delete/{teamId}', [TeamController::class, 'deleteTeam'])
+        Route::delete('delete/{team}', [TeamController::class, 'deleteTeam'])
             ->name('team.delete')
-            ->can('delete', Team::class);
+            ->middleware('can:delete,team');
 
         Route::put('restore/{team}', [TeamController::class, 'restoreTeam'])
             ->name('team.restore')
-            ->can('delete', Team::class)
+            ->middleware('can:restore,team')
             ->withTrashed();
 
         Route::delete('{team}/users/{user}/remove', [TeamController::class, 'deleteTeamMember'])
             ->name('teams.members.delete')
-            ->can('delete', Team::class);
+            ->middleware('can:delete,team');
 
         Route::get('/archives', [TeamController::class, 'archiveTeam'])
             ->name('teams.archives')
@@ -195,7 +198,7 @@ Route::group(['prefix' => 'invitations'], function () {
         ->name('invitation.expired');
 });
 
-Route::get('mailable/{teamId}/{token}', function ($teamId, $token) {
+Route::get('mailable/{team}/{token}', function ($teamId, $token) {
     $team = Team::with([
         'invitations' => function ($query) use ($token) {
             $query->where('token', $token);
