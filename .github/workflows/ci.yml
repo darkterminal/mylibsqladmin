@@ -34,16 +34,6 @@ jobs:
         run: composer install --no-interaction --prefer-dist --no-progress
         working-directory: webapp
 
-      - name: Pest
-        run: vendor/bin/pest
-        working-directory: webapp
-        env:
-          APP_KEY: base64:yq1wacvqzu3GU5D+NqtnqfQ8rudeNCLt1yg4xLCDYmw=
-
-      - name: Composer audit
-        run: composer audit --locked || true
-        working-directory: webapp
-
       - name: Setup Node 22
         uses: actions/setup-node@v6
         with:
@@ -61,4 +51,14 @@ jobs:
 
       - name: Build assets
         run: npm run build
+        working-directory: webapp
+
+      - name: Pest
+        run: vendor/bin/pest
+        working-directory: webapp
+        env:
+          APP_KEY: base64:yq1wacvqzu3GU5D+NqtnqfQ8rudeNCLt1yg4xLCDYmw=
+
+      - name: Composer audit
+        run: composer audit --locked || true
         working-directory: webapp
