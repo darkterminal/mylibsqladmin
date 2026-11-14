@@ -16,12 +16,21 @@ class TeamSeeder extends Seeder
             DB::table('team_user')->delete();
             DB::table('teams')->delete();
 
-            // Get existing users
+            // Get existing users (absent by default on fresh installs —
+            // fixture users are deliberately not seeded anymore).
+            $fixtureNames = ['superadmin', 'manager', 'database-maintainer', 'member'];
+            $byName = User::whereIn('username', $fixtureNames)->get()->keyBy('username');
+
+            if ($byName->count() !== count($fixtureNames)) {
+                $this->command?->info('Skipping TeamSeeder: demo fixture users absent (create them explicitly to use this seeder).');
+                return;
+            }
+
             $users = [
-                'super-admin' => User::where('username', 'superadmin')->first(),
-                'team-manager' => User::where('username', 'manager')->first(),
-                'database-maintainer' => User::where('username', 'database-maintainer')->first(),
-                'member' => User::where('username', 'member')->first(),
+                'super-admin' => $byName['superadmin'],
+                'team-manager' => $byName['manager'],
+                'database-maintainer' => $byName['database-maintainer'],
+                'member' => $byName['member'],
             ];
 
             // Create core teams

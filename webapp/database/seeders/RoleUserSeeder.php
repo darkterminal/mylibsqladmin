@@ -319,36 +319,10 @@ class RoleUserSeeder extends Seeder
         }
 
         // Create users with roles
-        $users = [
-            [
-                'name' => 'Robert Jamiin',
-                'username' => 'superadmin',
-                'email' => 'superadmin@mylibsqladmin.oss',
-                'password' => Hash::make('superadmin12345'),
-                'role' => 'Super Admin'
-            ],
-            [
-                'name' => 'Valentinus Marheng',
-                'username' => 'manager',
-                'email' => 'manager@mylibsqladmin.oss',
-                'password' => Hash::make('manager12345'),
-                'role' => 'Team Manager'
-            ],
-            [
-                'name' => 'Lee Gi Min',
-                'username' => 'database-maintainer',
-                'email' => 'database-maintainer@mylibsqladmin.oss',
-                'password' => Hash::make('database-maintainer12345'),
-                'role' => 'Database Maintainer'
-            ],
-            [
-                'name' => 'Alexander To Ming',
-                'username' => 'member',
-                'email' => 'member@mylibsqladmin.oss',
-                'password' => Hash::make('member12345'),
-                'role' => 'Member'
-            ],
-        ];
+        // NOTE: no fixture users are created here. A production instance
+        // bootstraps its single super-admin via BootstrapSeeder; demo users
+        // required by the documentation should be created explicitly/on-demand.
+        $users = [];
 
         foreach ($users as $userData) {
             $user = User::create([
