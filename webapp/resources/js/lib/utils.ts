@@ -83,3 +83,7 @@ export function calculateExpirationDate(createdAt: string, expirationDays: numbe
 
     return expirationDate.toISOString().slice(0, 10);
 }
+
+export function isTokenHash(value: string): boolean {
+    return /^[a-f0-9]{64}$/i.test(value);
+}

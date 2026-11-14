@@ -63,6 +63,7 @@ export interface FlashMessageProps {
     error?: string;
     newToken?: UserDatabaseTokenProps;
     newTeam?: number | null;
+    newGroupToken?: GroupDatabaseTokenProps;
     [key: string]: unknown;
 }
 

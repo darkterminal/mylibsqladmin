@@ -2,155 +2,42 @@
 
 namespace App\Services;
 
-use App\Models\UserDatabase;
-use Illuminate\Support\Str;
-use Lcobucci\JWT\JwtFacade;
-use Lcobucci\JWT\Signer\Eddsa;
-use Lcobucci\JWT\Signer\Key\InMemory;
-use Lcobucci\JWT\Token\Builder;
-
+/**
+ * Opaque bearer tokens for the sqld data plane.
+ *
+ * No JWT, no third-party signing keys, no filesystem side effects. Tokens are
+ * random 64-char hex strings; their SHA-256 hash is what gets stored in the
+ * database, so a leaked DB backup does not disclose usable credentials.
+ * Authors only ever see the plaintext at creation time.
+ */
 class DatabaseTokenGenerator
 {
-    protected ?string $publicKeyPem;
-    protected ?string $privateKey;
-    protected ?string $pubKeyBase64;
-    protected int $tokenExpiration;
-    protected InMemory $key;
-    protected $temp_dir;
-
-    public function __construct()
-    {
-        $this->temp_dir = sys_get_temp_dir();
-        $this->generatePublicAndPrivateKey();
-    }
-
-    public function __destruct()
-    {
-        unlink("{$this->temp_dir}/jwt_private.pem");
-        unlink("{$this->temp_dir}/jwt_public.pem");
-    }
-
+    /**
+     * Kept for call-site compatibility; no clock dependence on the client side.
+     */
     public function setTokenExpiration(int $expiration): void
     {
-        $this->tokenExpiration = $expiration;
+        // Pinned in the caller via the expiration column instead.
     }
 
-    protected function generatePublicAndPrivateKey()
-    {
-        shell_exec("openssl genpkey -algorithm ed25519 -out {$this->temp_dir}/jwt_private.pem");
-        shell_exec("openssl pkey -in {$this->temp_dir}/jwt_private.pem -outform DER | tail -c 32 > {$this->temp_dir}/jwt_private.binary");
-        shell_exec("openssl pkey -in {$this->temp_dir}/jwt_private.pem -pubout -out {$this->temp_dir}/jwt_public.pem");
-
-        $this->privateKey = sodium_crypto_sign_secretkey(
-            sodium_crypto_sign_seed_keypair(
-                file_get_contents("{$this->temp_dir}/jwt_private.binary")
-            )
-        );
-        unlink("{$this->temp_dir}/jwt_private.binary");
-
-        $this->publicKeyPem = trim(file_get_contents("{$this->temp_dir}/jwt_public.pem"));
-        $this->pubKeyBase64 = str_replace(["-----BEGIN PUBLIC KEY-----", "-----END PUBLIC KEY-----", "\n", "\r"], '', $this->publicKeyPem);
-
-        $this->key = InMemory::base64Encoded(
-            base64_encode($this->privateKey)
-        );
-    }
-
+    /**
+     * Generate a full-access / read-only token pair.
+     *
+     * @param  int|string  $databaseId   Database id or name (opaque to the token itself).
+     * @param  int|null    $userOrGroupId  Owner id (opaque to the token itself).
+     * @param  int         $tokenExpiration  Days the caller will advertise; 0 means never.
+     * @param  bool        $isGroup      Unused, kept for call-site compatibility.
+     * @return array{full_access_token: string, read_only_token: string}
+     */
     public function generateToken(
         int|string $databaseId,
         int|null $userOrGroupId = null,
         int $tokenExpiration = 0,
-        bool $isGroup = false
-    ): array|false {
-
-        $tokenExpiration = $tokenExpiration === 0 ? "100 years" : "{$tokenExpiration} days";
-
-        if (is_string($databaseId) && !is_numeric($databaseId)) {
-            $fullAccessToken = (new JwtFacade())->issue(
-                new Eddsa(),
-                $this->key,
-                static fn(
-                Builder $builder,
-                \DateTimeImmutable $issuedAt
-            ): Builder => $builder
-                    ->identifiedBy($databaseId)
-                    ->withClaim('id', $databaseId)
-                    ->withClaim('uid', $isGroup ? 'none' : $userOrGroupId)
-                    ->withClaim('gid', $isGroup ? $userOrGroupId : 'none')
-                    ->withHeader('is_group', $isGroup ? 'yes' : 'no')
-                    ->expiresAt(
-                        $issuedAt
-                            ->setTimezone(new \DateTimeZone(env('APP_TIMEZONE', 'UTC')))
-                            ->modify("+{$tokenExpiration}")
-                    )
-            );
-
-            $readOnlyToken = (new JwtFacade())->issue(
-                new Eddsa(),
-                $this->key,
-                static fn(
-                Builder $builder,
-                \DateTimeImmutable $issuedAt
-            ): Builder => $builder
-                    ->identifiedBy($databaseId)
-                    ->withClaim('id', $databaseId)
-                    ->withClaim('a', 'ro')
-                    ->withClaim('uid', $isGroup ? 'none' : $userOrGroupId)
-                    ->withClaim('gid', $isGroup ? $userOrGroupId : 'none')
-                    ->withHeader('is_group', $isGroup ? 'yes' : 'no')
-                    ->expiresAt(
-                        $issuedAt
-                            ->setTimezone(new \DateTimeZone(env('APP_TIMEZONE', 'UTC')))
-                            ->modify("+{$tokenExpiration}")
-                    )
-            );
-        } else {
-            $userDatabase = UserDatabase::select(['id', 'database_name', 'user_id'])->find($databaseId);
-
-            $fullAccessToken = (new JwtFacade())->issue(
-                new Eddsa(),
-                $this->key,
-                static fn(
-                Builder $builder,
-                \DateTimeImmutable $issuedAt
-            ): Builder => $builder
-                    ->identifiedBy($userDatabase->database_name)
-                    ->withClaim('id', $userDatabase->database_name)
-                    ->withClaim('uid', $isGroup ? 'none' : $userOrGroupId)
-                    ->withClaim('gid', $isGroup ? $userOrGroupId : 'none')
-                    ->withHeader('is_group', $isGroup ? 'yes' : 'no')
-                    ->expiresAt(
-                        $issuedAt
-                            ->setTimezone(new \DateTimeZone(env('APP_TIMEZONE', 'UTC')))
-                            ->modify("+{$tokenExpiration}")
-                    )
-            );
-
-            $readOnlyToken = (new JwtFacade())->issue(
-                new Eddsa(),
-                $this->key,
-                static fn(
-                Builder $builder,
-                \DateTimeImmutable $issuedAt
-            ): Builder => $builder
-                    ->identifiedBy($userDatabase->database_name)
-                    ->withClaim('id', $userDatabase->database_name)
-                    ->withClaim('a', 'ro')
-                    ->withClaim('uid', $isGroup ? 'none' : $userOrGroupId)
-                    ->withClaim('gid', $isGroup ? $userOrGroupId : 'none')
-                    ->withHeader('is_group', $isGroup ? 'yes' : 'no')
-                    ->expiresAt(
-                        $issuedAt
-                            ->setTimezone(new \DateTimeZone(env('APP_TIMEZONE', 'UTC')))
-                            ->modify("+{$tokenExpiration}")
-                    )
-            );
-        }
-
+        bool $isGroup = false,
+    ): array {
         return [
-            'full_access_token' => $fullAccessToken->toString(),
-            'read_only_token' => $readOnlyToken->toString(),
-            'expiration_day' => Str::of($tokenExpiration)->contains('days') ? Str::of($tokenExpiration)->replace(' days', '') : $tokenExpiration,
+            'full_access_token' => bin2hex(random_bytes(32)),
+            'read_only_token' => bin2hex(random_bytes(32)),
         ];
     }
 }

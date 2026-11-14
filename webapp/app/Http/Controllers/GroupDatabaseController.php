@@ -45,24 +45,28 @@ class GroupDatabaseController extends Controller
             'expiration' => 'required|integer|min:1|max:365'
         ]);
 
-        $tokenGenerator = (new DatabaseTokenGenerator())->generateToken(
+        $pair = $tokenGenerator->generateToken(
             $validated['name'],
             $validated['group_id'],
             $validated['expiration'],
             true
         );
 
-        DB::transaction(fn() => $group->tokens()->updateOrCreate(
+        $groupToken = DB::transaction(fn() => $group->tokens()->updateOrCreate(
             [
                 'group_id' => $validated['group_id'],
             ],
             [
                 'name' => $validated['name'],
-                'full_access_token' => $tokenGenerator['full_access_token'],
-                'read_only_token' => $tokenGenerator['read_only_token'],
+                'full_access_token' => hash('sha256', $pair['full_access_token']),
+                'read_only_token' => hash('sha256', $pair['read_only_token']),
                 'expiration_day' => $validated['expiration']
             ]
         ));
+
+        // Plaintext exists only in this response; the database stores hashes.
+        $groupToken->full_access_token = $pair['full_access_token'];
+        $groupToken->read_only_token = $pair['read_only_token'];
 
         $location = get_ip_location($request->ip());
 
@@ -79,7 +83,8 @@ class GroupDatabaseController extends Controller
         );
 
         return redirect()->back()->with([
-            'success' => 'Group token created successfully'
+            'success' => 'Group token created successfully',
+            'newGroupToken' => $groupToken,
         ]);
     }
 
