@@ -159,7 +159,15 @@ class TokenController extends Controller
 
     public function deleteToken(int $tokenId)
     {
-        UserDatabaseToken::where('id', $tokenId)->delete();
+        $token = UserDatabaseToken::find($tokenId);
+        abort_if(!$token, 404, 'Token not found');
+
+        $isOwn = (int) $token->user_id === (int) auth()->id();
+        $canManage = auth()->user()->hasPermission('manage-database-tokens')
+            || auth()->user()->hasPermission('manage-users');
+        abort_unless($isOwn || $canManage, 403, 'Unauthorized');
+
+        $token->delete();
 
         $location = get_ip_location(request()->ip());
 

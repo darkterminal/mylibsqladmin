@@ -70,8 +70,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::group(['prefix' => 'tokens'], function () {
         Route::post('create', [TokenController::class, 'createToken'])
+            ->middleware('permission:create-database-tokens')
             ->name('token.create');
         Route::delete('delete/{tokenId}', [TokenController::class, 'deleteToken'])
+            ->middleware('permission:delete-database-tokens')
             ->name('token.delete');
     });
 
@@ -85,8 +87,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('delete-database/{database}', [GroupDatabaseController::class, 'deleteDatabaseFromGroup'])
             ->name('group.delete-databases');
         Route::post('{group}/tokens', [GroupDatabaseController::class, 'createGroupToken'])
+            ->middleware('permission:create-group-tokens')
             ->name('group.token.create');
         Route::delete('{tokenId}/tokens', [GroupDatabaseController::class, 'deleteGroupToken'])
+            ->middleware('permission:delete-group-tokens')
             ->name('group.token.delete');
     });
 

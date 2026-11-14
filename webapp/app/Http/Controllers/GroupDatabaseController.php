@@ -45,7 +45,17 @@ class GroupDatabaseController extends Controller
             'expiration' => 'required|integer|min:1|max:365'
         ]);
 
-        $pair = $tokenGenerator->generateToken(
+        $groupId = (int) $validated['group_id'];
+        $inTeam = \DB::table('group_databases')
+            ->join('team_user', 'team_user.team_id', '=', 'group_databases.team_id')
+            ->where('group_databases.id', $groupId)
+            ->where('team_user.user_id', $request->user()->id)
+            ->exists();
+        $canManage = $request->user()->hasPermission('manage-group-tokens')
+            || $request->user()->hasPermission('manage-users');
+        abort_unless($inTeam || $canManage, 403, 'Unauthorized group token creation');
+
+        $pair = (new DatabaseTokenGenerator())->generateToken(
             $validated['name'],
             $validated['group_id'],
             $validated['expiration'],
@@ -91,6 +101,16 @@ class GroupDatabaseController extends Controller
     public function deleteGroupToken($tokenId)
     {
         $token = GroupDatabaseToken::where('id', $tokenId)->first();
+        abort_if(!$token, 404, 'Group token not found');
+
+        $inTeam = DB::table('group_databases')
+            ->join('team_user', 'team_user.team_id', '=', 'group_databases.team_id')
+            ->where('group_databases.id', $token->group_id)
+            ->where('team_user.user_id', auth()->id())
+            ->exists();
+        $canManage = auth()->user()->hasPermission('manage-group-tokens')
+            || auth()->user()->hasPermission('manage-users');
+        abort_unless($inTeam || $canManage, 403, 'Unauthorized');
 
         if (!$token) {
             return redirect()->back()->with([
