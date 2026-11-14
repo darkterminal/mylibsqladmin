@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\User;
+use App\Models\UserDatabase;
 
 class UserDatabasePolicy
 {
@@ -18,31 +19,40 @@ class UserDatabasePolicy
             $user->hasPermission('create-databases');
     }
 
-    public function update(User $user): bool
+    public function update(User $user, UserDatabase $database): bool
     {
-        return $user->hasPermission('manage-databases') ||
-            $user->hasPermission('update-databases');
+        return $this->ownerOrSuperAdmin($user, $database)
+            && ($user->hasPermission('manage-databases') ||
+                $user->hasPermission('update-databases'));
     }
 
-    public function delete(User $user): bool
+    public function delete(User $user, UserDatabase $database): bool
     {
-        return $user->hasPermission('manage-databases') ||
-            $user->hasPermission('delete-databases');
+        return $this->ownerOrSuperAdmin($user, $database)
+            && ($user->hasPermission('manage-databases') ||
+                $user->hasPermission('delete-databases'));
     }
 
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user): bool
+    public function restore(User $user, UserDatabase $database): bool
     {
-        return $user->hasRole('Super Admin');
+        return $this->ownerOrSuperAdmin($user, $database)
+            && $user->hasRole('Super Admin');
     }
 
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user): bool
+    public function forceDelete(User $user, UserDatabase $database): bool
     {
-        return $user->hasRole('Super Admin');
+        return $this->ownerOrSuperAdmin($user, $database)
+            && $user->hasRole('Super Admin');
+    }
+
+    private function ownerOrSuperAdmin(User $user, UserDatabase $database): bool
+    {
+        return $user->hasRole('Super Admin') || (int) $database->user_id === (int) $user->id;
     }
 }

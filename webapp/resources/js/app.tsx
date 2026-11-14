@@ -1,9 +1,14 @@
 import '../css/app.css';
 
 import { createInertiaApp } from '@inertiajs/react';
-import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
-import { createRoot } from 'react-dom/client';
 import { route as routeFn } from 'ziggy-js';
+
+import AppLayout from '@/layouts/app-layout';
+import AuthLayout from '@/layouts/auth-layout';
+import SettingsLayout from '@/layouts/settings/layout';
+import { Toaster } from '@/components/ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
+
 import { initializeTheme } from './hooks/use-appearance';
 import { OpenModalStateChangeProps, UserDatabaseTokenProps, type AppearanceStateChangeProps, type DatabaseStatsChangeProps } from './types';
 
@@ -56,19 +61,26 @@ declare global {
 
 const appName = import.meta.env.VITE_APP_NAME || 'MylibSQLAdmin';
 
-createInertiaApp({
-    title: (title) => `${title} - ${appName}`,
-    resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),
-    setup({ el, App, props }) {
-
-        const csrfMetaTag = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]');
-        if (csrfMetaTag) {
-            // @ts-ignore
-            props.initialPage.props.auth.csrfToken = csrfMetaTag.content;
+void createInertiaApp({
+    title: (title) => (title ? `${title} - ${appName}` : appName),
+    layout: (name) => {
+        switch (true) {
+            case name.startsWith('auth/'):
+                return AuthLayout;
+            case name.startsWith('settings/'):
+                return [AppLayout, SettingsLayout];
+            default:
+                return AppLayout;
         }
-
-        const root = createRoot(el);
-        root.render(<App {...props} />);
+    },
+    strictMode: true,
+    withApp(app) {
+        return (
+            <TooltipProvider delayDuration={0}>
+                {app}
+                <Toaster />
+            </TooltipProvider>
+        );
     },
     progress: {
         color: '#4B5563',

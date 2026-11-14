@@ -40,26 +40,33 @@ class RegisteredUserController extends Controller
         ]);
 
         $invitation = session('valid_invitation');
-        $role = Role::getRoleName($invitation->permission_level);
+
+        $roleName = $invitation
+            ? Role::getRoleName($invitation->permission_level)
+            : 'Member';
 
         $user = User::create([
             'name' => $validate['name'],
             'username' => $validate['username'],
             'email' => $validate['email'],
             'password' => Hash::make($validate['password']),
-            'role' => $invitation ? $role : 'Member'
         ]);
 
-        $role = Role::where('name', $role)->first();
-        $user->roles()->attach($role);
+        $role = Role::where('name', $roleName)->first();
 
-        if ($invitation) {
+        if ($role) {
+            $user->roles()->attach($role->id);
+        }
+
+        if ($invitation && strtolower((string) $invitation->email) === strtolower((string) $request->email)) {
             $user->teams()->attach($invitation->team_id, [
                 'permission_level' => $invitation->permission_level,
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
             $invitation->delete();
+            session()->forget('valid_invitation');
+        } else {
             session()->forget('valid_invitation');
         }
 

@@ -63,6 +63,7 @@ export interface FlashMessageProps {
     error?: string;
     newToken?: UserDatabaseTokenProps;
     newTeam?: number | null;
+    newGroupToken?: GroupDatabaseTokenProps;
     [key: string]: unknown;
 }
 
@@ -132,7 +133,7 @@ export interface QueriesInMatrictsProps {
     created_at: number;
     count: number;
     stats: QueriesInMatrictsStatsProps[];
-    elapsed: any;
+    elapsed: unknown;
 }
 
 export interface QueryMetrics {
@@ -221,10 +222,11 @@ export interface DatabaseInGroupProps {
 export interface GroupDatabaseTokenProps {
     id: number;
     group_id: number;
-    database_id: number;
+    database_id?: number;
     name: string;
     full_access_token: string;
     read_only_token: string;
+    fingerprint?: string;
     expiration_day: number;
     created_at: string
 }

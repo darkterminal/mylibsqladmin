@@ -2,8 +2,8 @@
 
 $config = [
     "url" => "file:./database.db",
-    "authToken" => "eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSIsImlzX2dyb3VwIjoieWVzIn0.eyJpYXQiOjE3NDI0ODc5MTYsIm5iZiI6MTc0MjQ4NzkxNiwiZXhwIjoxNzQ1MDc5OTE2LCJqdGkiOiJ0ZXN0aW5nIGdyb3VwIHRva2VuIiwiaWQiOiJ0ZXN0aW5nIGdyb3VwIHRva2VuIiwidWlkIjoibm9uZSIsImdpZCI6MX0.2mtRl1307LQaASJBmtJ9GjLQCNYG2MDA5G_-xuhzFJ9rLxiVbV4viVLjxjx7imEyLMp62uwwnbyYPTWWfCnVAA",
-    "syncUrl" => "http://db-testing.localhost:8080",
+    "authToken" => getenv('LIBSQL_AUTH_TOKEN') ?: die('Set LIBSQL_AUTH_TOKEN in the environment first.'),
+    "syncUrl" => getenv('LIBSQL_SYNC_URL') ?: 'http://db-testing.localhost:8080',
 ];
 
 $db = new LibSQL($config);

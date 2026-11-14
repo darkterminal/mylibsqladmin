@@ -21,9 +21,13 @@ class SqldService
                 $host = env('LIBSQL_LOCAL_INSTANCE') === true ? env('LIBSQL_HOST') : $host;
                 $port = config('mylibsqladmin.libsql.api.port');
 
-                return "http://{$host}" . ($port === null ? '' : ":{$port}");
+                $scheme = filter_var(env('LIBSQL_API_USE_HTTPS', false), FILTER_VALIDATE_BOOLEAN) ? 'https' : 'http';
+
+                return "{$scheme}://{$host}" . ($port === null ? '' : ":{$port}");
             case 'bridge':
-                return 'http://' . config('mylibsqladmin.bridge.host') . ':' . config('mylibsqladmin.bridge.port');
+                $scheme = filter_var(env('LIBSQL_API_USE_HTTPS', false), FILTER_VALIDATE_BOOLEAN) ? 'https' : 'http';
+
+                return $scheme . '://' . config('mylibsqladmin.bridge.host') . ':' . config('mylibsqladmin.bridge.port');
             default:
                 return false;
         }
@@ -50,7 +54,7 @@ class SqldService
             ? UserDatabase::where('user_id', $userId)->get()->toArray()
             : [];
 
-        logger()->debug("Returning databases: {$userId}" . json_encode($result));
+        logger()->debug("Returning databases: {$userId} (count=" . count($result) . ")");
 
         return $result;
     }
@@ -83,13 +87,16 @@ class SqldService
         if ($allMetrics->successful()) {
             logger()->debug("Metrics fetch successful, parsing response");
             $allDatabases = self::parseMetricsResponse($allMetrics->body());
-            logger()->debug("Fetched databases: " . json_encode($allDatabases));
+            logger()->debug("Fetched databases: " . count($allDatabases) . " entries");
 
             if (empty($allDatabases)) {
                 logger()->debug("No databases found, performing health checks");
-                $userDatabases = UserDatabase::where('user_id', auth()->user()->id)
-                    ->whereNotIn('database_name', ['default'])
-                    ->get();
+                $currentUserId = auth()->user()?->id;
+                $userDatabases = $currentUserId === null
+                    ? collect()
+                    : UserDatabase::where('user_id', $currentUserId)
+                        ->whereNotIn('database_name', ['default'])
+                        ->get();
 
                 $retryMetrics = self::performHealthChecks($host, $request, $userDatabases);
                 if ($retryMetrics->successful()) {
@@ -120,7 +127,7 @@ class SqldService
                 ->timeout(3)
                 ->post("{$host}/v2/pipeline", $pipelineRequest);
         } catch (\Exception $e) {
-            logger()->error($e->getMessage());
+            logger()->error('internal error', ['file' => basename(__FILE__)]);
         }
 
         return $request->retry(3, 100)

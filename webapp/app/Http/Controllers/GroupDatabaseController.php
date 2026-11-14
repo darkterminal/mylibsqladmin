@@ -45,24 +45,38 @@ class GroupDatabaseController extends Controller
             'expiration' => 'required|integer|min:1|max:365'
         ]);
 
-        $tokenGenerator = (new DatabaseTokenGenerator())->generateToken(
+        $groupId = (int) $validated['group_id'];
+        $inTeam = \DB::table('group_databases')
+            ->join('team_user', 'team_user.team_id', '=', 'group_databases.team_id')
+            ->where('group_databases.id', $groupId)
+            ->where('team_user.user_id', $request->user()->id)
+            ->exists();
+        $canManage = $request->user()->hasPermission('manage-group-tokens')
+            || $request->user()->hasPermission('manage-users');
+        abort_unless($inTeam || $canManage, 403, 'Unauthorized group token creation');
+
+        $pair = (new DatabaseTokenGenerator())->generateToken(
             $validated['name'],
             $validated['group_id'],
             $validated['expiration'],
             true
         );
 
-        DB::transaction(fn() => $group->tokens()->updateOrCreate(
+        $groupToken = DB::transaction(fn() => $group->tokens()->updateOrCreate(
             [
                 'group_id' => $validated['group_id'],
             ],
             [
                 'name' => $validated['name'],
-                'full_access_token' => $tokenGenerator['full_access_token'],
-                'read_only_token' => $tokenGenerator['read_only_token'],
+                'full_access_token' => hash('sha256', $pair['full_access_token']),
+                'read_only_token' => hash('sha256', $pair['read_only_token']),
                 'expiration_day' => $validated['expiration']
             ]
         ));
+
+        // Plaintext exists only in this response; the database stores hashes.
+        $groupToken->full_access_token = $pair['full_access_token'];
+        $groupToken->read_only_token = $pair['read_only_token'];
 
         $location = get_ip_location($request->ip());
 
@@ -79,13 +93,24 @@ class GroupDatabaseController extends Controller
         );
 
         return redirect()->back()->with([
-            'success' => 'Group token created successfully'
+            'success' => 'Group token created successfully',
+            'newGroupToken' => $groupToken,
         ]);
     }
 
     public function deleteGroupToken($tokenId)
     {
         $token = GroupDatabaseToken::where('id', $tokenId)->first();
+        abort_if(!$token, 404, 'Group token not found');
+
+        $inTeam = DB::table('group_databases')
+            ->join('team_user', 'team_user.team_id', '=', 'group_databases.team_id')
+            ->where('group_databases.id', $token->group_id)
+            ->where('team_user.user_id', auth()->id())
+            ->exists();
+        $canManage = auth()->user()->hasPermission('manage-group-tokens')
+            || auth()->user()->hasPermission('manage-users');
+        abort_unless($inTeam || $canManage, 403, 'Unauthorized');
 
         if (!$token) {
             return redirect()->back()->with([
@@ -188,7 +213,7 @@ class GroupDatabaseController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Group creation failed: ' . $e->getMessage()
+                'message' => 'Group creation failed'
             ], 500);
         }
     }
@@ -345,26 +370,29 @@ class GroupDatabaseController extends Controller
 
     public function deleteDatabaseFromGroup(UserDatabase $database)
     {
-        if (!SqldService::archiveDatabase($database->database_name)) {
-            return redirect()->back()->with(['error' => 'Database deletion failed']);
-        }
+        // "Remove from group" means detach the pivot row. It must never
+        // archive/delete the database itself.
+        $removed = DB::table('group_database_members')
+            ->where('database_id', $database->id)
+            ->delete();
 
         $location = get_ip_location(request()->ip());
 
         log_user_activity(
             auth()->user(),
             ActivityType::GROUP_DATABASE_UPDATE,
-            "Group update from " . request()->ip(),
+            "Database {$database->database_name} removed from group(s) from " . request()->ip(),
             [
                 'ip' => request()->ip(),
                 'device' => request()->userAgent(),
                 'country' => $location['country'],
                 'city' => $location['city'],
+                'pivot_rows_removed' => $removed,
             ]
         );
 
         return redirect()->back()->with([
-            'success' => 'Database removed successfully'
+            'success' => 'Database removed from group successfully'
         ]);
     }
 }

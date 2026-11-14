@@ -132,6 +132,26 @@ export function ModalCreateToken({
                         Enter the name of the database token you want to create.
                     </DialogDescription>
                 </DialogHeader>
+                {flash.newToken && (
+                    <div className="rounded-md border border-amber-500/50 bg-amber-50/30 p-3 dark:bg-amber-950/30">
+                        <p className="mb-2 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                            Token created — copy it now. It will not be shown again after this message.
+                        </p>
+                        <code className="block max-w-full break-all rounded bg-muted px-2 py-1 font-mono text-[10px]">
+                            {flash.newToken.full_access_token}
+                        </code>
+                        <div className="mt-2">
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => navigator.clipboard?.writeText(flash.newToken!.full_access_token)}
+                            >
+                                Copy Full-Access Token
+                            </Button>
+                        </div>
+                    </div>
+                )}
                 <form onSubmit={submit} autoComplete="off" className="flex flex-col gap-4">
                     <div className="w-full items-center gap-1.5">
                         <Select value={selectedDatabase} onValueChange={handleSelectChange}>

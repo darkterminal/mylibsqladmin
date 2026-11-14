@@ -2,7 +2,9 @@
 
 namespace App\Policies;
 
+use App\Models\GroupDatabase;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class GroupDatabasePolicy
 {
@@ -18,16 +20,18 @@ class GroupDatabasePolicy
             $user->hasPermission('create-groups');
     }
 
-    public function update(User $user): bool
+    public function update(User $user, GroupDatabase $group): bool
     {
-        return $user->hasPermission('manage-groups') ||
-            $user->hasPermission('update-groups');
+        return $this->sameTeamOrSuperAdmin($user, (int) $group->team_id)
+            && ($user->hasPermission('manage-groups') ||
+                $user->hasPermission('update-groups'));
     }
 
-    public function delete(User $user): bool
+    public function delete(User $user, GroupDatabase $group): bool
     {
-        return $user->hasPermission('manage-groups') ||
-            $user->hasPermission('delete-groups');
+        return $this->sameTeamOrSuperAdmin($user, (int) $group->team_id)
+            && ($user->hasPermission('manage-groups') ||
+                $user->hasPermission('delete-groups'));
     }
 
     /**
@@ -44,5 +48,17 @@ class GroupDatabasePolicy
     public function forceDelete(User $user): bool
     {
         return $user->hasRole('Super Admin');
+    }
+
+    private function sameTeamOrSuperAdmin(User $user, int $teamId): bool
+    {
+        if ($user->hasRole('Super Admin')) {
+            return true;
+        }
+
+        return DB::table('team_user')
+            ->where('team_id', $teamId)
+            ->where('user_id', $user->id)
+            ->exists();
     }
 }

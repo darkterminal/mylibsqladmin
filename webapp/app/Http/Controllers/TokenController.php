@@ -97,35 +97,41 @@ class TokenController extends Controller
 
         $user = User::find($validated['userId']);
 
-        $tokenGenerator = (new DatabaseTokenGenerator())->generateToken(
+        $pair = $tokenGenerator->generateToken(
             $validated['databaseId'],
             $validated['userId'],
             $validated['expiration']
         );
 
-        if (!$tokenGenerator) {
+        if (!$pair) {
             return redirect()->back()
                 ->with('error', 'Failed to generate tokens');
         }
 
+        // The database stores only SHA-256 hashes of the bearer tokens.
         $formData = [
             'user_id' => $validated['userId'],
             'database_id' => $validated['databaseId'],
             'name' => "Token for {$user->name}",
-            'full_access_token' => $tokenGenerator['full_access_token'],
-            'read_only_token' => $tokenGenerator['read_only_token'],
+            'full_access_token' => hash('sha256', $pair['full_access_token']),
+            'read_only_token' => hash('sha256', $pair['read_only_token']),
             'expiration_day' => $validated['expiration'],
             'created_by' => auth()->id()
         ];
 
         try {
-            UserDatabaseToken::updateOrCreate(
+            $tokenModel = UserDatabaseToken::updateOrCreate(
                 [
                     'user_id' => $validated['userId'],
                     'database_id' => $validated['databaseId'],
                 ],
                 $formData
             );
+
+            // Plaintext exists only in this response; the session carries it
+            // to the page once — later reads show only the stored hashes.
+            $tokenModel->full_access_token = $pair['full_access_token'];
+            $tokenModel->read_only_token = $pair['read_only_token'];
 
             $location = get_ip_location($request->ip());
 
@@ -143,17 +149,25 @@ class TokenController extends Controller
 
             return redirect()->back()->with([
                 'success' => 'Token created/updated successfully',
-                'newToken' => UserDatabaseToken::latest()->first(),
+                'newToken' => $tokenModel,
                 'databaseGroups' => GroupDatabase::databaseGroups(auth()->id(), session('team_databases')['team_id'] ?? null),
             ]);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to save token: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to save token');
         }
     }
 
     public function deleteToken(int $tokenId)
     {
-        UserDatabaseToken::where('id', $tokenId)->delete();
+        $token = UserDatabaseToken::find($tokenId);
+        abort_if(!$token, 404, 'Token not found');
+
+        $isOwn = (int) $token->user_id === (int) auth()->id();
+        $canManage = auth()->user()->hasPermission('manage-database-tokens')
+            || auth()->user()->hasPermission('manage-users');
+        abort_unless($isOwn || $canManage, 403, 'Unauthorized');
+
+        $token->delete();
 
         $location = get_ip_location(request()->ip());
 

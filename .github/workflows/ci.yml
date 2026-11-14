@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main, upgrade/*]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: pest + types + build
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_sqlite, mbstring, intl, dom, xml, xmlwriter, zip, gd, bcmath
+          coverage: none
+          tools: composer:v2
+
+      - name: Validate composer.json
+        run: composer validate --strict
+        working-directory: webapp
+
+      - name: Install dependencies (Composer)
+        run: composer install --no-interaction --prefer-dist --no-progress
+        working-directory: webapp
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: webapp/package-lock.json
+
+      - name: Install dependencies (npm)
+        run: npm ci --no-audit --no-fund
+        working-directory: webapp
+
+      - name: TypeScript
+        run: npm run types
+        working-directory: webapp
+
+      - name: Build assets
+        run: npm run build
+        working-directory: webapp
+
+      - name: Pest
+        run: vendor/bin/pest
+        working-directory: webapp
+        env:
+          APP_KEY: base64:yq1wacvqzu3GU5D+NqtnqfQ8rudeNCLt1yg4xLCDYmw=
+
+      - name: Composer audit
+        run: composer audit --locked || true
+        working-directory: webapp

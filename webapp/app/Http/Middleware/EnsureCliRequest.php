@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -17,21 +16,16 @@ class EnsureCliRequest
             ], 403);
         }
 
-        // Get user identifier from header
-        $userIdentifier = $request->header('X-User-Identifier');
+        // Identity comes from the Sanctum-authenticated guard, never from a
+        // client-supplied header. A caller must be logged in AND hold the
+        // Super Admin role to reach CLI admin routes.
+        $user = $request->user();
 
-        // Find requesting user
-        $requestingUser = User::where('username', $userIdentifier)
-            ->orWhere('id', $userIdentifier)->first();
-
-        if (!$requestingUser->exists()) {
-            return response()->json(['error' => 'User not found'], 404);
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
         }
 
-        logger()->debug("Role of requesting user is superadmin: " . $requestingUser->hasRole('Super Admin'));
-
-        // Verify user is superadmin
-        if (!$requestingUser->hasRole('Super Admin')) {
+        if (!$user->hasRole('Super Admin')) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 

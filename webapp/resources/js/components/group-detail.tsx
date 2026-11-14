@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { triggerEvent } from "@/hooks/use-custom-event"
 import { apiFetch } from "@/lib/api"
 import { usePermission } from "@/lib/auth"
-import { calculateExpirationDate } from "@/lib/utils"
+import { calculateExpirationDate, isTokenHash } from "@/lib/utils"
 import { DatabaseInGroupProps, GroupDatabaseProps, SharedData } from "@/types"
 import { router, usePage } from "@inertiajs/react"
 import { CirclePlusIcon, DatabaseIcon, KeyIcon, PlusCircleIcon, Server } from "lucide-react"
@@ -30,7 +30,8 @@ export default function GroupDetail({
     availableDatabases: DatabaseInGroupProps[]
 }) {
     const { can } = usePermission();
-    const { csrfToken, databases, groups: databaseGroups } = usePage<SharedData>().props;
+    const { csrfToken, databases, groups: databaseGroups, flash } = usePage<SharedData>().props;
+    const newGroupToken = (flash as { newGroupToken?: import('@/types').GroupDatabaseTokenProps }).newGroupToken;
     const groupedDatabases = (databaseGroups || [])
         .map?.(group => ({
             label: group.name,
@@ -212,6 +213,28 @@ export default function GroupDetail({
                     </div>
                 </div>
             </CardHeader>
+            {newGroupToken && (
+                <CardContent>
+                    <div className="rounded-md border border-amber-500/50 bg-amber-50/30 p-3 dark:bg-amber-950/30">
+                        <p className="mb-2 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                            Group token created — copy it now. It will not be shown again after this message.
+                        </p>
+                        <code className="block max-w-full break-all rounded bg-muted px-2 py-1 font-mono text-[10px]">
+                            {newGroupToken.full_access_token}
+                        </code>
+                        <div className="mt-2">
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => navigator.clipboard?.writeText(newGroupToken.full_access_token)}
+                            >
+                                Copy Full-Access Group Token
+                            </Button>
+                        </div>
+                    </div>
+                </CardContent>
+            )}
             <CardContent>
                 <h3 className="text-sm font-medium mb-2">Databases in this group:</h3>
                 <ScrollArea className="h-[700px]">

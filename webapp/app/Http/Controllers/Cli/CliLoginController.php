@@ -20,7 +20,8 @@ class CliLoginController extends Controller
         $user = User::where('username', $validated['username'])->first();
 
         // Verify credentials
-        if (!$user || !Hash::check((string) $validated['password'], (string) $user->password)) {
+        if (!$user || !Hash::check((string) $validated['password'], (string) $user->password)
+            || !$user->is_active) {
             throw ValidationException::withMessages([
                 'username' => ['The provided credentials are incorrect.'],
             ]);
