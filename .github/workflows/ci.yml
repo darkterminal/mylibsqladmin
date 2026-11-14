@@ -38,7 +38,7 @@ jobs:
         run: vendor/bin/pest
         working-directory: webapp
         env:
-          APP_KEY: base64:Zm9vYmFyMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=
+          APP_KEY: base64:yq1wacvqzu3GU5D+NqtnqfQ8rudeNCLt1yg4xLCDYmw=
 
       - name: Composer audit
         run: composer audit --locked || true
