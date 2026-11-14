@@ -58,13 +58,15 @@ class RegisteredUserController extends Controller
             $user->roles()->attach($role->id);
         }
 
-        if ($invitation) {
+        if ($invitation && strtolower((string) $invitation->email) === strtolower((string) $request->email)) {
             $user->teams()->attach($invitation->team_id, [
                 'permission_level' => $invitation->permission_level,
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
             $invitation->delete();
+            session()->forget('valid_invitation');
+        } else {
             session()->forget('valid_invitation');
         }
 

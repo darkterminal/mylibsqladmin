@@ -498,15 +498,27 @@ class TeamController extends Controller
         ]);
     }
 
-    public function acceptInvite($token)
+    public function acceptInvite(Request $request, $token)
     {
         $invitation = Invitation::where('token', $token)
             ->where('expires_at', '>', now())
             ->firstOrFail();
 
-        // Handle authenticated users
+        // An invitation may only be claimed by someone who owns the email it
+        // was issued to. Authenticated users must match their session email;
+        // unauthenticated users get the invitation associated with the email
+        // on record, never with a different one.
+        $invitedEmail = strtolower((string) $invitation->email);
+
         if (auth()->check()) {
-            $this->attachToTeam(auth()->user(), $invitation);
+            $currentEmail = strtolower((string) $request->user()->email);
+
+            if ($currentEmail !== $invitedEmail) {
+                return redirect()->route('dashboard.teams')
+                    ->with('error', 'This invitation was issued to a different email address.');
+            }
+
+            $this->attachToTeam($request->user(), $invitation);
             $invitation->delete();
             return redirect()->route('dashboard.teams')
                 ->with('success', 'Successfully joined the team');
