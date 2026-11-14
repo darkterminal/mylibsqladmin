@@ -274,6 +274,11 @@ class UserController extends Controller
     {
         $name = $user->name;
         $user->deactivate();
+        // Revoke outstanding Sanctum/API tokens so deactivated users cannot
+        // continue using CLI or token-based access. Web sessions persist until
+        // next sign-in; the auth middleware below blocks new sign-ins for
+        // inactive users.
+        $user->tokens()->delete();
 
         $location = get_ip_location(request()->ip());
 

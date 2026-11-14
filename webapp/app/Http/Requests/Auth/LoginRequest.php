@@ -51,6 +51,15 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        if (!(Auth::user()?->is_active)) {
+            Auth::logout();
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'username' => 'Your account has been deactivated.',
+            ]);
+        }
+
         Team::setTeamDatabases(Auth::user()->id, $this->input('currentTeamId'));
 
         $location = get_ip_location($this->ip());
