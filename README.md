@@ -67,12 +67,16 @@ curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/darkterm
 
 or read the [Manual Installation Guides](/docs/README.md)
 
-### Default Credentials
+### Bootstrap
 
--   Super Admin = username: `superadmin` password: `superadmin12345`
--   Manager = username: `manager` password: `manager12345`
--   Database Maintainer = username: `database-maintainer` password: `database-maintainer12345`
--   Member = username: `member` password: `member12345`
+Fresh production installs create **no** default accounts. Bootstrap your super-admin with:
+
+```bash
+docker compose exec webui php artisan db:seed --class=BootstrapSeeder
+```
+
+If `LIBSQL_SEED_DEMO_USERS=true` is set in the environment, demo users are created for local testing only — **never set it in production**.
+
 
 ## Contributors
 

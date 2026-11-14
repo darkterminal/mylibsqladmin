@@ -43,7 +43,7 @@ services:
         restart: unless-stopped
         environment:
             - APP_TIMEZONE=Asia/Jakarta
-            - APP_KEY=base64:/BzpAudtYyAGmuxBNn0PISYvyj0ntEEtoF4MlRPpVbw=
+            - APP_KEY=base64:REPLACE_WITH_YOUR_OWN_KEY # generate with: openssl rand -base64 32
             - DB_CONNECTION=libsql
             - SESSION_DRIVER=file
             - APP_NAME=MyLibSQLAdmin
@@ -73,7 +73,7 @@ services:
         restart: unless-stopped
         environment:
             - APP_TIMEZONE=Asia/Jakarta
-            - APP_KEY=base64:P7ExlKQb1odguP9Sv713EPxM/qkcbCkXuIXaAp24uMo=
+            - APP_KEY=base64:REPLACE_WITH_YOUR_OWN_KEY # generate with: openssl rand -base64 32
             - DB_CONNECTION=libsql
             - SESSION_DRIVER=file
             - APP_NAME=MyLibSQLAdmin
@@ -137,7 +137,15 @@ docker compose up -d
 
 ### Default Credentials
 
--   Super Admin = username: `superadmin` password: `superadmin12345`
--   Manager = username: `manager` password: `manager12345`
--   Database Maintainer = username: `database-maintainer` password: `database-maintainer12345`
--   Member = username: `member` password: `member`
+Fresh production installs create **no** default user with a documented password.
+Bootstrap your super-admin with:
+
+```bash
+docker compose exec webui php artisan db:seed --class=BootstrapSeeder
+```
+
+If `LIBSQL_SEED_DEMO_USERS=true` is set in the environment, the demo users are
+created for local testing only — **never set it in production**. Credentials
+are generated per install and written to `storage/app/bootstrap-credentials.txt`
+by the entrypoint on first boot (re-read it once, then delete it).
+
