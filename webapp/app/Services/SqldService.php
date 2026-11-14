@@ -50,7 +50,7 @@ class SqldService
             ? UserDatabase::where('user_id', $userId)->get()->toArray()
             : [];
 
-        logger()->debug("Returning databases: {$userId}" . json_encode($result));
+        logger()->debug("Returning databases: {$userId} (count=" . count($result) . ")");
 
         return $result;
     }
@@ -83,7 +83,7 @@ class SqldService
         if ($allMetrics->successful()) {
             logger()->debug("Metrics fetch successful, parsing response");
             $allDatabases = self::parseMetricsResponse($allMetrics->body());
-            logger()->debug("Fetched databases: " . json_encode($allDatabases));
+            logger()->debug("Fetched databases: " . count($allDatabases) . " entries");
 
             if (empty($allDatabases)) {
                 logger()->debug("No databases found, performing health checks");
@@ -123,7 +123,7 @@ class SqldService
                 ->timeout(3)
                 ->post("{$host}/v2/pipeline", $pipelineRequest);
         } catch (\Exception $e) {
-            logger()->error($e->getMessage());
+            logger()->error('internal error', ['file' => basename(__FILE__)]);
         }
 
         return $request->retry(3, 100)

@@ -153,7 +153,7 @@ class TokenController extends Controller
                 'databaseGroups' => GroupDatabase::databaseGroups(auth()->id(), session('team_databases')['team_id'] ?? null),
             ]);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to save token: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to save token');
         }
     }
 

@@ -213,7 +213,7 @@ class GroupDatabaseController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Group creation failed: ' . $e->getMessage()
+                'message' => 'Group creation failed'
             ], 500);
         }
     }

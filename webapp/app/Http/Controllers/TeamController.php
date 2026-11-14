@@ -187,7 +187,7 @@ class TeamController extends Controller
                 'newTeam' => $team->id
             ]);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage());
+            return redirect()->back()->with('error', 'Internal server error');
         }
     }
 
@@ -227,7 +227,7 @@ class TeamController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => 'Internal server error'
             ], $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ? 404 : 500);
         }
     }
@@ -262,7 +262,7 @@ class TeamController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => 'Internal server error'
             ], $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ? 404 : 500);
         }
     }
@@ -370,7 +370,7 @@ class TeamController extends Controller
 
             return redirect()->back()->with('success', "Team {$team->name} restored successfully");
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage());
+            return redirect()->back()->with('error', 'Internal server error');
         }
     }
 
@@ -402,7 +402,7 @@ class TeamController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => 'Internal server error'
             ], $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ? 404 : 500);
         }
     }
@@ -423,7 +423,7 @@ class TeamController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => 'Internal server error'
             ], $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ? 404 : 500);
         }
     }
@@ -595,7 +595,7 @@ class TeamController extends Controller
 
             return redirect()->back()->with('success', 'Role updated successfully.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage());
+            return redirect()->back()->with('error', 'Internal server error');
         }
     }
 }

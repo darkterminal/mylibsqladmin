@@ -116,12 +116,15 @@ class SubdomainValidationController extends Controller
             return 'none';
         }
 
-        if (env('APP_DEBUG') === true) {
+        if (config('app.debug') === true) {
             logger()->debug('Access level', [
                 'subdomain' => $subdomain,
-                'full_access_token' => $databaseToken->full_access_token,
-                'read_only_token' => $databaseToken->read_only_token,
-                'access_level' => $databaseToken->full_access_token === $token ? 'full-access' : 'read-only'
+                'token_fingerprint' => substr((string) $token, 0, 8),
+                'access_level' => match (true) {
+                    hash_equals((string) $databaseToken->full_access_token, hash('sha256', $token)) => 'full-access',
+                    hash_equals((string) $databaseToken->read_only_token, hash('sha256', $token)) => 'read-only',
+                    default => 'none',
+                }
             ]);
         }
 
