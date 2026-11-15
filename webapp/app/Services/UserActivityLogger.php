@@ -35,7 +35,7 @@ class UserActivityLogger
      */
     public static function getActivitiesForUser(
         User $user,
-        int $limit = null
+        ?int $limit = null
     ): Collection {
         $query = UserActivityLog::whereUserId($user->id)
             ->with('user')
@@ -54,7 +54,7 @@ class UserActivityLogger
     public static function getActivitiesByType(
         User $user,
         string $type,
-        int $limit = null
+        ?int $limit = null
     ): Collection {
         $query = UserActivityLog::where([
             'user_id' => $user->id,
