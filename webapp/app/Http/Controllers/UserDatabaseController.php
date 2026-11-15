@@ -88,12 +88,18 @@ class UserDatabaseController extends Controller
 
     public function grantUserDatabase(Request $request)
     {
-        try {
-            $validated = $request->validate([
-                'userId' => 'required|integer|exists:users,id',
-                'databaseId' => 'required|integer|exists:user_databases,id',
-            ]);
+        $validated = $request->validate([
+            'userId' => 'required|integer|exists:users,id',
+            'databaseId' => 'required|integer|exists:user_databases,id',
+        ]);
 
+        $database = UserDatabase::findOrFail($validated['databaseId']);
+
+        if (!$request->user()->can('delete', $database)) {
+            abort(403);
+        }
+
+        try {
             GrantedDatabase::updateOrCreate(
                 [
                     'user_id' => $validated['userId'],
