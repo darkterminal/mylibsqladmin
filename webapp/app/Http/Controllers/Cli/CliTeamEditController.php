@@ -41,7 +41,7 @@ class CliTeamEditController extends Controller
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => 'error',
-                'message' => $th->getMessage(),
+                'message' => 'Internal server error',
                 'data' => [],
             ]);
         }

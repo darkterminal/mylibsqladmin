@@ -34,7 +34,7 @@ class CliTeamFinderController extends Controller
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => 'error',
-                'message' => $th->getMessage(),
+                'message' => 'Internal server error',
                 'data' => []
             ], 500);
         }

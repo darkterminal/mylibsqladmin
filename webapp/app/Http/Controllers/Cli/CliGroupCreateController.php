@@ -22,8 +22,8 @@ class CliGroupCreateController extends Controller
                 'name' => 'required|string'
             ]);
 
-            $userIdentifier = $request->header('X-User-Identifier');
-            $userId = User::where('username', $userIdentifier)->first()->id;
+            // Identity comes from the Sanctum session, not from client headers.
+            $userId = $request->user()->id;
 
             DB::transaction(function () use ($validated, $userId) {
                 $group = GroupDatabase::create([
@@ -52,7 +52,7 @@ class CliGroupCreateController extends Controller
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => true,
-                'message' => $th->getMessage(),
+                'message' => 'Internal server error',
                 'data' => []
             ], 500);
         }

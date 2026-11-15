@@ -40,7 +40,7 @@ class CliLoginController extends Controller
                 'token' => $token->plainTextToken,
                 'expires_at' => $token->accessToken->expires_at->toIso8601String(),
                 'expires_in' => $token->accessToken->expires_at->diffInSeconds(now()),
-                'app_url' => env('APP_URL')
+                'app_url' => config('app.url')
             ]
         ]);
     }

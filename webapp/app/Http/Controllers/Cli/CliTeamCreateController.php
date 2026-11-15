@@ -15,9 +15,8 @@ class CliTeamCreateController extends Controller
     public function __invoke(Request $request)
     {
         try {
-            $userIdentifier = $request->header('X-User-Identifier');
-
-            $user = User::where('username', $userIdentifier)->first();
+            // Identity comes from the Sanctum session, not from client headers.
+            $user = $request->user();
 
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
@@ -49,7 +48,7 @@ class CliTeamCreateController extends Controller
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => 'error',
-                'message' => $th->getMessage(),
+                'message' => 'Internal server error',
                 'data' => []
             ], 500);
         }

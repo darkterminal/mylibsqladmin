@@ -16,14 +16,11 @@ class CliGroupDeleteController extends Controller
     public function __invoke(Request $request, $groupId)
     {
         try {
-            $userIdentifier = $request->header('X-User-Identifier');
+            $userId = $request->user()->id;
 
-            $userId = User::where('username', $userIdentifier)->first()->id;
-
-            logger()->debug('Deleting group: ', [
+            logger()->debug('Deleting group', [
                 'group_id' => $groupId,
                 'user_id' => $userId,
-                'user_identifier' => $userIdentifier
             ]);
 
             $group = GroupDatabase::with(['members', 'tokens'])
@@ -45,7 +42,7 @@ class CliGroupDeleteController extends Controller
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
-                'message' => $th->getMessage(),
+                'message' => 'Internal server error',
                 'data' => null
             ], 500);
         }
