@@ -99,6 +99,46 @@ class Team extends Model
         return $this->getPermissionLevel($user) === 'super-admin';
     }
 
+    /**
+     * The team_databases session payload, guaranteeing its expires_at is
+     * enforced. A payload past its TTL (or missing) is transparently
+     * refreshed; fresh payloads cost zero queries.
+     */
+    public static function currentTeamDatabases(): array
+    {
+        $payload = session('team_databases');
+
+        if (!is_array($payload) || !self::teamDatabasesPayloadIsFresh($payload)) {
+            if (auth()->id()) {
+                self::setTeamDatabases((int) auth()->id(), $payload['team_id'] ?? null);
+                $payload = session('team_databases');
+            }
+        }
+
+        return is_array($payload)
+            ? $payload
+            : ['team_id' => null, 'databases' => [], 'groups' => [], 'expires_at' => now()->addHours(2)];
+    }
+
+    private static function teamDatabasesPayloadIsFresh(array $payload): bool
+    {
+        $expiresAt = $payload['expires_at'] ?? null;
+
+        if ($expiresAt instanceof \DateTimeInterface) {
+            return $expiresAt > now();
+        }
+
+        if (is_string($expiresAt)) {
+            try {
+                return \Illuminate\Support\Carbon::parse($expiresAt)->isFuture();
+            } catch (\Throwable) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
     public static function setTeamDatabases(int $userId, int|string|null $teamId = null)
     {
         if ($teamId === null || $teamId === 'null' || $teamId === '') {

@@ -6,6 +6,7 @@ use App\ActivityType;
 use App\Models\GroupDatabase;
 use App\Models\User;
 use App\Models\UserDatabase;
+use App\Models\Team;
 use App\Models\UserDatabaseToken;
 use App\Services\DatabaseTokenGenerator;
 use Illuminate\Http\Request;
@@ -156,7 +157,7 @@ class TokenController extends Controller
             return redirect()->back()->with([
                 'success' => 'Token created/updated successfully',
                 'newToken' => $tokenModel,
-                'databaseGroups' => GroupDatabase::databaseGroups(auth()->id(), session('team_databases')['team_id'] ?? null),
+                'databaseGroups' => GroupDatabase::databaseGroups(auth()->id(), Team::currentTeamDatabases()['team_id'] ?? null),
             ]);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to save token');
