@@ -145,18 +145,12 @@ class TokenController extends Controller
             $tokenModel->full_access_token = $pair['full_access_token'];
             $tokenModel->read_only_token = $pair['read_only_token'];
 
-            $location = get_ip_location($request->ip());
 
             log_user_activity(
                 auth()->user(),
                 ActivityType::DATABASE_TOKEN_CREATE,
                 "Token created from " . $request->ip(),
-                [
-                    'ip' => $request->ip(),
-                    'device' => $request->userAgent(),
-                    'country' => $location['country'],
-                    'city' => $location['city'],
-                ]
+                activity_request_context()
             );
 
             return redirect()->back()->with([
@@ -181,18 +175,12 @@ class TokenController extends Controller
 
         $token->delete();
 
-        $location = get_ip_location(request()->ip());
 
         log_user_activity(
             auth()->user(),
             ActivityType::DATABASE_TOKEN_DELETE,
             "Token deleted from " . request()->ip(),
-            [
-                'ip' => request()->ip(),
-                'device' => request()->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
 
         return redirect()->back()->with([

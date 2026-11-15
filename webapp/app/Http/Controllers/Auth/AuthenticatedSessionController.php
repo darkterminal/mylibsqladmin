@@ -43,18 +43,12 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        $location = get_ip_location($request->ip());
 
         log_user_activity(
             Auth::user(),
             ActivityType::LOGOUT,
             "Logout from {$request->ip()}",
-            [
-                'ip' => $request->ip(),
-                'device' => $request->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
 
         Auth::guard('web')->logout();

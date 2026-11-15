@@ -36,18 +36,12 @@ class ProfileController extends Controller
             $request->user()->email_verified_at = null;
         }
 
-        $location = get_ip_location($request->ip());
 
         log_user_activity(
             Auth::user(),
             ActivityType::PROFILE_UPDATE,
             "Profile update from {$request->ip()}",
-            [
-                'ip' => $request->ip(),
-                'device' => $request->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
 
         $request->user()->save();
