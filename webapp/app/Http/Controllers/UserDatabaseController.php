@@ -66,8 +66,8 @@ class UserDatabaseController extends Controller
             'token' => $database->tokens->isEmpty() ? null : $database->tokens->map(fn($token) => [
                 'id' => $token->id,
                 'name' => $token->name,
-                'full_access_token' => $token->full_access_token,
-                'read_only_token' => $token->read_only_token,
+                'full_access_token' => '••••••••' . substr((string) $token->full_access_token, -8),
+                'read_only_token' => '••••••••' . substr((string) $token->read_only_token, -8),
                 'expires_at' => $token->expiration_day ?
                     now()->addDays($token->expiration_day)->format('Y-m-d') :
                     'Never'
@@ -177,8 +177,8 @@ class UserDatabaseController extends Controller
             'token' => $database->tokens->isEmpty() ? null : $database->tokens->map(fn($token) => [
                 'id' => $token->id,
                 'name' => $token->name,
-                'full_access_token' => $token->full_access_token,
-                'read_only_token' => $token->read_only_token,
+                'full_access_token' => '••••••••' . substr((string) $token->full_access_token, -8),
+                'read_only_token' => '••••••••' . substr((string) $token->read_only_token, -8),
                 'expires_at' => $token->expiration_day ?
                     now()->addDays($token->expiration_day)->format('Y-m-d') :
                     'Never'
