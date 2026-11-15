@@ -96,6 +96,15 @@ class Team extends Model
 
 
     /**
+     * Re-sync the team_databases session payload for the user's most recent
+     * team (the 'null' sentinel means "latest membership").
+     */
+    public static function refreshLatestTeamDatabases(int $userId): void
+    {
+        self::setTeamDatabases($userId, 'null');
+    }
+
+    /**
      * The team_databases session payload, guaranteeing its expires_at is
      * enforced. A payload past its TTL (or missing) is transparently
      * refreshed; fresh payloads cost zero queries.
@@ -192,6 +201,32 @@ class Team extends Model
                 'expires_at' => now()->addHours(2)
             ]
         ]);
+    }
+
+    /**
+     * Ensure the user has a personal workspace team (created lazily at
+     * login/registration — never inside the request-sharing middleware).
+     */
+    public static function ensurePersonalWorkspace(User $user): Team
+    {
+        $existing = Team::whereHas('members', fn($q) => $q->where('user_id', $user->id))
+            ->latest()
+            ->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
+        $team = Team::firstOrCreate([
+            'name' => "{$user->username} space",
+            'description' => 'Personal workspace',
+        ]);
+
+        if (! $team->members()->where('user_id', $user->id)->exists()) {
+            $team->members()->attach($user->id, ['permission_level' => 'super-admin']);
+        }
+
+        return $team;
     }
 
     public function recentActivities()

@@ -13,10 +13,13 @@ use App\Models\User;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use App\Http\Controllers\Concerns\RespondsWithInternalError;
 use Inertia\Inertia;
 
 class TeamController extends Controller
 {
+    use RespondsWithInternalError;
+
     public function index(Request $request)
     {
         $user = auth()->user();
@@ -179,7 +182,7 @@ class TeamController extends Controller
                 'newTeam' => $team->id
             ]);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Internal server error');
+            return $this->backWithInternalError();
         }
     }
 
@@ -195,7 +198,7 @@ class TeamController extends Controller
             $team->description = $validated['description'];
             $team->save();
 
-            Team::setTeamDatabases(auth()->id(), 'null');
+            Team::refreshLatestTeamDatabases((int) auth()->id());
 
 
             log_user_activity(
@@ -210,10 +213,7 @@ class TeamController extends Controller
                 'message' => 'Team updated successfully'
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Internal server error'
-            ], $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ? 404 : 500);
+            return $this->jsonNotFoundOrError($e);
         }
     }
 
@@ -223,7 +223,7 @@ class TeamController extends Controller
             $teamName = $team->name;
             $team->delete();
 
-            Team::setTeamDatabases(auth()->id(), 'null');
+            Team::refreshLatestTeamDatabases((int) auth()->id());
 
 
             log_user_activity(
@@ -238,10 +238,7 @@ class TeamController extends Controller
                 'message' => "Team {$teamName} deleted successfully"
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Internal server error'
-            ], $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ? 404 : 500);
+            return $this->jsonNotFoundOrError($e);
         }
     }
 
@@ -341,7 +338,7 @@ class TeamController extends Controller
 
             return redirect()->back()->with('success', "Team {$team->name} restored successfully");
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Internal server error');
+            return $this->backWithInternalError();
         }
     }
 
@@ -350,7 +347,7 @@ class TeamController extends Controller
         try {
             $team->members()->detach($user->id);
 
-            Team::setTeamDatabases(auth()->id(), 'null');
+            Team::refreshLatestTeamDatabases((int) auth()->id());
 
 
             log_user_activity(
@@ -365,10 +362,7 @@ class TeamController extends Controller
                 'message' => 'Team member deleted successfully'
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Internal server error'
-            ], $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ? 404 : 500);
+            return $this->jsonNotFoundOrError($e);
         }
     }
 
@@ -386,10 +380,7 @@ class TeamController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Internal server error'
-            ], $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ? 404 : 500);
+            return $this->jsonNotFoundOrError($e);
         }
     }
 
@@ -404,7 +395,7 @@ class TeamController extends Controller
             $request->user_id => ['permission_level' => $request->permission_level]
         ]);
 
-        Team::setTeamDatabases(auth()->id(), 'null');
+        Team::refreshLatestTeamDatabases((int) auth()->id());
 
 
         log_user_activity(
@@ -541,7 +532,7 @@ class TeamController extends Controller
 
             return redirect()->back()->with('success', 'Role updated successfully.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Internal server error');
+            return $this->backWithInternalError();
         }
     }
 }

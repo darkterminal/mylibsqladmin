@@ -18,9 +18,9 @@ class CheckInvitationExpiration
     {
         $token = $request->route('token');
 
-        $invitation = Invitation::where('token', $token)->first();
+        $invitation = $token ? Invitation::where('token', $token)->first() : null;
 
-        if ($invitation->expires_at < now()) {
+        if (!$invitation || $invitation->expires_at < now()) {
             return redirect()->route('invitation.expired');
         }
 
