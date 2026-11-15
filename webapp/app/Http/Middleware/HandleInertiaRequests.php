@@ -46,31 +46,40 @@ class HandleInertiaRequests extends Middleware
     {
         $currentTeamDatabases = session('team_databases') ?? [];
 
-        if (auth()->check() && env('LIBSQL_LOCAL_INSTANCE') === false) {
-            $teamId = (int) $currentTeamDatabases['team_id'];
+        if (auth()->check() && !filter_var(env('LIBSQL_LOCAL_INSTANCE', true), FILTER_VALIDATE_BOOLEAN)) {
+            $teamId = (int) ($currentTeamDatabases['team_id'] ?? 0);
             $userId = $request->user()->id;
-            $databases = SqldService::getDatabases(false, $userId);
 
-            if (
-                !GroupDatabase::where('user_id', $userId)->whereHas('members', function ($query) use ($databases) {
-                    $query->whereIn('database_id', Arr::pluck($databases, 'id'));
-                })->exists()
-            ) {
-                $remoteDatabase = Arr::pluck($databases, 'id');
+            // The remote sync converges eventually; it does not need to run
+            // on every request. Throttle to once per 15 minutes per session.
+            $lastCheck = (int) (session('remote_databases_checked_at') ?? 0);
 
-                $group = GroupDatabase::firstOrCreate([
-                    'user_id' => $userId,
-                    'team_id' => $teamId,
-                    'name' => 'default',
-                    'created_by' => $userId
-                ]);
+            if ($teamId > 0 && (time() - $lastCheck) > 900) {
+                session(['remote_databases_checked_at' => time()]);
 
-                $group->members()->sync($remoteDatabase);
+                $databases = SqldService::getDatabases(false, $userId);
 
-                Team::setTeamDatabases($userId, $teamId);
-                $currentTeamDatabases = session('team_databases');
+                if (
+                    !GroupDatabase::where('user_id', $userId)->whereHas('members', function ($query) use ($databases) {
+                        $query->whereIn('database_id', Arr::pluck($databases, 'id'));
+                    })->exists()
+                ) {
+                    $remoteDatabase = Arr::pluck($databases, 'id');
+
+                    $group = GroupDatabase::firstOrCreate([
+                        'user_id' => $userId,
+                        'team_id' => $teamId,
+                        'name' => 'default',
+                        'created_by' => $userId
+                    ]);
+
+                    $group->members()->sync($remoteDatabase);
+
+                    Team::setTeamDatabases($userId, $teamId);
+                    $currentTeamDatabases = session('team_databases');
+                }
+                logger()->debug("Remote database sync checked for user $userId");
             }
-            logger()->debug("Remote database already synced for user $userId");
         }
 
         return [
