@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
+import { getCurrentTeamId } from "@/lib/current-team"
 
 type LoginForm = {
     username: string;
@@ -32,7 +33,7 @@ export default function Login({ status, canResetPassword, disabledSignUpPage }: 
     });
 
     useEffect(() => {
-        const storedTeamId = localStorage.getItem('currentTeamId') || 'null';
+        const storedTeamId = String(getCurrentTeamId() ?? 'null');
         setData('currentTeamId', storedTeamId);
 
         const handleStorageChange = (e: StorageEvent) => {

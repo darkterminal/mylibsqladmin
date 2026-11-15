@@ -4,6 +4,7 @@ import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { type User } from '@/types';
 import { Link } from '@inertiajs/react';
 import { LogOut, Settings } from 'lucide-react';
+import { clearCurrentTeamId } from "@/lib/current-team"
 
 interface UserMenuContentProps {
     user: User;
@@ -31,7 +32,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
                 <Link className="block w-full" method="post" href={route('logout')} as="button" onClick={() => {
-                    localStorage.removeItem('currentTeamId');
+                    clearCurrentTeamId();
                     cleanup();
                 }}>
                     <LogOut className="mr-2" />

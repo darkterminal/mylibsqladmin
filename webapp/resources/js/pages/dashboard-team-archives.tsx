@@ -11,7 +11,8 @@ import { usePermission } from "@/lib/auth"
 import { BreadcrumbItem, Team, TeamForm } from "@/types"
 import { Head, router } from "@inertiajs/react"
 import { ArrowLeft, Grid3X3, List, Search, Users } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useCurrentTeamId } from "@/lib/current-team"
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -32,8 +33,7 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
     const { can } = usePermission();
     const [searchQuery, setSearchQuery] = useState<string>("")
     const [viewMode, setViewMode] = useState("table")
-    const [currentTeamId, setCurrentTeamId] = useState<string | null>(null)
-
+    
     const handleOnSave = (team: TeamForm) => {
         router.post(route('team.create'), team, {
             onSuccess: () => {
@@ -44,9 +44,7 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
         })
     }
 
-    useEffect(() => {
-        setCurrentTeamId(localStorage.getItem('currentTeamId'))
-    }, [])
+    const currentTeamId = useCurrentTeamId()
 
     const sortedAndFilteredTeams = teams
         .filter(team =>
@@ -54,8 +52,8 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
             team.description.toLowerCase().includes(searchQuery.toLowerCase())
         )
         .sort((a, b) => {
-            if (String(a.id) === currentTeamId) return -1
-            if (String(b.id) === currentTeamId) return 1
+            if (a.id === currentTeamId) return -1
+            if (b.id === currentTeamId) return 1
             return a.name.localeCompare(b.name)
         })
 
@@ -116,7 +114,7 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
                             <TeamCard
                                 key={team.id}
                                 team={team}
-                                isCurrent={String(team.id) === currentTeamId}
+                                isCurrent={team.id === currentTeamId}
                                 totalTeams={teams.length}
                                 isArchived={true}
                             />

@@ -20,6 +20,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { ScrollArea } from "../ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { GroupTree } from "./group-tree";
+import { getCurrentTeamId } from "@/lib/current-team"
 
 export default function TeamCard({ team, isCurrent, totalTeams: totalTeams, isArchived = false }: TeamCardProps) {
     const getInitials = useInitials();
@@ -36,7 +37,7 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams, isAr
 
     const handleCreateGroup = async (name: string): Promise<string> => {
         try {
-            const teamId = localStorage.getItem('currentTeamId');
+            const teamId = getCurrentTeamId();
             const response = await apiFetch(route('api.group.create-only'), {
                 method: 'POST',
                 body: JSON.stringify({ name, team_id: teamId }),
@@ -61,7 +62,7 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams, isAr
     }
 
     const handleDatabaseSubmit = async (formData: CreateDatabaseProps) => {
-        const teamId = formData.teamId || localStorage.getItem('currentTeamId');
+        const teamId = formData.teamId || getCurrentTeamId();
         const submittedData = {
             database: formData.useExisting ? formData.childDatabase : formData.database,
             isSchema: formData.useExisting ? formData.database : formData.isSchema,

@@ -4,7 +4,7 @@ import { usePermission } from "@/lib/auth";
 import { MemberForm, SharedData, Team, TeamCardProps, TeamForm } from "@/types";
 import { router, usePage } from "@inertiajs/react";
 import { CheckCircle, Database, File, FolderClosed, GitBranch, MoreHorizontal, RefreshCcw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { AppTooltip } from "../app-tooltip";
 import ButtonOpenDatabaseStudio from "../button-actions/action-open-database-studio";
@@ -18,13 +18,11 @@ import { Button } from "../ui/button";
 import { ComboboxOption } from "../ui/combobox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
+import { getCurrentTeamId, useCurrentTeamId } from "@/lib/current-team"
 
 export default function TeamsTable({ teams, isArchived = false }: { teams: Team[], isArchived?: boolean }) {
-    const [currentTeamId, setCurrentTeamId] = useState<string | null>(null)
+    const currentTeamId = useCurrentTeamId()
 
-    useEffect(() => {
-        setCurrentTeamId(localStorage.getItem('currentTeamId'))
-    }, [])
 
     return (
         <div className="rounded-md border">
@@ -44,7 +42,7 @@ export default function TeamsTable({ teams, isArchived = false }: { teams: Team[
                         <TeamTableRow
                             key={team.id}
                             team={team}
-                            isCurrent={String(team.id) === currentTeamId}
+                            isCurrent={team.id === currentTeamId}
                             totalTeams={teams.length}
                             isArchived={isArchived}
                         />
@@ -70,7 +68,7 @@ function TeamTableRow({ team, isCurrent, totalTeams: totalTeams, isArchived = fa
 
     const handleCreateGroup = async (name: string): Promise<string> => {
         try {
-            const teamId = localStorage.getItem('currentTeamId');
+            const teamId = getCurrentTeamId();
             const response = await apiFetch(route('api.group.create-only'), {
                 method: 'POST',
                 body: JSON.stringify({ name, team_id: teamId }),
@@ -95,7 +93,7 @@ function TeamTableRow({ team, isCurrent, totalTeams: totalTeams, isArchived = fa
     }
 
     const handleDatabaseSubmit = async (formData: CreateDatabaseProps) => {
-        const teamId = formData.teamId || localStorage.getItem('currentTeamId');
+        const teamId = formData.teamId || getCurrentTeamId();
         const submittedData = {
             database: formData.useExisting ? formData.childDatabase : formData.database,
             isSchema: formData.useExisting ? formData.database : formData.isSchema,

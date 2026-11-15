@@ -1,5 +1,6 @@
 import { SharedData } from "@/types";
 import { usePage } from "@inertiajs/react";
+import { getCurrentTeamId } from "@/lib/current-team"
 
 export type PermissionAttributes =
     'manage-databases' |
@@ -52,8 +53,8 @@ export type RoleAttributes =
 // Check basic permissions
 export function usePermission() {
     const { auth } = usePage<SharedData>().props;
-    const currentTeamId = localStorage.getItem('currentTeamId');
-    const teamRole = auth.user.teams.map(team => team.id === Number(currentTeamId) ? getRole(team.pivot.permission_level) : auth.user.role);
+    const currentTeamId = getCurrentTeamId();
+    const teamRole = auth.user.teams.map(team => team.id === currentTeamId ? getRole(team.pivot.permission_level) : auth.user.role);
 
     return {
         can: (permission: PermissionAttributes) => {

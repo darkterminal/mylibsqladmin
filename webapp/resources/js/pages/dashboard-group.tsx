@@ -16,6 +16,7 @@ import {
 import { Head, router, usePage } from "@inertiajs/react";
 import { Users2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { getCurrentTeamId } from "@/lib/current-team"
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -53,7 +54,7 @@ export default function DashboardGroup({
 
     const handleCreateGroup = async (name: string) => {
         try {
-            const teamId = localStorage.getItem('currentTeamId');
+            const teamId = getCurrentTeamId();
             const response = await apiFetch(route('api.group.create-only'), {
                 method: 'POST',
                 body: JSON.stringify({ name, team_id: teamId }),
