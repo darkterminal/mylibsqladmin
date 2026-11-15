@@ -16,6 +16,7 @@ import { router, usePage } from "@inertiajs/react"
 import { Trash2Icon, UserPen } from "lucide-react"
 import { useCallback } from "react"
 import { toast } from "sonner"
+import { getCurrentTeamId } from "@/lib/current-team"
 
 interface Databases extends DatabaseRow {
     granted_users_count: number
@@ -52,7 +53,7 @@ function DatabaseActions({ database }: { database: Databases }) {
                                 toast.success('Database deleted successfully');
                             },
                             onFinish: async () => {
-                                const teamId = localStorage.getItem('currentTeamId');
+                                const teamId = getCurrentTeamId();
 
                                 if (teamId) {
                                     await apiFetch(route('api.teams.databases', Number(teamId)), {
@@ -72,7 +73,7 @@ function DatabaseActions({ database }: { database: Databases }) {
                 </Button>
             )
         })
-    }, [])
+    }, [csrfToken])
 
     return (
         <div className="flex items-center gap-2">

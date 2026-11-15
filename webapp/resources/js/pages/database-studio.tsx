@@ -13,6 +13,7 @@ import {
 } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from "react";
+import { getCurrentTeamId } from "@/lib/current-team"
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -74,7 +75,7 @@ export default function DatabaseStudio() {
     useCustomEvent<DatabaseStatsChangeProps>('stats-changed', async ({ databaseName, statement, type }) => {
         const statsEndpoint = route('trigger.stats-changed', { databaseName, source: 'web' });
         const logEndpoint = route('activities.store');
-        const currentTeamId = localStorage.getItem('currentTeamId') || 'null';
+        const currentTeamId = getCurrentTeamId() || 'null';
 
         if (statement !== undefined) {
             await apiFetch(logEndpoint, {

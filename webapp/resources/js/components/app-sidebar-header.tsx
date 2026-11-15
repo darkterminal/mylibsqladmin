@@ -14,6 +14,7 @@ import { CreateDatabaseProps, ModalCreateDatabase } from './modals/modal-create-
 import { TeamSwitcher } from './team-switcher';
 import { Button } from './ui/button';
 import { ComboboxOption } from './ui/combobox';
+import { getCurrentTeamId } from "@/lib/current-team"
 
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
 
@@ -37,7 +38,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
 
     const handleCreateGroup = async (name: string): Promise<string> => {
         try {
-            const teamId = localStorage.getItem('currentTeamId');
+            const teamId = getCurrentTeamId();
             const response = await apiFetch(route('api.group.create-only'), {
                 method: 'POST',
                 body: JSON.stringify({ name, team_id: teamId }),
@@ -62,7 +63,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
     }
 
     const handleDatabaseSubmit = async (formData: CreateDatabaseProps) => {
-        const teamId = localStorage.getItem('currentTeamId');
+        const teamId = getCurrentTeamId();
 
         const submittedData = {
             database: formData.useExisting ? formData.childDatabase : formData.database,

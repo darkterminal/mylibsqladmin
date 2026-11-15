@@ -21,6 +21,7 @@ import { ModalCreateGroupToken } from "./modals/modal-create-group-token"
 import { Button } from "./ui/button"
 import { ComboboxOption } from "./ui/combobox"
 import { ScrollArea } from "./ui/scroll-area"
+import { getCurrentTeamId } from "@/lib/current-team"
 
 export default function GroupDetail({
     group: initialGroup,
@@ -88,7 +89,7 @@ export default function GroupDetail({
     }, [group?.database_tokens]);
 
     const handleDatabaseSubmit = async (formData: CreateDatabaseProps) => {
-        const teamId = localStorage.getItem('currentTeamId');
+        const teamId = getCurrentTeamId();
 
         const submittedData = {
             database: formData.useExisting ? formData.childDatabase : formData.database,

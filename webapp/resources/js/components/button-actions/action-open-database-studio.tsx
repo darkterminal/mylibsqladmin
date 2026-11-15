@@ -5,6 +5,7 @@ import { VariantProps } from "class-variance-authority";
 import { BoxIcon } from "lucide-react";
 import { AppTooltip } from "../app-tooltip";
 import { Button } from "../ui/button";
+import { setCurrentTeamId } from "@/lib/current-team"
 
 export default function ButtonOpenDatabaseStudio({
     databaseName,
@@ -22,7 +23,7 @@ export default function ButtonOpenDatabaseStudio({
     const handleSelectDatabase = async (database: string) => {
         localStorage.setItem('sidebar', 'false');
         if (team) {
-            localStorage.setItem('currentTeamId', team.id.toString());
+            setCurrentTeamId(team.id);
             await apiFetch(route('api.teams.databases', team.id), {
                 method: 'GET',
                 headers: {

@@ -11,6 +11,7 @@ import { router, usePage } from "@inertiajs/react"
 import { ArrowLeft } from "lucide-react"
 import { useCallback } from "react"
 import { toast } from "sonner"
+import { getCurrentTeamId } from "@/lib/current-team"
 
 type Databases = DatabaseRow
 
@@ -30,7 +31,7 @@ function DatabaseActions({ database }: { database: Databases }) {
     const { csrfToken } = usePage<SharedData>().props
 
     const notifyTeamDatabasesChanged = useCallback(async () => {
-        const teamId = localStorage.getItem('currentTeamId');
+        const teamId = getCurrentTeamId();
 
         if (teamId) {
             await apiFetch(route('api.teams.databases', Number(teamId)), {
