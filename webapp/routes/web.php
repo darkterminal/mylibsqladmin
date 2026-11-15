@@ -122,8 +122,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('teams.archives');
 
         Route::post('{team}/invitations', [TeamController::class, 'invite'])
-            ->name('teams.invitations.store')
-            ->can('create', Team::class);
+            ->name('teams.invitations.store');
 
         Route::delete('invitations/{invitation}', [TeamController::class, 'revokeInvite'])
             ->name('teams.invitations.destroy');

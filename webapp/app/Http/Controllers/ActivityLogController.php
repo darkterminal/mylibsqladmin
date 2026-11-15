@@ -19,6 +19,13 @@ class ActivityLogController extends Controller
         $database = UserDatabase::where('database_name', $validated['database_name'])->first();
         $user = $request->user();
 
+        $isSuperAdmin = $user->hasRole('Super Admin');
+        $isTeamMember = \DB::table('team_user')
+            ->where('team_id', $validated['team_id'])
+            ->where('user_id', $user->id)
+            ->exists();
+        abort_unless($isSuperAdmin || $isTeamMember, 403, 'You are not a member of this team');
+
         $action = ActivityLogger::log(
             $validated['team_id'],
             $user->id,

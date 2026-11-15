@@ -131,7 +131,7 @@ test('expired invitation acceptance redirects to the expired page', function () 
     $response->assertRedirect(route('invitation.expired'));
 });
 
-test('a team manager cannot invite (seeded matrix), super admin can', function () {
+test('a team manager can invite their team (member admin), super admin can, members cannot', function () {
     $manager = User::factory()->create();
     $manager->roles()->attach(Role::where('name', 'Team Manager')->firstOrFail()->id);
 
@@ -140,7 +140,19 @@ test('a team manager cannot invite (seeded matrix), super admin can', function (
 
     $this->actingAs($manager)
         ->post("/teams/{$team->id}/invitations", [
+            'name' => 'Invitee',
             'email' => 'invitee@example.com',
+            'role' => 'member',
+        ])
+        ->assertOk()
+        ->assertJsonPath('success', true);
+
+    $member = teamMemberUser();
+
+    $this->actingAs($member)
+        ->post("/teams/{$team->id}/invitations", [
+            'name' => 'Invitee2',
+            'email' => 'invitee2@example.com',
             'role' => 'member',
         ])
         ->assertForbidden();
@@ -149,12 +161,10 @@ test('a team manager cannot invite (seeded matrix), super admin can', function (
 
     $this->actingAs($admin)
         ->post("/teams/{$team->id}/invitations", [
-            'name' => 'Invitee',
-            'email' => 'invitee@example.com',
+            'name' => 'Invitee3',
+            'email' => 'invitee3@example.com',
             'role' => 'member',
         ])
         ->assertOk()
         ->assertJsonPath('success', true);
-
-    expect(Invitation::where('team_id', $team->id)->count())->toBe(1);
 });

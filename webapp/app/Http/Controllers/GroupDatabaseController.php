@@ -51,9 +51,10 @@ class GroupDatabaseController extends Controller
             ->where('group_databases.id', $groupId)
             ->where('team_user.user_id', $request->user()->id)
             ->exists();
-        $canManage = $request->user()->hasPermission('manage-group-tokens')
+        $hasGroupTokenPermission = $request->user()->hasPermission('manage-group-tokens')
             || $request->user()->hasPermission('manage-users');
-        abort_unless($inTeam || $canManage, 403, 'Unauthorized group token creation');
+        $isSuperAdmin = $request->user()->hasRole('Super Admin');
+        abort_unless($isSuperAdmin || ($inTeam && $hasGroupTokenPermission), 403, 'Unauthorized group token creation');
 
         $pair = (new DatabaseTokenGenerator())->generateToken(
             $validated['name'],

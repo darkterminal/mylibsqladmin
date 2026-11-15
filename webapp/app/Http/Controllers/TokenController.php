@@ -169,10 +169,21 @@ class TokenController extends Controller
         $token = UserDatabaseToken::find($tokenId);
         abort_if(!$token, 404, 'Token not found');
 
+        $db = $token->database;
+
         $isOwn = (int) $token->user_id === (int) auth()->id();
-        $canManage = auth()->user()->hasPermission('manage-database-tokens')
-            || auth()->user()->hasPermission('manage-users');
-        abort_unless($isOwn || $canManage, 403, 'Unauthorized');
+        $isSuperAdmin = auth()->user()->hasRole('Super Admin');
+        $isDatabaseOwner = $db && (int) $db->user_id === (int) auth()->id();
+        $isOwningTeamMember = $db && $db->team_id && \DB::table('team_user')
+            ->where('team_id', $db->team_id)
+            ->where('user_id', auth()->id())
+            ->exists();
+        $canManageDatabase = $isDatabaseOwner || $isOwningTeamMember;
+        $canManage = $canManageDatabase && (
+            auth()->user()->hasPermission('manage-database-tokens')
+            || auth()->user()->hasPermission('manage-users')
+        );
+        abort_unless($isOwn || $isSuperAdmin || $canManage, 403, 'Unauthorized');
 
         $token->delete();
 
