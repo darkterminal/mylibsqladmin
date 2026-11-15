@@ -93,7 +93,6 @@ class DbDelete extends Command
     {
         $request = http_request('/api/cli/db/delete/' . urlencode($dbName), 'DELETE', null, [
             "Authorization: Bearer $token",
-            "X-User-Identifier: $userIdentifier"
         ]);
 
         return [
@@ -106,7 +105,6 @@ class DbDelete extends Command
     {
         $request = http_request('/api/cli/db/force-delete/' . urlencode($dbName), 'DELETE', null, [
             "Authorization: Bearer $token",
-            "X-User-Identifier: $userIdentifier"
         ]);
 
         return [

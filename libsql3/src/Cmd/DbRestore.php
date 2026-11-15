@@ -81,7 +81,6 @@ class DbRestore extends Command
     {
         $request = http_request('/api/cli/db/restore/' . urlencode($dbName), 'POST', null, [
             "Authorization: Bearer $token",
-            "X-User-Identifier: $userIdentifier",
             "Content-Type: application/json"
         ]);
 

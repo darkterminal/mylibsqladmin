@@ -183,7 +183,6 @@ class TeamRestore extends Command
     private function fetchArchivedTeams(string $userIdentifier, string $token): array
     {
         $request = http_request('/api/cli/team/archives', 'GET', null, [
-            "X-User-Identifier: $userIdentifier",
             "Authorization: Bearer $token"
         ]);
 
@@ -207,7 +206,6 @@ class TeamRestore extends Command
     {
         $request = http_request("/api/cli/team/restore/$teamId", 'POST', null, [
             "Content-Type: application/json",
-            "X-User-Identifier: $userIdentifier",
             "Authorization: Bearer $token"
         ]);
 

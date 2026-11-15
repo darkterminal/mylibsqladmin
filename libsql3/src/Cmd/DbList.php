@@ -92,7 +92,6 @@ class DbList extends Command implements Configurable
         $pathUrl = '/api/cli/db/lists';
 
         $request = http_request($pathUrl, 'GET', null, [
-            "X-User-Identifier: $userIdentifier",
             "Authorization: Bearer $token"
         ]);
 

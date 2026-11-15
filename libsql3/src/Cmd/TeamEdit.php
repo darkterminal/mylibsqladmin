@@ -124,7 +124,6 @@ class TeamEdit extends Command
             // Send update request
             $request = http_request("/api/cli/team/update/$teamId", 'PUT', $data, [
                 "Content-Type: application/json",
-                "X-User-Identifier: $userIdentifier",
                 "Authorization: Bearer $token"
             ]);
 
@@ -159,7 +158,6 @@ class TeamEdit extends Command
     private function fetchTeam(string $teamId, string $userIdentifier, string $token): array
     {
         $request = http_request("/api/cli/team/get/$teamId", 'GET', null, [
-            "X-User-Identifier: $userIdentifier",
             "Authorization: Bearer $token"
         ]);
 

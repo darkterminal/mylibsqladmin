@@ -92,7 +92,6 @@ class DbArchive extends Command implements Configurable
         $pathUrl = '/api/cli/db/archives';
 
         $request = http_request($pathUrl, 'GET', null, [
-            "X-User-Identifier: $userIdentifier",
             "Authorization: Bearer $token"
         ]);
 

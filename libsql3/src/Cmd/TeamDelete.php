@@ -58,7 +58,6 @@ class TeamDelete extends Command
             }
 
             $request = http_request("/api/cli/team/delete/$teamId", 'DELETE', null, [
-                "X-User-Identifier: $userIdentifier",
                 "Authorization: Bearer $token"
             ]);
 
@@ -96,7 +95,6 @@ class TeamDelete extends Command
     private function fetchTeam(string $teamId, string $userIdentifier, string $token): array
     {
         $request = http_request("/api/cli/team/get/$teamId", 'GET', null, [
-            "X-User-Identifier: $userIdentifier",
             "Authorization: Bearer $token"
         ]);
 
