@@ -90,7 +90,7 @@ class TokenController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string',
-            'databaseId' => 'required|integer',
+            'databaseId' => 'required|integer|exists:user_databases,id',
             'expiration' => 'required|integer',
             'userId' => 'required|integer|exists:users,id'
         ]);
