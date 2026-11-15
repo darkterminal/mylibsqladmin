@@ -64,8 +64,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('can:delete,database');
 
         Route::post('grant-access', [UserDatabaseController::class, 'grantUserDatabase'])
-            ->name('database.grant-access')
-            ->can('delete', UserDatabase::class);
+            ->name('database.grant-access');
     });
 
     Route::group(['prefix' => 'tokens'], function () {
