@@ -27,10 +27,6 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    protected $appends = ['permission_names'];
-
-    protected $with = ['teams'];
-
     protected function casts(): array
     {
         return [
@@ -150,9 +146,8 @@ class User extends Authenticatable
 
     public function getPermissionNamesAttribute()
     {
-        return $this->roles()
-            ->with('permissions')
-            ->get()
+        return $this->loadMissing('roles.permissions')
+            ->roles
             ->flatMap(fn($role) => $role->permissions->pluck('name'))
             ->unique()
             ->values()
