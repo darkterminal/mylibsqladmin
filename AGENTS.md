@@ -24,6 +24,7 @@ npm install --package-lock=true   # global npm config here sets package-lock=fal
 vendor/bin/pest                   # domain + unit tests; in-memory SQLite, fail-closed
 npm run types                     # tsc --noEmit
 npm run build                     # vite build
+npm run test                      # vitest (jsdom) — permission/hook contracts
 ```
 
 CI (`.github/workflows/ci.yml`) gates every push/PR: composer install + pest +

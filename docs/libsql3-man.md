@@ -4,37 +4,36 @@
 
 ## Availables Commands
 
-| Command         | Description                                   | Status |
-| --------------- | --------------------------------------------- | ------ |
-| `auth:login`    | Authenticate and store API token              | ✅     |
-| `auth:logout`   | Logout from the API and remove local token    | ✅     |
-| `config:set`    | Set a configuration value (local)             | ✅     |
-| `config:get`    | Get a configuration value (local)             | ✅     |
-| `config:list`   | List all configuration values (local)         | ✅     |
-| `config:delete` | Delete a configuration value (local)          | ✅     |
-| `db:shell`      | Open interactive shell for libSQL database    | ✅     |
-| `db:list`       | List databases                                | ✅     |
-| `db:create`     | Create new database                           | ✅     |
-| `db:delete`     | Delete a database from MylibSQLAdmin Platform | ✅     |
-| `db:archive`    | List all archived databases                   | ✅     |
-| `db:restore`    | Restore a deleted database from archive       | ✅     |
-| `group:list`    | List all available groups                     | ✅     |
-| `group:create`  | Create a new group                            | ✅     |
-| `group:edit`    | Edit a group                                  |        |
-| `group:delete`  | Detele a group                                | ✅     |
-| `team:list`     | List all available teams                      | ✅     |
-| `team:create`   | Create a new team                             | ✅     |
-| `team:edit`     | Edit an existing team                         | ✅     |
-| `team:delete`   | Delete a team                                 | ✅     |
-| `token:list`    | List all generated token                      |        |
-| `token:create`  | Create a new token for a database or group    |        |
-| `token:edit`    | Edit token for a database or group            |        |
-| `token:delete`  | Delete token for a database or group          |        |
-| `user:list`     | List all users                                | ✅     |
-| `user:create`   | Create a new user                             |        |
-| `user:edit`     | Edit a user                                   |        |
-| `user:delete`   | Delete a user                                 |        |
-| `whoami`        | Display the current user                      | ✅     |
+| Command            | Description                                            | Status |
+| ------------------ | ------------------------------------------------------ | ------ |
+| `auth:login`       | Authenticate and store API token                       | ✅     |
+| `auth:logout`      | Logout from the API and remove local token             | ✅     |
+| `config:set`       | Set a configuration value (local)                      | ✅     |
+| `config:get`       | Get a configuration value (local)                      | ✅     |
+| `config:list`      | List all configuration values (local)                  | ✅     |
+| `config:delete`    | Delete a configuration value (local)                   | ✅     |
+| `db:shell`         | Open interactive shell for a database                  | ✅     |
+| `db:list`          | List databases                                         | ✅     |
+| `db:create`        | Create new database                                    | ✅     |
+| `db:delete`        | Delete a database from MylibSQLAdmin Platform          | ✅     |
+| `db:archive`       | List all archived databases                            | ✅     |
+| `db:restore`       | Restore a deleted database from archive                | ✅     |
+| `db:token:create`  | Mint a full-access token for a database (shown once)   | ✅     |
+| `group:list`       | List all available groups                              | ✅     |
+| `group:create`     | Create a new group                                     | ✅     |
+| `group:delete`     | Delete a group                                         | ✅     |
+| `team:list`        | List all available teams                               | ✅     |
+| `team:create`      | Create a new team                                      | ✅     |
+| `team:edit`        | Edit an existing team                                  | ✅     |
+| `team:delete`      | Delete a team                                          | ✅     |
+| `team:restore`     | Restore a soft-deleted team                            | ✅     |
+| `user:list`        | List all users                                         | ✅     |
+| `whoami`           | Display the current user                               | ✅     |
+
+Commands not listed above do not exist. Never trust a doc section that
+describes `token:list`, `token:edit`, `token:delete`, `user:create`,
+`user:edit`, `user:delete`, or `group:edit` — those are aspirational
+sketches, not shipped commands. To mint a token, use `db:token:create`.
 
 ---
 
@@ -963,3 +962,54 @@ Select a group to delete: 1
 ```
 
 ---
+
+### `db:token:create`
+
+Mint a fresh full-access token for a database.
+
+**Usage**
+
+```bash
+mylibsqladmin@libsql3> db:token:create my-database-name
+```
+
+**What it does**
+
+-   Mints a new full-access opaque token (SHA-256 stored at rest server-side)
+-   Prints the plaintext **exactly once** — it is never shown again
+-   Replaces any previous `cli-shell-token` minted by this user for that database
+
+**Example Output**
+
+```
+Full-access token minted for my-database-name
+example-opaque-token-value-64-hex
+Fingerprint: ••••••••12345678
+Store this token now — it will never be shown again.
+```
+
+**Requirements**
+
+-   Active login session (`auth:login` first)
+-   Super Admin role (CLI mint path; matches the `auth:login` CLI token contract)
+
+**Common Use Cases**
+
+```bash
+# Mint a token for CI to access a database
+mylibsqladmin@libsql3> db:token:create metrics-db
+
+# Re-mint after a leak (replaces the previous CLI token automatically)
+mylibsqladmin@libsql3> db:token:create metrics-db
+```
+
+**Error Handling**
+
+```bash
+# No session
+<error>There is no active session</error>
+
+# Unknown database
+<error>API returned status 404: Database not found</error>
+```
+

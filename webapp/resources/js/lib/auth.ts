@@ -54,7 +54,8 @@ export type RoleAttributes =
 export function usePermission() {
     const { auth } = usePage<SharedData>().props;
     const currentTeamId = getCurrentTeamId();
-    const teamRole = auth.user.teams.map(team => team.id === currentTeamId ? getRole(team.pivot.permission_level) : auth.user.role);
+    const user = auth?.user;
+    const teamRole = (user?.teams ?? []).map(team => team.id === currentTeamId ? getRole(team.pivot.permission_level) : (user?.role ?? 'Member'));
 
     return {
         can: (permission: PermissionAttributes) => {
@@ -64,7 +65,7 @@ export function usePermission() {
             return (auth?.user.role === role || teamRole.includes(role)) ?? false;
         },
         hasAnyRole: (...roles: RoleAttributes[]) => {
-            return roles.includes(auth?.user.role as RoleAttributes) ?? false;
+            return roles.some((role) => auth?.user.role === role || teamRole.includes(role)) ?? false;
         }
     }
 }
