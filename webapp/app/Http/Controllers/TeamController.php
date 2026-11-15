@@ -32,14 +32,13 @@ class TeamController extends Controller
         $teamsQuery->with([
             'members',
             'invitations.inviter',
-            'recentActivities.user',
             // Conditionally load the 'groups.members' relationship
             'groups' => function ($groupQuery) use ($canViewAll, $userId) {
                 // If the user can view everything, load all members of the group
                 if ($canViewAll) {
                     $groupQuery->with([
                         'members' => function ($memberQuery) {
-                            $memberQuery->with(['latestActivity', 'user'])
+                            $memberQuery->with('latestActivity')
                                 ->select('id', 'database_name', 'is_schema', 'user_id', 'created_at');
                         }
                     ]);
@@ -52,7 +51,7 @@ class TeamController extends Controller
                                 'members' => function ($memberQuery) use ($userId) {
                                 $memberQuery->whereHas('grant', function ($q) use ($userId) {
                                     $q->where('user_id', $userId);
-                                })->with(['latestActivity', 'user'])
+                                })->with('latestActivity')
                                     ->select('id', 'database_name', 'is_schema', 'user_id', 'created_at');
                             }
                             ]);
@@ -275,10 +274,9 @@ class TeamController extends Controller
             },
             'invitations.inviter',
             'groups.members' => function ($query) {
-                $query->onlyTrashed()->with(['latestActivity', 'user'])
+                $query->onlyTrashed()->with('latestActivity')
                     ->select('id', 'database_name', 'is_schema', 'user_id', 'created_at');
-            },
-            'recentActivities.user'
+            }
         ]);
 
         if ($user->hasRole('Super Admin')) {
@@ -328,7 +326,7 @@ class TeamController extends Controller
                         'lastActivity' => $database->latestActivity?->created_at->diffForHumans() ?? 'No activity'
                     ])
                 ]) : [],
-                'recentActivity' => $canAccessDatabases ? $team->recentActivities->map(fn($activity) => [
+                'recentActivity' => $canAccessDatabases ? $team->recentActivities()->get()->map(fn($activity) => [
                     'id' => $activity->id,
                     'user' => $activity->user->name,
                     'action' => $activity->action,
