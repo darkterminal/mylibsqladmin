@@ -12,7 +12,7 @@ class ActivityLogger
         int $userId,
         int $databaseId,
         string $query
-    ): void {
+    ): string {
         $action = ActivityLog::determineAction($query, $databaseId);
 
         ActivityLog::create([
@@ -30,5 +30,7 @@ class ActivityLogger
             $user->name . ' ' . $action . ' from ' . request()->ip(),
             activity_request_context()
         );
+
+        return $action;
     }
 }

@@ -59,8 +59,6 @@ class ActivityLog extends Model
         $table = null;
         $query = str_replace(['MAIN.', 'MAIN'], '', strtoupper(trim($query)));
 
-        logger("Query: $query");
-
         // Detect action and extract table name
         if (count($tokens) >= 2) {
             $firstTwo = "{$tokens[0]} {$tokens[1]}";
@@ -113,14 +111,18 @@ class ActivityLog extends Model
             }
         }
 
-        // Build description with table name
+        // Build description with table name; unknown statements get a safe
+        // fallback instead of violating the string return type.
         $baseDescription = self::ACTION_MAP[$actionKey] ?? null;
 
-        if (!$baseDescription)
-            return null;
+        if ($baseDescription === null) {
+            return 'Executed query';
+        }
 
-        return !empty($table) && strtolower($table)
-            ? sprintf("%s [%s] table in database [%s]", $baseDescription, strtolower($table), UserDatabase::find($databaseId)->database_name)
+        $databaseName = UserDatabase::whereKey($databaseId)->value('database_name') ?? 'unknown';
+
+        return !empty($table)
+            ? sprintf("%s [%s] table in database [%s]", $baseDescription, strtolower($table), $databaseName)
             : $baseDescription;
     }
 }
