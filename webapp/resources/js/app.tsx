@@ -1,6 +1,8 @@
 import '../css/app.css';
 
 import { createInertiaApp } from '@inertiajs/react';
+import type { ResolvedComponent as PageComponent } from '@inertiajs/react';
+import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { route as routeFn } from 'ziggy-js';
 
 import AppLayout from '@/layouts/app-layout';
@@ -63,6 +65,7 @@ const appName = import.meta.env.VITE_APP_NAME || 'MylibSQLAdmin';
 
 void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
+    resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob<PageComponent>('./pages/**/*.tsx', { import: 'default' })),
     layout: (name) => {
         switch (true) {
             case name.startsWith('auth/'):
