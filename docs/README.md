@@ -81,7 +81,7 @@ services:
             - LIBSQL_LOCAL_INSTANCE=true
             - LIBSQL_HOST=proxy
             - LIBSQL_PORT=8080
-            - LIBSQL_API_HOST=proxy
+            - LIBSQL_API_HOST=db
             - LIBSQL_API_PORT=8081
             - LIBSQL_API_USERNAME=
             - LIBSQL_API_PASSWORD=
@@ -96,7 +96,6 @@ services:
         ports:
             - 8080:8080
             - 5001:5001
-            - 8081:8081
         networks:
             - mylibsqladmin-network
         restart: unless-stopped
@@ -134,6 +133,56 @@ networks:
 ```bash
 docker compose up -d
 ```
+
+### First-time Bootstrap (fresh installs)
+
+v1.5.0 does **not** ship any seeded user accounts. The container
+entrypoint applies migrations automatically on first boot. To create the
+single super-admin, either:
+
+**Option A — automatic (recommended):** set `LIBSQL_SEED_DEFAULTS=true` in
+`environment:` before the first `docker compose up`. The entrypoint writes
+`storage/app/bootstrap-credentials.txt` (mode `0600`) containing the generated
+credentials. Read it once, then delete it:
+
+```bash
+docker compose exec webui cat storage/app/bootstrap-credentials.txt
+docker compose exec webui rm storage/app/bootstrap-credentials.txt
+```
+
+**Option B — manual:** run the seeder yourself (idempotent; safe to re-run to
+rotate the password):
+
+```bash
+docker compose exec webui php artisan db:seed --class=BootstrapSeeder
+```
+
+To set a specific password instead of a generated one, set
+`SUPER_ADMIN_PASSWORD` in `environment:`. The seeder never stores the
+plaintext; it is only written to the credentials file when generated.
+
+### Upgrading from v1.4.x to v1.5.0
+
+- **Seeded fixture accounts are gone.** `superadmin`, `manager`,
+  `database-maintainer`, `member` (with the previously documented public
+  passwords) are no longer created on fresh installs, and their passwords
+  have never been valid for new bootstraps. Existing installs keep their
+  current accounts.
+- **Tokens are stored hashed (irreversible).** The migration
+  `2026_11_14_000000_hash_existing_database_tokens` converts any plaintext
+  tokens in place (SHA-256). Existing bearer tokens keep working — each one
+  is hashed identically on both sides. This migration cannot be reversed.
+- **Deactivated users can no longer sign in** (web and CLI), and their API
+  tokens are revoked on deactivation.
+- **CSP / SecureHeaders are now sent by the app.** If you embed MylibSQLAdmin
+  inside an `<iframe>`, adjust `frame-ancestors` in
+  `app/Http/Middleware/SecureHeaders.php`.
+- **Registration is disabled by default** (`REGISTRATION_ENABLED=false`).
+- **The sqld admin API (`:8081`) is no longer exposed** through the proxy
+  container; the webapp reaches it via the internal Docker network.
+- Pin images for reproducible deploys, e.g.
+  `ghcr.io/darkterminal/mylibsqladmin-web:1.5.0-production` and
+  `ghcr.io/darkterminal/mylibsqladmin-proxy:1.5.0`. `latest` still moves.
 
 ### Default Credentials
 
