@@ -410,13 +410,14 @@ class TeamController extends Controller
 
     public function invite(Request $request, Team $team)
     {
-        $request->validate([
+        $validated = $request->validate([
+            'name' => 'nullable|string|max:255',
             'email' => 'required|email',
-            'role' => 'required|in:super-admin,team-manager,database-maintener,member'
+            'role' => 'required|in:super-admin,team-manager,database-maintainer,member'
         ]);
 
         $invitation = $team->invitations()->create([
-            'name' => $request->name,
+            'name' => $validated['name'] ?? strtok($validated['email'], '@'),
             'email' => $request->email,
             'token' => Str::random(64),
             'inviter_id' => auth()->id(),
@@ -482,6 +483,28 @@ class TeamController extends Controller
             ->with('info', 'Finish registration to join the team');
     }
 
+
+    public function revokeInvite(Invitation $invitation)
+    {
+        if (!auth()->user()->can('delete', $invitation->team)) {
+            abort(403);
+        }
+
+        $email = $invitation->email;
+        $invitation->delete();
+
+        log_user_activity(
+            auth()->user(),
+            ActivityType::TEAM_MEMBER_DELETE,
+            "Invitation to {$email} revoked from " . request()->ip(),
+            activity_request_context()
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Invitation revoked successfully',
+        ]);
+    }
 
     protected function attachToTeam(Authenticatable|User $user, Invitation $invitation): void
     {
