@@ -335,7 +335,27 @@ class GroupDatabaseController extends Controller
     public function deleteDatabaseFromGroup(UserDatabase $database)
     {
         // "Remove from group" means detach the pivot row. It must never
-        // archive/delete the database itself.
+        // archive/delete the database itself. Authorized against the teams
+        // that own groups containing this database (or Super Admin / owner).
+        $database->load('groups');
+
+        $isOwner = (int) $database->user_id === (int) auth()->id();
+        $isSuperAdmin = auth()->user()->hasRole('Super Admin');
+
+        $teamIds = $database->groups->pluck('team_id');
+        $isMemberOfOwningTeam = DB::table('team_user')
+            ->whereIn('team_id', $teamIds)
+            ->where('user_id', auth()->id())
+            ->exists();
+        $hasGroupWritePermission = auth()->user()->hasPermission('manage-groups')
+            || auth()->user()->hasPermission('update-groups');
+
+        abort_unless(
+            $isOwner || $isSuperAdmin || ($isMemberOfOwningTeam && $hasGroupWritePermission),
+            403,
+            'Unauthorized'
+        );
+
         $removed = DB::table('group_database_members')
             ->where('database_id', $database->id)
             ->delete();
