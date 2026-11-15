@@ -6,11 +6,26 @@ use App\Models\QueryMetric;
 use App\Models\SlowestQuery;
 use App\Models\TopQuery;
 use App\Models\UserDatabase;
+use Illuminate\Support\Facades\Cache;
 
 class StatsFetcherService
 {
+    /**
+     * The Studio calls this once per executed statement. A remote HTTP fetch
+     * plus metric inserts must not run unthrottled in the request cycle —
+     * gate it to once per TTL per database (or globally for broadcasts).
+     */
     public static function run(?string $databaseName = null, ?string $source = null, ?int $userId = null): string|array
     {
+        $throttleKey = $databaseName
+            ? 'stats-throttle:db:' . md5($databaseName)
+            : 'stats-throttle:broadcast-all';
+        $throttleTtl = $databaseName ? 30 : 60;
+
+        if (! Cache::add($throttleKey, true, $throttleTtl)) {
+            return $databaseName ? ['throttled' => true] : 'Stats throttled';
+        }
+
         if ($databaseName) {
 
             if (UserDatabase::where('database_name', $databaseName)->doesntExist()) {
