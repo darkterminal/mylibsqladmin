@@ -41,10 +41,6 @@ class User extends Authenticatable
         return $this->hasMany(GrantedDatabase::class, 'user_id');
     }
 
-    public function activityLogs()
-    {
-        return $this->hasMany(UserActivityLog::class);
-    }
 
     public function roles(): BelongsToMany
     {
@@ -95,15 +91,7 @@ class User extends Authenticatable
         return $this->hasMany(UserDatabase::class);
     }
 
-    public function databaseTokens(): HasMany
-    {
-        return $this->hasMany(UserDatabaseToken::class);
-    }
 
-    public function groupDatabases(): HasMany
-    {
-        return $this->hasMany(GroupDatabase::class);
-    }
 
     public function permissions()
     {
@@ -137,12 +125,6 @@ class User extends Authenticatable
             ->exists();
     }
 
-    public function getPermissionsAttribute()
-    {
-        return cache()->remember("user-{$this->id}-permissions", 3600, function () {
-            return $this->permissions()->pluck('name')->toArray();
-        });
-    }
 
     public function getPermissionNamesAttribute()
     {
