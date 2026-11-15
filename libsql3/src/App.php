@@ -14,6 +14,7 @@ use Libsql3\Cmd\DbDelete;
 use Libsql3\Cmd\DbList;
 use Libsql3\Cmd\DbRestore;
 use Libsql3\Cmd\DbShell;
+use Libsql3\Cmd\DbTokenCreate;
 use Libsql3\Cmd\GroupCreate;
 use Libsql3\Cmd\GroupDelete;
 use Libsql3\Cmd\GroupList;
@@ -21,6 +22,7 @@ use Libsql3\Cmd\TeamCreate;
 use Libsql3\Cmd\TeamDelete;
 use Libsql3\Cmd\TeamEdit;
 use Libsql3\Cmd\TeamList;
+use Libsql3\Cmd\TeamRestore;
 use Libsql3\Cmd\UserList;
 use Libsql3\Cmd\WhoAmI;
 use Psy\Configuration;
@@ -91,7 +93,14 @@ class App extends Application
         $teamDelete = new TeamDelete();
         $teamDelete->setAppConfig($this->app_config);
 
+        $teamRestore = new TeamRestore();
+        $teamRestore->setAppConfig($this->app_config);
+
+        $dbTokenCreate = new DbTokenCreate();
+        $dbTokenCreate->setAppConfig($this->app_config);
+
         return [
+            $dbTokenCreate,
             $authLogin,
             $authLogout,
             new ConfigSet(),
@@ -111,6 +120,7 @@ class App extends Application
             $teamCreate,
             $teamEdit,
             $teamDelete,
+            $teamRestore,
             $userList,
             $whoAmI,
         ];

@@ -49,6 +49,10 @@ jobs:
         run: npm run types
         working-directory: webapp
 
+      - name: Frontend tests (vitest)
+        run: npm run test
+        working-directory: webapp
+
       - name: Build assets
         run: npm run build
         working-directory: webapp
