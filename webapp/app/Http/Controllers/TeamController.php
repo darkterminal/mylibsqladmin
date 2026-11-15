@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\ActivityType;
 use App\Events\TeamDatabasesRequested;
 use App\Jobs\SendTeamInvitation;
-use App\Models\ActivityLog;
 use App\Models\GroupDatabase;
 use App\Models\Invitation;
 use App\Models\Role;
@@ -191,7 +190,7 @@ class TeamController extends Controller
         }
     }
 
-    public function updateTeam(Request $request, $teamId)
+    public function updateTeam(Request $request, Team $team)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -199,7 +198,6 @@ class TeamController extends Controller
         ]);
 
         try {
-            $team = Team::findOrFail($teamId);
             $team->name = $validated['name'];
             $team->description = $validated['description'];
             $team->save();
@@ -232,10 +230,9 @@ class TeamController extends Controller
         }
     }
 
-    public function deleteTeam(Request $request, $teamId)
+    public function deleteTeam(Request $request, Team $team)
     {
         try {
-            $team = Team::findOrFail($teamId);
             $teamName = $team->name;
             $team->delete();
 
@@ -564,13 +561,6 @@ class TeamController extends Controller
                 'city' => $location['city'],
             ]
         );
-
-        ActivityLog::create([
-            'team_id' => $invitation->team_id,
-            'user_id' => $user->id,
-            'database_id' => null,
-            'action' => "Joined team via invitation from {$invitation->inviter->name} ({$invitation->inviter->email})",
-        ]);
     }
 
     public function updateTeamMemberRole(Request $request, Team $team, User $user)
