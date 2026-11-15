@@ -44,18 +44,24 @@ export function groupDatabases(databases: LibSQLDatabases[]) {
     return { standalone, parents, childrenMap };
 }
 
-export function databaseType(schema: string) {
-    if (Boolean(Number(schema)) === false && Number(schema) === 0) {
+/**
+ * Classify a database's is_schema value, matching the backend convention:
+ *  - '1'          -> 'schema'     (schema parent database)
+ *  - '0'          -> 'standalone'
+ *  - parent name  -> that name    (child database, e.g. is_schema = 'db-parent')
+ */
+export function databaseType(schema: string): string {
+    if (schema === '') {
         return 'standalone';
     }
 
-    if (Boolean(Number(schema)) === true && Number(schema) === 1) {
-        return 'schema';
+    const n = Number(schema);
+    if (!Number.isNaN(n)) {
+        if (n === 1) return 'schema';
+        if (n === 0) return 'standalone';
     }
 
-    if (Boolean(schema) !== true || Boolean(schema) !== false) {
-        return schema;
-    }
+    return schema;
 }
 
 export function databaseGroupType(dbs: MostUsedDatabaseProps[] | MostUsedDatabaseMinimalProps[]) {

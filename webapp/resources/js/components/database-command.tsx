@@ -7,9 +7,9 @@ import {
     CommandItem,
     CommandList,
 } from "@/components/ui/command"
-import { databaseType } from "@/lib/utils"
+import { DatabaseTypeIcon, DatabaseTypeText } from "@/components/databases/database-type-icon"
 import { LibSQLDatabases } from "@/types"
-import { Cylinder, File, GitBranch, Search } from "lucide-react"
+import { Search } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 
 interface DatabaseCommandProps {
@@ -65,36 +65,17 @@ export function DatabaseCommand({ databases, onSelect, triggerShortcut = "ctrl+k
                     <CommandGroup heading="Databases">
                         {databases
                             .filter((db) => db.database_name.toLowerCase().includes(search.toLowerCase()))
-                            .map((database) => {
-                                const dbType = databaseType(String(database.is_schema))
-                                return (
-                                    <CommandItem
-                                        key={`${database.user_id}-${database.database_name}`}
-                                        onSelect={() => handleSelect(database)}
-                                        className="flex items-center cursor-pointer"
-                                    >
-                                        {dbType === "schema" && (
-                                            <File className="mr-2 h-4 w-4 text-primary" />
-                                        )}
-                                        {dbType === "standalone" && (
-                                            <Cylinder className="mr-2 h-4 w-4 text-primary" />
-                                        )}
-                                        {dbType === database.is_schema && (
-                                            <GitBranch className="mr-2 h-4 w-4 text-primary" />
-                                        )}
-                                        <span>{database.database_name}</span>
-                                        {dbType === "schema" && (
-                                            <span className="ml-auto text-xs text-muted-foreground">schema</span>
-                                        )}
-                                        {dbType === "0" && (
-                                            <span className="ml-auto text-xs text-muted-foreground">standalone</span>
-                                        )}
-                                        {dbType === database.is_schema && (
-                                            <span className="ml-auto text-xs text-muted-foreground">child of {database.is_schema}</span>
-                                        )}
-                                    </CommandItem>
-                                )
-                            })}
+                            .map((database) => (
+                                <CommandItem
+                                    key={`${database.user_id}-${database.database_name}`}
+                                    onSelect={() => handleSelect(database)}
+                                    className="flex items-center cursor-pointer"
+                                >
+                                    <DatabaseTypeIcon isSchema={database.is_schema} />
+                                    <span>{database.database_name}</span>
+                                    <span className="ml-auto"><DatabaseTypeText isSchema={database.is_schema} /></span>
+                                </CommandItem>
+                            ))}
                     </CommandGroup>
                 </CommandList>
             </CommandDialog>
