@@ -1,8 +1,8 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/react-starter-kit",
+    "name": "darkterminal/mylibsqladmin-webapp",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "MylibSQLAdmin - database management platform for libsql-server",
     "keywords": [
         "laravel",
         "framework"
