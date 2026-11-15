@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ActivityLog;
 use App\Models\UserDatabase;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
@@ -20,7 +19,7 @@ class ActivityLogController extends Controller
         $database = UserDatabase::where('database_name', $validated['database_name'])->first();
         $user = $request->user();
 
-        ActivityLogger::log(
+        $action = ActivityLogger::log(
             $validated['team_id'],
             $user->id,
             $database->id,
@@ -32,7 +31,7 @@ class ActivityLogController extends Controller
             'message' => 'Activity logged successfully',
             'activity' => [
                 'user' => $user->name,
-                'action' => ActivityLog::determineAction($validated['query'], $database->id),
+                'action' => $action,
                 'database' => $validated['database_name'],
                 'time' => now()->diffForHumans()
             ]
