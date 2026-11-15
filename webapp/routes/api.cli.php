@@ -6,6 +6,7 @@ use App\Http\Controllers\Cli\CliDatabaseListController;
 use App\Http\Controllers\Cli\CliDeleteDatabaseController;
 use App\Http\Controllers\Cli\CliForceDeleteDatabaseController;
 use App\Http\Controllers\Cli\CliGetTokenByDatabaseNameController;
+use App\Http\Controllers\Cli\CliMintDatabaseTokenController;
 use App\Http\Controllers\Cli\CliGroupCreateController;
 use App\Http\Controllers\Cli\CliGroupDeleteController;
 use App\Http\Controllers\Cli\CliGroupListController;
@@ -33,6 +34,7 @@ Route::group(['prefix' => '/api/cli'], function () {
             Route::post('/restore/{database_name}', CliResotreDatabaseController::class);
             Route::delete('/force-delete/{database_name}', CliForceDeleteDatabaseController::class);
             Route::get('/token/{database_name}', CliGetTokenByDatabaseNameController::class);
+            Route::post('/token/mint/{database_name}', CliMintDatabaseTokenController::class);
             Route::get('/lists', CliDatabaseListController::class);
         });
 
