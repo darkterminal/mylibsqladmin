@@ -97,7 +97,7 @@ class TokenController extends Controller
 
         $user = User::find($validated['userId']);
 
-        $pair = $tokenGenerator->generateToken(
+        $pair = (new DatabaseTokenGenerator())->generateToken(
             $validated['databaseId'],
             $validated['userId'],
             $validated['expiration']

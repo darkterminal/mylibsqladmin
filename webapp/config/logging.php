@@ -123,6 +123,18 @@ return [
             'handler' => NullHandler::class,
         ],
 
+        'deprecations' => env('LOG_DEPRECATIONS_CHANNEL', 'null') === 'null'
+            ? [
+                'driver' => 'monolog',
+                'handler' => NullHandler::class,
+            ]
+            : [
+                'driver' => 'single',
+                'path' => storage_path('logs/php-deprecation-warnings.log'),
+                'level' => 'debug',
+                'replace_placeholders' => true,
+            ],
+
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
