@@ -14,16 +14,8 @@ class CliDatabaseListController extends Controller
      */
     public function __invoke(Request $request)
     {
-        $userIdentifier = $request->header('X-User-Identifier');
-
-        // Find user by ID or username
-        $user = is_numeric($userIdentifier)
-            ? User::find($userIdentifier)
-            : User::where('username', $userIdentifier)->first();
-
-        if (!$user) {
-            return response()->json(['error' => 'User not found'], 404);
-        }
+        // Identity comes from the Sanctum session, not from client headers.
+        $user = $request->user();
 
         $databases = UserDatabase::where('user_id', $user->id)
             ->orWhereHas('groups.members', function ($query) use ($user) {
