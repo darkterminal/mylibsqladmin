@@ -408,8 +408,8 @@ class TeamController extends Controller
     {
         try {
 
-            Team::setTeamDatabases(auth()->id(), $teamId);
-
+            // The FetchTeamDatabases listener performs the sync once; do not
+            // call setTeamDatabases directly here as well.
             TeamDatabasesRequested::dispatch(auth()->id(), $teamId);
 
             return response()->json([
