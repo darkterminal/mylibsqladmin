@@ -1,0 +1,7 @@
+# Shared base for the Makefile compose invocations.
+# Combine with compose.lli.yml (LIBSQL_LOCAL_INSTANCE=true) or
+# compose.lri.yml (false), then pick a profile:
+#   docker compose -f compose.yml -f compose.lli.yml --profile development up
+networks:
+  app-network:
+    driver: bridge

@@ -1,7 +1,3 @@
-DOCKERIGNORE_DEV = ./docker/.dockerignore.local
-DOCKERIGNORE_PROD = ./docker/.dockerignore.prod
-DOCKERIGNORE_TARGET_DIR = ./webapp/.dockerignore
-
 GET_LOCAL_INSTANCE = $(shell grep -E '^LIBSQL_LOCAL_INSTANCE=' .env | cut -d'=' -f2)
 VERSION ?= $(shell git describe --tags --abbrev=0)
 
@@ -11,8 +7,10 @@ COMPOSE_PROFILES_PROD = --profile production $(if $(filter true,$(GET_LOCAL_INST
 COMPOSE_FILE_BASE = compose.yml
 COMPOSE_FILES = -f $(COMPOSE_FILE_BASE) $(if $(filter true,$(GET_LOCAL_INSTANCE)),-f compose.lli.yml,-f compose.lri.yml)
 
-SETUP_NGINX_PROD = sed -i "s|proxy_pass http://mylibsqladmin-webui-dev:8000/validate-subdomain;|proxy_pass http://mylibsqladmin-webui-prod:8000/validate-subdomain;|" nginx/nginx.conf
-SETUP_NGINX_DEV = sed -i "s|proxy_pass http://mylibsqladmin-webui-prod:8000/validate-subdomain;|proxy_pass http://mylibsqladmin-webui-dev:8000/validate-subdomain;|" nginx/nginx.conf
+# Dev override for the proxy's validate-subdomain upstream. Tracked file; the
+# Makefile never edits tracked files.
+NGINX_CONF_DEV = ./nginx/nginx.dev.conf
+NGINX_CONF_PROD = ./nginx/nginx.conf
 
 .PHONY: help compose-dev/build compose-prod/build compose-dev/up compose-prod/up compose-dev/down compose-prod/down compose-dev/restart compose-prod/restart compose-dev/rebuild compose-prod/rebuild compose-lli/build compose-lri/build compose-dev/upd compose-prod/upd compose-dev/restartd compose-prod/restartd compose-proxy/build
 
@@ -35,41 +33,27 @@ help:
 	@echo "  make compose-proxy/build\t\tBuild proxy container"
 
 compose-prod/build:
-	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
-	$(SETUP_NGINX_PROD)
 	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:latest -f webapp/Dockerfile.production ./webapp
 	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:$(VERSION)-production -f webapp/Dockerfile.production ./webapp
 
 compose-dev/build:
-	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
-	$(SETUP_NGINX_DEV)
 	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-web:nightly -f webapp/Dockerfile.local ./webapp
 
 compose-proxy/build:
-	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
-	$(SETUP_NGINX_DEV)
-	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-proxy:latest -f nginx/Dockerfile ./nginx
-	docker buildx build --push -t ghcr.io/darkterminal/mylibsqladmin-proxy:$(VERSION) -f nginx/Dockerfile ./nginx
+	docker buildx build --push --build-arg NGINX_CONF=nginx.conf -t ghcr.io/darkterminal/mylibsqladmin-proxy:latest -f nginx/Dockerfile ./nginx
+	docker buildx build --push --build-arg NGINX_CONF=nginx.conf -t ghcr.io/darkterminal/mylibsqladmin-proxy:$(VERSION) -f nginx/Dockerfile ./nginx
 
 compose-dev/up:
-	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
-	$(SETUP_NGINX_DEV)
-	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) up
+	NGINX_CONF=$(NGINX_CONF_DEV) COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) up
 
 compose-dev/upd:
-	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
-	$(SETUP_NGINX_DEV)
-	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) up -d
+	NGINX_CONF=$(NGINX_CONF_DEV) COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) up -d
 
 compose-prod/up:
-	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
-	$(SETUP_NGINX_PROD)
-	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_PROD) up
+	NGINX_CONF=$(NGINX_CONF_PROD) COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_PROD) up
 
 compose-prod/upd:
-	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
-	$(SETUP_NGINX_PROD)
-	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_PROD) up -d
+	NGINX_CONF=$(NGINX_CONF_PROD) COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_PROD) up -d
 
 compose-dev/down:
 	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) down --remove-orphans
@@ -78,38 +62,26 @@ compose-prod/down:
 	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_PROD) down --remove-orphans
 
 compose-dev/restart:
-	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
-	$(SETUP_NGINX_DEV)
 	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) down --remove-orphans
-	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) up
+	NGINX_CONF=$(NGINX_CONF_DEV) COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) up
 
 compose-dev/restartd:
-	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
-	$(SETUP_NGINX_DEV)
 	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) down --remove-orphans
-	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) up -d
+	NGINX_CONF=$(NGINX_CONF_DEV) COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) up -d
 
 compose-prod/restart:
-	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
-	$(SETUP_NGINX_PROD)
 	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_PROD) down --remove-orphans
-	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_PROD) up
+	NGINX_CONF=$(NGINX_CONF_PROD) COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_PROD) up
 
 compose-prod/restartd:
-	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
-	$(SETUP_NGINX_PROD)
 	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_PROD) down --remove-orphans
-	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_PROD) up -d
+	NGINX_CONF=$(NGINX_CONF_PROD) COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_PROD) up -d
 
 compose-dev/rebuild:
-	cp $(DOCKERIGNORE_DEV) $(DOCKERIGNORE_TARGET_DIR)
-	$(SETUP_NGINX_DEV)
 	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) down -v --remove-orphans
 	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_DEV) build --no-cache
 
 compose-prod/rebuild:
-	cp $(DOCKERIGNORE_PROD) $(DOCKERIGNORE_TARGET_DIR)
-	$(SETUP_NGINX_PROD)
 	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_PROD) down -v --remove-orphans
 	COMPOSE_BAKE=true docker compose $(COMPOSE_FILES) $(COMPOSE_PROFILES_PROD) build --no-cache
 
