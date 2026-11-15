@@ -54,9 +54,16 @@ class QueryMetric extends Model
 
     public static function summarized()
     {
-        return self::scopeLast24Hours()
-            ->map(function ($metric) {
-                $database = UserDatabase::find($metric->database_id);
+        $metrics = self::scopeLast24Hours();
+
+        // One batched lookup for all referenced databases (no per-row finds).
+        $databases = UserDatabase::whereIn('id', $metrics->pluck('database_id')->unique())
+            ->get(['id', 'database_name'])
+            ->keyBy('id');
+
+        return $metrics
+            ->map(function ($metric) use ($databases) {
+                $database = $databases->get($metric->database_id);
 
                 if (!$database) {
                     return null;
@@ -74,12 +81,12 @@ class QueryMetric extends Model
                     'replication_index' => $metric->replication_index ?? 0,
                     'embedded_replica_frames_replicated' => $metric->embedded_replica_frames_replicated ?? 0,
                     'queries' => empty($metric->queries) ? [] : json_decode($metric->queries, true),
-                    'top_queries' => $metric->topQueries()->orderBy('rows_read', 'desc')->get()->map(fn($query) => [
+                    'top_queries' => $metric->topQueries->sortByDesc('rows_read')->values()->map(fn($query) => [
                         'rows_written' => $query->rows_written ?? 0,
                         'rows_read' => $query->rows_read ?? 0,
                         'query' => $query->query ?? ''
                     ]),
-                    'slowest_queries' => $metric->slowestQueries()->orderBy('elapsed_ms', 'desc')->get()->map(fn($query) => [
+                    'slowest_queries' => $metric->slowestQueries->sortByDesc('elapsed_ms')->values()->map(fn($query) => [
                         'rows_written' => $query->rows_written ?? 0,
                         'rows_read' => $query->rows_read ?? 0,
                         'query' => $query->query ?? '',

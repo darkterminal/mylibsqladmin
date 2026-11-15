@@ -41,23 +41,35 @@ class TokenController extends Controller
 
         // Main tokens query with team filtering
         $userDatabaseTokens = UserDatabaseToken::with([
-            'database.groups' => fn($q) => $q->whereHas('team', fn($q) => $q->where('id', $teamId)),
+            'database.groups' => fn($q) => $q->whereHas('team', fn($q) => $q->where('id', $teamId))->with('team:id,name'),
             'user:id,name'
         ])
             ->whereHas('database.groups.team', fn($q) => $q->where('id', $teamId))
             ->when(!auth()->user()->hasRole('Super Admin') && !auth()->user()->hasRole('Team Manager'), fn($q) => $q->where('user_id', $userId))
-            ->paginate(10)
-            ->through(function ($token) {
+            ->paginate(10);
+
+        // Batched lookup for display names (no per-row queries, no 500 on
+        // dangling created_by references).
+        $creators = User::whereIn('id', collect($userDatabaseTokens->items())
+                ->pluck('created_by')
+                ->filter()
+                ->unique())
+            ->pluck('name', 'id');
+
+        $userDatabaseTokens = $userDatabaseTokens
+            ->through(function ($token) use ($creators) {
                 $expirationDate = $token->expiration_day !== 0 ? now()->addDays($token->expiration_day) : null;
 
                 // Get team from filtered groups
                 $team = $token->database->groups->first()?->team;
 
-                $created_by = User::find($token->created_by)->first('name');
+                $createdByName = $creators->get($token->created_by) ?? 'Unknown';
 
                 return [
                     ...$token->toArray(),
-                    'created_by' => $created_by->name,
+                    'full_access_token' => '••••••••' . substr((string) $token->full_access_token, -8),
+                    'read_only_token' => '••••••••' . substr((string) $token->read_only_token, -8),
+                    'created_by' => $createdByName,
                     'expiration_day' => $expirationDate
                         ? now()->isAfter($expirationDate) ? "Expired" : $expirationDate->format('Y-m-d')
                         : "Never",
