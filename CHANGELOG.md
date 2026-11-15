@@ -1,3 +1,12 @@
+## [1.5.6] - 2026-11-16
+
+- see `webapp/CHANGELOG.md` for the full 1.5.x release history.
+- fix(critical): all releases since v1.5.0 shipped a blank white UI
+  (React never mounted). Fixed in v1.5.6 - do not deploy v1.5.0..v1.5.5.
+  In-place upgrades from inertia-laravel v2 must run `php artisan view:clear`.
+- Note: this file is kept for pre-1.5 history; new entries are maintained in
+  `webapp/CHANGELOG.md`.
+
 ## [1.4.2] - 2025-06-23
 
 - fix: local instance proxy connection [Imam Ali Mustofa]
