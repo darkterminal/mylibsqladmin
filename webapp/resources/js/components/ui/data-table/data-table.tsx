@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { getQuery } from "@/lib/utils"
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { DataTablePagination } from "./data-pagination"
 
 export type LaravelPaginationLink = {
@@ -72,19 +72,26 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
 
     const search = getQuery('search');
-    const [searchQuery, setSearchQuery] = useState(search || undefined)
+    const [searchQuery, setSearchQuery] = useState(search || '')
+    const skipFirstSearch = useRef(true)
 
     const paginationData = data || emptyPagination
 
-    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const query = e.target.value
-        setSearchQuery(query)
-
+    // Debounce: one onSearch call 300ms after the user stops typing.
+    useEffect(() => {
+        if (skipFirstSearch.current) {
+            skipFirstSearch.current = false
+            return
+        }
         const handler = setTimeout(() => {
-            onSearch?.(query)
+            onSearch?.(searchQuery)
         }, 300)
-
         return () => clearTimeout(handler)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchQuery])
+
+    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(e.target.value)
     }
 
     const getValue = (item: any, key: string) => {

@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 
 Schedule::command('app:stats-fetcher')->everyTenMinutes();
 Schedule::command('activities:cleanup')->daily();
+Schedule::command('metrics:cleanup')->daily();
