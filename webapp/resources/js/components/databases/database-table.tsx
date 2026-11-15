@@ -1,8 +1,9 @@
 import { Badge } from "@/components/ui/badge"
 import { Column } from "@/components/ui/data-table/data-table"
-import { databaseType, formatBytes } from "@/lib/utils"
+import { formatBytes } from "@/lib/utils"
+import { DatabaseTypeIcon, DatabaseTypeText } from "@/components/databases/database-type-icon"
 import { Team } from "@/types"
-import { Cylinder, DatabaseIcon, File, GitBranch, Handshake, Users } from "lucide-react"
+import { DatabaseIcon, Handshake, Users } from "lucide-react"
 
 /**
  * Shared shape for database rows across the active and archived lists.
@@ -37,23 +38,10 @@ export interface DatabaseRow {
 }
 
 function typeCell(database: DatabaseRow) {
-    const dbType = databaseType(String(database.is_schema))
-    const isStandalone = dbType === "standalone"
-    const isSchema = dbType === "schema"
-    const isChild = !isStandalone && !isSchema // databaseType returns the parent name for children
-
     return (
         <div className="flex items-center">
-            {isSchema && <File className="mr-2 h-4 w-4 text-primary" />}
-            {isStandalone && <Cylinder className="mr-2 h-4 w-4 text-primary" />}
-            {isChild && <GitBranch className="mr-2 h-4 w-4 text-primary" />}
-            {isSchema && <span className="text-xs text-muted-foreground">schema</span>}
-            {isStandalone && <span className="text-xs text-muted-foreground">standalone</span>}
-            {isChild && (
-                <span className="text-xs text-muted-foreground">
-                    child of <span className="text-primary">{database.is_schema}</span>
-                </span>
-            )}
+            <DatabaseTypeIcon isSchema={database.is_schema} />
+            <DatabaseTypeText isSchema={database.is_schema} />
         </div>
     )
 }
