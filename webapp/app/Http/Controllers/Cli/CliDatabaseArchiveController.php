@@ -25,14 +25,15 @@ class CliDatabaseArchiveController extends Controller
             ->with([
                 'groups' => function ($query) {
                     $query->select('id', 'name');
-                }
+                },
+                'user:id,name,username',
             ])
             ->get()
             ->map(fn($db) => [
                 'database_name' => $db->database_name,
                 'is_schema' => $db->is_schema,
                 'group_name' => $db->groups->first()?->name ?? 'Personal',
-                'owner' => $userIdentifier,
+                'owner' => $db->user?->username ?? 'unknown',
                 'created_at' => $db->created_at->format('Y-m-d H:i:s'),
                 'updated_at' => $db->updated_at->format('Y-m-d H:i:s'),
                 'deleted_at' => $db->deleted_at,
@@ -43,7 +44,6 @@ class CliDatabaseArchiveController extends Controller
             'status' => 'success',
             'message' => 'Databases fetched successfully',
             'data' => [
-                'user_identifier' => $userIdentifier,
                 'databases' => $databases
             ]
         ], 200);

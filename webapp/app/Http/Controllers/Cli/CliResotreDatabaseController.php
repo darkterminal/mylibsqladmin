@@ -13,7 +13,7 @@ class CliResotreDatabaseController extends Controller
      */
     public function __invoke(Request $request)
     {
-        $dbName = $request->input('database_name');
+        $dbName = $request->route('database_name') ?? $request->input('database_name');
 
         if (SqldService::restoreDatabase($dbName, 'web')) {
             return response()->json([
