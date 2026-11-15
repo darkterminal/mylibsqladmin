@@ -44,7 +44,7 @@ services:
       - "8080:8080"
       - "5001:5001"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ${NGINX_CONF:-./nginx/nginx.conf}:/etc/nginx/conf.d/default.conf:ro
     networks:
       - app-network
     restart: unless-stopped
@@ -92,6 +92,3 @@ services:
       - app-network
     profiles: ["development"]
 
-networks:
-  app-network:
-    driver: bridge
