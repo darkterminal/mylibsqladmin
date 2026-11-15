@@ -94,10 +94,6 @@ class Team extends Model
         return $levels[$userLevel] <= $minRequired;
     }
 
-    public function isSuperAdmin(User $user)
-    {
-        return $this->getPermissionLevel($user) === 'super-admin';
-    }
 
     /**
      * The team_databases session payload, guaranteeing its expires_at is
@@ -206,14 +202,4 @@ class Team extends Model
             ->limit(10);
     }
 
-    public function getRecentActivityAttribute()
-    {
-        return $this->recentActivities->map(fn($activity) => [
-            'id' => $activity->id,
-            'user' => $activity->user->name,
-            'action' => $activity->action,
-            'database' => $activity->database->database_name,
-            'time' => $activity->time_ago
-        ]);
-    }
 }

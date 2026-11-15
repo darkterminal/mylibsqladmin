@@ -45,12 +45,6 @@ class QueryMetric extends Model
             ->get();
     }
 
-    public static function chartData()
-    {
-        return self::with(['topQueries', 'slowestQueries'])
-            ->orderBy('id', 'desc')
-            ->get();
-    }
 
     public static function summarized()
     {
@@ -109,13 +103,4 @@ class QueryMetric extends Model
             ->toArray();
     }
 
-    public function scopeMinimalSummarized($query)
-    {
-        return $query->selectRaw('
-            SUM(rows_read) as rows_read_count,
-            SUM(rows_written) as rows_written_count,
-            COUNT(*) as query_count,
-            SUM(storage_bytes_used) as storage_bytes_used
-        ');
-    }
 }

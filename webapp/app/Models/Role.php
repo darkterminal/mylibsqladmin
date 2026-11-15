@@ -52,19 +52,5 @@ class Role extends Model
             ->withTimestamps();
     }
 
-    public static function superAdmin(): Role
-    {
-        return static::firstOrCreate([
-            'name' => 'Super Admin',
-            'description' => 'Full system access'
-        ]);
-    }
 
-    public static function teamManager(): Role
-    {
-        return static::firstOrCreate([
-            'name' => 'Team Manager',
-            'description' => 'Manages team resources'
-        ]);
-    }
 }

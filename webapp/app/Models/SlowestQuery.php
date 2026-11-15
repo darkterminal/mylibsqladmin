@@ -21,24 +21,4 @@ class SlowestQuery extends Model
         return $this->belongsTo(QueryMetric::class, 'main_id');
     }
 
-    public static function slowestQueries()
-    {
-        $slowestQueries = self::select('query')
-            ->selectRaw('AVG(elapsed_ms) as avg_duration, COUNT(*) as occurrences')
-            ->groupBy('query')
-            ->orderByDesc('avg_duration')
-            ->limit(10)
-            ->get();
-
-        $queries = [];
-        foreach ($slowestQueries as $query) {
-            array_push($queries, [
-                'query' => $query->query,
-                'avg_duration' => $query->avg_duration,
-                'occurrences' => $query->occurrences
-            ]);
-        }
-
-        return $queries;
-    }
 }
