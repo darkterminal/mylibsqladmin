@@ -65,9 +65,10 @@ RUN composer install --optimize-autoloader --no-dev --no-interaction \
     && php artisan config:clear \
     && php artisan route:clear \
     && php artisan view:clear \
-    && npm ci --omit=dev \
+    && npm ci \
     && npm run build \
-    && rm -f public/hot
+    && rm -f public/hot \
+    && rm -rf node_modules /root/.npm
 
 # Set permissions
 RUN chown -R www-data:www-data storage bootstrap/cache \
