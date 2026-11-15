@@ -324,6 +324,19 @@ class TeamController extends Controller
 
     public function invite(Request $request, Team $team)
     {
+        // Invite = member administration for a team the caller belongs to.
+        // Super Admins can invite anywhere; members need manage-team-members.
+        $isMember = \DB::table('team_user')
+            ->where('team_id', $team->id)
+            ->where('user_id', auth()->id())
+            ->exists();
+        abort_unless(
+            auth()->user()->hasRole('Super Admin')
+                || ($isMember && auth()->user()->hasPermission('manage-team-members')),
+            403,
+            'Unauthorized'
+        );
+
         $validated = $request->validate([
             'name' => 'nullable|string|max:255',
             'email' => 'required|email',
