@@ -60,6 +60,8 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        \App\Models\Team::ensurePersonalWorkspace(Auth::user());
+
         Team::setTeamDatabases(Auth::user()->id, $this->input('currentTeamId'));
 
 

@@ -9,10 +9,13 @@ use App\Models\User;
 use App\Models\UserDatabase;
 use App\Services\SqldService;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\RespondsWithInternalError;
 use Inertia\Inertia;
 
 class UserDatabaseController extends Controller
 {
+    use RespondsWithInternalError;
+
     public function index()
     {
         $user = auth()->user();
@@ -227,10 +230,7 @@ class UserDatabaseController extends Controller
                 'databaseMetrics' => $databaseMetrics
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Internal server error'
-            ], $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ? 404 : 500);
+            return $this->jsonNotFoundOrError($e);
         }
     }
 

@@ -92,15 +92,9 @@ class HandleInertiaRequests extends Middleware
                         return null;
                     }
 
-                    if ($user->teams()->doesntExist()) {
-                        $team = Team::firstOrCreate([
-                            "name" => "{$user->username} space",
-                            'description' => 'Personal workspace'
-                        ]);
-
-                        $team->members()->attach($user->id, ['permission_level' => 'super-admin']);
-                    }
-
+                    // The personal workspace is created at login/registration
+                    // (Team::ensurePersonalWorkspace). The middleware must
+                    // never write.
                     return $user->append('permission_names')
                         ->load('teams:id,name,description')
                         ->only('id', 'username', 'name', 'email', 'role', 'permission_names', 'teams');

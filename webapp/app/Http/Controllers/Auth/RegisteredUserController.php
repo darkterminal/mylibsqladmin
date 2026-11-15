@@ -52,6 +52,8 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($validate['password']),
         ]);
 
+        \App\Models\Team::ensurePersonalWorkspace($user);
+
         $role = Role::where('name', $roleName)->first();
 
         if ($role) {
