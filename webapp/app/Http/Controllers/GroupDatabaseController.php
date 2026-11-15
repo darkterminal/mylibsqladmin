@@ -78,18 +78,12 @@ class GroupDatabaseController extends Controller
         $groupToken->full_access_token = $pair['full_access_token'];
         $groupToken->read_only_token = $pair['read_only_token'];
 
-        $location = get_ip_location($request->ip());
 
         log_user_activity(
             auth()->user(),
             ActivityType::GROUP_DATABASE_TOKEN_CREATE,
             "Group token create from {$request->ip()}",
-            [
-                'ip' => $request->ip(),
-                'device' => $request->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
 
         return redirect()->back()->with([
@@ -120,18 +114,12 @@ class GroupDatabaseController extends Controller
 
         $token->delete();
 
-        $location = get_ip_location(request()->ip());
 
         log_user_activity(
             auth()->user(),
             ActivityType::GROUP_DATABASE_TOKEN_DELETE,
             "Group token delete from " . request()->ip(),
-            [
-                'ip' => request()->ip(),
-                'device' => request()->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
 
         return redirect()->back()->with([
@@ -185,18 +173,12 @@ class GroupDatabaseController extends Controller
 
             Team::setTeamDatabases(auth()->id(), $validated['team_id']);
 
-            $location = get_ip_location(request()->ip());
 
             log_user_activity(
                 auth()->user(),
                 ActivityType::GROUP_DATABASE_CREATE,
                 "Group " . $validated['name'] . " create from " . request()->ip(),
-                [
-                    'ip' => request()->ip(),
-                    'device' => request()->userAgent(),
-                    'country' => $location['country'],
-                    'city' => $location['city'],
-                ]
+                activity_request_context()
             );
 
             return response()->json([
@@ -260,18 +242,12 @@ class GroupDatabaseController extends Controller
 
         Team::setTeamDatabases(auth()->id(), $validated['team_id']);
 
-        $location = get_ip_location(request()->ip());
 
         log_user_activity(
             auth()->user(),
             ActivityType::GROUP_DATABASE_CREATE,
             "Group " . $validated['name'] . " create from " . request()->ip(),
-            [
-                'ip' => request()->ip(),
-                'device' => request()->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
 
         return redirect()->back()->with([
@@ -302,18 +278,12 @@ class GroupDatabaseController extends Controller
             ->whereDoesntHave('groups')
             ->get(['id', 'database_name']);
 
-        $location = get_ip_location(request()->ip());
 
         log_user_activity(
             auth()->user(),
             ActivityType::GROUP_DATABASE_DELETE,
             "Group " . $group->name . " delete from " . request()->ip(),
-            [
-                'ip' => request()->ip(),
-                'device' => request()->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
 
         return redirect()->back()->with([
@@ -349,18 +319,12 @@ class GroupDatabaseController extends Controller
 
         Team::setTeamDatabases(auth()->id(), $group->team_id);
 
-        $location = get_ip_location(request()->ip());
 
         log_user_activity(
             auth()->user(),
             ActivityType::GROUP_DATABASE_UPDATE,
             "Group {$group->name} update from " . request()->ip(),
-            [
-                'ip' => request()->ip(),
-                'device' => request()->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
 
         return redirect()->back()->with([
@@ -376,19 +340,12 @@ class GroupDatabaseController extends Controller
             ->where('database_id', $database->id)
             ->delete();
 
-        $location = get_ip_location(request()->ip());
 
         log_user_activity(
             auth()->user(),
             ActivityType::GROUP_DATABASE_UPDATE,
             "Database {$database->database_name} removed from group(s) from " . request()->ip(),
-            [
-                'ip' => request()->ip(),
-                'device' => request()->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-                'pivot_rows_removed' => $removed,
-            ]
+            array_merge(activity_request_context(request()), ['pivot_rows_removed' => $removed])
         );
 
         return redirect()->back()->with([

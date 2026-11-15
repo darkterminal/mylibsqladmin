@@ -166,18 +166,12 @@ class TeamController extends Controller
 
             TeamDatabasesRequested::dispatch(auth()->id(), $team->id);
 
-            $location = get_ip_location($request->ip());
 
             log_user_activity(
                 auth()->user(),
                 ActivityType::TEAM_CREATE,
                 "Team {$team->name} created from {$request->ip()}",
-                [
-                    'ip' => $request->ip(),
-                    'device' => $request->userAgent(),
-                    'country' => $location['country'],
-                    'city' => $location['city'],
-                ]
+                activity_request_context()
             );
 
             return redirect()->back()->with([
@@ -203,18 +197,12 @@ class TeamController extends Controller
 
             Team::setTeamDatabases(auth()->id(), 'null');
 
-            $location = get_ip_location($request->ip());
 
             log_user_activity(
                 auth()->user(),
                 ActivityType::TEAM_UPDATE,
                 "Team {$team->name} updated from {$request->ip()}",
-                [
-                    'ip' => $request->ip(),
-                    'device' => $request->userAgent(),
-                    'country' => $location['country'],
-                    'city' => $location['city'],
-                ]
+                activity_request_context()
             );
 
             return response()->json([
@@ -237,18 +225,12 @@ class TeamController extends Controller
 
             Team::setTeamDatabases(auth()->id(), 'null');
 
-            $location = get_ip_location($request->ip());
 
             log_user_activity(
                 auth()->user(),
                 ActivityType::TEAM_DELETE,
                 "Team {$teamName} deleted from {$request->ip()}",
-                [
-                    'ip' => $request->ip(),
-                    'device' => $request->userAgent(),
-                    'country' => $location['country'],
-                    'city' => $location['city'],
-                ]
+                activity_request_context()
             );
 
             return response()->json([
@@ -348,19 +330,13 @@ class TeamController extends Controller
 
             Team::setTeamDatabases(auth()->id(), $team->id);
 
-            $location = get_ip_location($request->ip());
             $user = auth()->user();
 
             log_user_activity(
                 $user,
                 ActivityType::TEAM_MEMBER_DELETE,
                 "Team member {$user->name} deleted from {$request->ip()}",
-                [
-                    'ip' => $request->ip(),
-                    'device' => $request->userAgent(),
-                    'country' => $location['country'],
-                    'city' => $location['city'],
-                ]
+                activity_request_context()
             );
 
             return redirect()->back()->with('success', "Team {$team->name} restored successfully");
@@ -376,18 +352,12 @@ class TeamController extends Controller
 
             Team::setTeamDatabases(auth()->id(), 'null');
 
-            $location = get_ip_location($request->ip());
 
             log_user_activity(
                 auth()->user(),
                 ActivityType::TEAM_MEMBER_DELETE,
                 "Team member {$user->name} deleted from {$request->ip()}",
-                [
-                    'ip' => $request->ip(),
-                    'device' => $request->userAgent(),
-                    'country' => $location['country'],
-                    'city' => $location['city'],
-                ]
+                activity_request_context()
             );
 
             return response()->json([
@@ -436,18 +406,12 @@ class TeamController extends Controller
 
         Team::setTeamDatabases(auth()->id(), 'null');
 
-        $location = get_ip_location($request->ip());
 
         log_user_activity(
             auth()->user(),
             ActivityType::TEAM_MEMBER_CREATE,
             "Team member added to {$team->name} from " . $request->ip(),
-            [
-                'ip' => $request->ip(),
-                'device' => $request->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
 
         return redirect()->back()->with('success', 'Member added successfully');
@@ -473,18 +437,12 @@ class TeamController extends Controller
         // Send notification
         SendTeamInvitation::dispatch($invitation);
 
-        $location = get_ip_location($request->ip());
 
         log_user_activity(
             auth()->user(),
             ActivityType::TEAM_MEMBER_CREATE,
             "Team member {$request->name} invited to {$team->name} from " . $request->ip(),
-            [
-                'ip' => $request->ip(),
-                'device' => $request->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
 
         return response()->json([
@@ -546,18 +504,12 @@ class TeamController extends Controller
 
         Team::setTeamDatabases($user->id, $invitation->team_id);
 
-        $location = get_ip_location(request()->ip());
 
         log_user_activity(
             $user,
             ActivityType::TEAM_MEMBER_CREATE,
             "Joined team {$invitation->team->name} from " . request()->ip(),
-            [
-                'ip' => request()->ip(),
-                'device' => request()->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
     }
 
@@ -579,18 +531,12 @@ class TeamController extends Controller
             // Refresh team data in session
             Team::setTeamDatabases($user->id, $team->id);
 
-            $location = get_ip_location(request()->ip());
 
             log_user_activity(
                 auth()->user(),
                 ActivityType::TEAM_MEMBER_UPDATE,
                 "Team member {$user->name} role updated from " . request()->ip(),
-                [
-                    'ip' => request()->ip(),
-                    'device' => request()->userAgent(),
-                    'country' => $location['country'],
-                    'city' => $location['city'],
-                ]
+                activity_request_context()
             );
 
             return redirect()->back()->with('success', 'Role updated successfully.');

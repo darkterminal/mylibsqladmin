@@ -69,18 +69,12 @@ class UserController extends Controller
 
         $user->roles()->attach($request->roleSelection);
 
-        $location = get_ip_location($request->ip());
 
         log_user_activity(
             auth()->user(),
             ActivityType::USER_CREATE,
             "User {$user->name} created from " . $request->ip(),
-            [
-                'ip' => $request->ip(),
-                'device' => $request->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
 
         return redirect()->route('dashboard.users');
@@ -98,18 +92,12 @@ class UserController extends Controller
             ['id' => 'member', 'name' => 'Member']
         ];
 
-        $location = get_ip_location(request()->ip());
 
         log_user_activity(
             auth()->user(),
             ActivityType::USER_UPDATE,
             "User {$user->name} updated from " . request()->ip(),
-            [
-                'ip' => request()->ip(),
-                'device' => request()->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
 
         return Inertia::render('user/dashboard-user-edit', [
@@ -174,17 +162,11 @@ class UserController extends Controller
             });
 
             // 4. Move success-dependent logic outside the transaction
-            $location = get_ip_location($request->ip());
             log_user_activity(
                 auth()->user(),
                 ActivityType::USER_UPDATE,
                 "User {$user->name} updated from " . $request->ip(),
-                [
-                    'ip' => $request->ip(),
-                    'device' => $request->userAgent(),
-                    'country' => $location['country'] ?? 'Unknown',
-                    'city' => $location['city'] ?? 'Unknown',
-                ]
+                activity_request_context($request)
             );
 
             // 5. Add a success message for better user feedback
@@ -201,18 +183,12 @@ class UserController extends Controller
     {
         $name = $user->name;
         $user->delete();
-        $location = get_ip_location(request()->ip());
 
         log_user_activity(
             auth()->user(),
             ActivityType::USER_DELETE,
             "User {$name} deleted from " . request()->ip(),
-            [
-                'ip' => request()->ip(),
-                'device' => request()->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
 
         return redirect()->route('dashboard.users');
@@ -231,18 +207,12 @@ class UserController extends Controller
         $name = $user->name;
         $user->restore();
 
-        $location = get_ip_location(request()->ip());
 
         log_user_activity(
             auth()->user(),
             ActivityType::USER_RESTORE,
             "User {$name} restored from " . request()->ip(),
-            [
-                'ip' => request()->ip(),
-                'device' => request()->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
 
         return redirect()->route('dashboard.users');
@@ -253,18 +223,12 @@ class UserController extends Controller
         $name = $user->name;
         $user->forceDelete();
 
-        $location = get_ip_location(request()->ip());
 
         log_user_activity(
             auth()->user(),
             ActivityType::USER_FORCE_DELETE,
             "User {$name} permanently deleted from " . request()->ip(),
-            [
-                'ip' => request()->ip(),
-                'device' => request()->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
 
         return redirect()->route('dashboard.users');
@@ -280,18 +244,12 @@ class UserController extends Controller
         // inactive users.
         $user->tokens()->delete();
 
-        $location = get_ip_location(request()->ip());
 
         log_user_activity(
             auth()->user(),
             ActivityType::USER_DEACTIVATE,
             "User {$name} deactivated from " . request()->ip(),
-            [
-                'ip' => request()->ip(),
-                'device' => request()->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
 
         return redirect()->back();
@@ -302,18 +260,12 @@ class UserController extends Controller
         $name = $user->name;
         $user->activate();
 
-        $location = get_ip_location(request()->ip());
 
         log_user_activity(
             auth()->user(),
             ActivityType::USER_REACTIVATE,
             "User {$name} activated from " . request()->ip(),
-            [
-                'ip' => request()->ip(),
-                'device' => request()->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
 
         return redirect()->back();

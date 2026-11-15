@@ -37,18 +37,12 @@ class ConfirmablePasswordController extends Controller
             ]);
         }
 
-        $location = get_ip_location($request->ip());
 
         log_user_activity(
             Auth::user(),
             ActivityType::PASSWORD_RESET_REQUEST,
             "Login from {$request->ip()}",
-            [
-                'ip' => $request->ip(),
-                'device' => $request->userAgent(),
-                'country' => $location['country'],
-                'city' => $location['city'],
-            ]
+            activity_request_context()
         );
 
         $request->session()->put('auth.password_confirmed_at', time());
