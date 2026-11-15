@@ -19,7 +19,7 @@ class GroupDatabaseController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $teamId = session('team_databases')['team_id'] ?? null;
+        $teamId = Team::currentTeamDatabases()['team_id'] ?? null;
 
         if ($user->hasRole('Super Admin') || $user->hasRole('Team Manager') || $user->hasPermission('manage-teams') || $user->hasPermission('view-groups')) {
             $databaseGroups = GroupDatabase::databaseGroups($user->id, $teamId);

@@ -44,7 +44,7 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $currentTeamDatabases = session('team_databases') ?? [];
+        $currentTeamDatabases = Team::currentTeamDatabases();
 
         if (auth()->check() && !filter_var(env('LIBSQL_LOCAL_INSTANCE', true), FILTER_VALIDATE_BOOLEAN)) {
             $teamId = (int) ($currentTeamDatabases['team_id'] ?? 0);

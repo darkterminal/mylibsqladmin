@@ -214,7 +214,7 @@ class UserDatabaseController extends Controller
                 'web'
             );
 
-            $databases = session('team_databases')['databases'] ?? SqldService::getDatabases(config('mylibsqladmin.local_instance'));
+            $databases = Team::currentTeamDatabases()['databases'] ?? SqldService::getDatabases(config('mylibsqladmin.local_instance'));
             $mostUsedDatabases = UserDatabase::mostUsedDatabases();
             $databaseMetrics = QueryMetric::summarized();
 
