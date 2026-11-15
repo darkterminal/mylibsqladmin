@@ -12,13 +12,13 @@ class DashboardController extends Controller
     public function index()
     {
         $databases = session('team_databases')['databases'] ?? SqldService::getDatabases(config('mylibsqladmin.local_instance'));
-        $mostUsedDatabases = UserDatabase::mostUsedDatabases();
-        $databaseMetrics = QueryMetric::summarized();
 
+        // Deferred props: the expensive queries run only when the client
+        // actually requests them (partial reload), not on every page hit.
         return Inertia::render('dashboard', [
             'databases' => $databases,
-            'databaseMetrics' => Inertia::defer(fn() => $databaseMetrics),
-            'mostUsedDatabases' => Inertia::defer(fn() => $mostUsedDatabases)
+            'databaseMetrics' => Inertia::defer(fn() => QueryMetric::summarized()),
+            'mostUsedDatabases' => Inertia::defer(fn() => UserDatabase::mostUsedDatabases())
         ]);
     }
 }

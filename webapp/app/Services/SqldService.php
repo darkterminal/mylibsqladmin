@@ -18,7 +18,7 @@ class SqldService
             case 'db':
                 $host = $source === 'web' && env('APP_ENV') === 'production' ? env('LIBSQL_HOST') : config('mylibsqladmin.libsql.api.host');
                 # Change the host if we're using the local instance
-                $host = env('LIBSQL_LOCAL_INSTANCE') === true ? env('LIBSQL_HOST') : $host;
+                $host = filter_var(env('LIBSQL_LOCAL_INSTANCE', false), FILTER_VALIDATE_BOOLEAN) ? env('LIBSQL_HOST') : $host;
                 $port = config('mylibsqladmin.libsql.api.port');
 
                 $scheme = filter_var(env('LIBSQL_API_USE_HTTPS', false), FILTER_VALIDATE_BOOLEAN) ? 'https' : 'http';
