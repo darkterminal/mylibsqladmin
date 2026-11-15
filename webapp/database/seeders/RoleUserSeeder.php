@@ -13,17 +13,22 @@ class RoleUserSeeder extends Seeder
 {
     public function run()
     {
-        DB::table('role_user')->delete();
-        DB::table('permission_role')->delete();
-        User::query()->delete();
-        Role::query()->delete();
-        Permission::query()->delete();
+        // Destructive reset is opt-in only, for throwaway local environments.
+        // Production bootstrap must never delete existing users or roles.
+        if (filter_var(env('LIBSQL_SEED_RESET', false), FILTER_VALIDATE_BOOLEAN)) {
+            $this->command?->warn('LIBSQL_SEED_RESET=true — wiping users/roles/permissions first.');
+            DB::table('role_user')->delete();
+            DB::table('permission_role')->delete();
+            User::query()->delete();
+            Role::query()->delete();
+            Permission::query()->delete();
 
-        if (DB::getDriverName() === 'sqlite') {
-            DB::statement('DELETE FROM sqlite_sequence WHERE name IN ("users", "roles", "permissions", "role_user", "permission_role")');
+            if (DB::getDriverName() === 'sqlite') {
+                DB::statement('DELETE FROM sqlite_sequence WHERE name IN ("users", "roles", "permissions", "role_user", "permission_role")');
+            }
         }
 
-        // Create permissions
+        // Create/update permissions (idempotent)
         $permissions = [
             [
                 'name' => 'manage-databases',
@@ -188,7 +193,10 @@ class RoleUserSeeder extends Seeder
         ];
 
         foreach ($permissions as $permissionData) {
-            Permission::create($permissionData);
+            Permission::updateOrCreate(
+                ['name' => $permissionData['name']],
+                ['description' => $permissionData['description']]
+            );
         }
 
         // Create roles with permissions
@@ -308,32 +316,14 @@ class RoleUserSeeder extends Seeder
         ];
 
         foreach ($roles as $name => $data) {
-            $role = Role::create([
-                'name' => $name,
-                'description' => $data['description']
-            ]);
+            $role = Role::updateOrCreate(
+                ['name' => $name],
+                ['description' => $data['description']]
+            );
 
             $role->permissions()->sync(
                 Permission::whereIn('name', $data['permissions'])->pluck('id')
             );
-        }
-
-        // Create users with roles
-        // NOTE: no fixture users are created here. A production instance
-        // bootstraps its single super-admin via BootstrapSeeder; demo users
-        // required by the documentation should be created explicitly/on-demand.
-        $users = [];
-
-        foreach ($users as $userData) {
-            $user = User::create([
-                'name' => $userData['name'],
-                'username' => $userData['username'],
-                'email' => $userData['email'],
-                'password' => $userData['password']
-            ]);
-
-            $role = Role::where('name', $userData['role'])->first();
-            $user->roles()->attach($role);
         }
     }
 }
