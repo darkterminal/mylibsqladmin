@@ -75,7 +75,6 @@ class GroupList extends Command
         $pathUrl = '/api/cli/group/lists';
 
         $request = http_request($pathUrl, 'GET', null, [
-            "X-User-Identifier: $userIdentifier",
             "Authorization: Bearer $token"
         ]);
 

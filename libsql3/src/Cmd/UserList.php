@@ -141,7 +141,6 @@ class UserList extends Command implements Configurable
         $apiUrl = '/api/cli/user/lists';
 
         $request = http_request($apiUrl, 'GET', null, [
-            "X-User-Identifier: $userIdentifier",
             "Authorization: Bearer $token"
         ]);
 

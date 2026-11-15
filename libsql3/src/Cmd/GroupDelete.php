@@ -124,7 +124,6 @@ class GroupDelete extends Command
     private function deleteGroup(string $groupId, string $userIdentifier, string $token): array
     {
         $request = http_request("/api/cli/group/delete/$groupId", 'DELETE', null, [
-            "X-User-Identifier: $userIdentifier",
             "Authorization: Bearer $token"
         ]);
 
@@ -141,7 +140,6 @@ class GroupDelete extends Command
     private function fetchGroups(string $userIdentifier, string $token): array
     {
         $request = http_request('/api/cli/group/lists', 'GET', null, [
-            "X-User-Identifier: $userIdentifier",
             "Authorization: Bearer $token"
         ]);
 

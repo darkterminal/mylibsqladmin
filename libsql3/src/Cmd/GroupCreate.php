@@ -186,7 +186,6 @@ class GroupCreate extends Command
 
         $request = http_request('/api/cli/group/create', 'POST', $data, [
             "Content-Type: application/json",
-            "X-User-Identifier: $userIdentifier",
             "Authorization: Bearer $token"
         ]);
 
@@ -198,7 +197,6 @@ class GroupCreate extends Command
     private function fetchTeams(string $userIdentifier, string $token): array
     {
         $request = http_request('/api/cli/team/lists', 'GET', null, [
-            "X-User-Identifier: $userIdentifier",
             "Authorization: Bearer $token"
         ]);
 

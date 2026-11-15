@@ -73,7 +73,6 @@ class TeamList extends Command
         $pathUrl = '/api/cli/team/lists';
 
         $request = http_request($pathUrl, 'GET', null, [
-            "X-User-Identifier: $userIdentifier",
             "Authorization: Bearer $token"
         ]);
 

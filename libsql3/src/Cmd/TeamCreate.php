@@ -55,7 +55,6 @@ class TeamCreate extends Command
 
             $request = http_request('/api/cli/team/create', 'POST', $data, [
                 "Content-Type: application/json",
-                "X-User-Identifier: $userIdentifier",
                 "Authorization: Bearer $token"
             ]);
 
