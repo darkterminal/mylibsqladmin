@@ -4,21 +4,23 @@ namespace App\Http\Controllers;
 
 use App\ActivityType;
 use App\Events\TeamDatabasesRequested;
-use App\Jobs\SendTeamInvitation;
 use App\Models\GroupDatabase;
 use App\Models\Invitation;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
-use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use App\Http\Controllers\Concerns\RespondsWithInternalError;
+use App\Services\TeamMembershipService;
 use Inertia\Inertia;
 
 class TeamController extends Controller
 {
     use RespondsWithInternalError;
+
+    public function __construct(
+        private TeamMembershipService $membership,
+    ) {}
 
     public function index(Request $request)
     {
@@ -345,17 +347,7 @@ class TeamController extends Controller
     public function deleteTeamMember(Request $request, Team $team, User $user)
     {
         try {
-            $team->members()->detach($user->id);
-
-            Team::refreshLatestTeamDatabases((int) auth()->id());
-
-
-            log_user_activity(
-                auth()->user(),
-                ActivityType::TEAM_MEMBER_DELETE,
-                "Team member {$user->name} deleted from {$request->ip()}",
-                activity_request_context()
-            );
+            $this->membership->detachMember($team, $user);
 
             return response()->json([
                 'success' => true,
@@ -391,19 +383,7 @@ class TeamController extends Controller
             'permission_level' => 'required|in:super-admin,team-manager,database-maintener,member'
         ]);
 
-        $team->members()->syncWithoutDetaching([
-            $request->user_id => ['permission_level' => $request->permission_level]
-        ]);
-
-        Team::refreshLatestTeamDatabases((int) auth()->id());
-
-
-        log_user_activity(
-            auth()->user(),
-            ActivityType::TEAM_MEMBER_CREATE,
-            "Team member added to {$team->name} from " . $request->ip(),
-            activity_request_context()
-        );
+        $this->membership->storeMember($team, (int) $request->user_id, $request->permission_level);
 
         return redirect()->back()->with('success', 'Member added successfully');
     }
@@ -416,26 +396,7 @@ class TeamController extends Controller
             'role' => 'required|in:super-admin,team-manager,database-maintainer,member'
         ]);
 
-        $invitation = $team->invitations()->create([
-            'name' => $validated['name'] ?? strtok($validated['email'], '@'),
-            'email' => $request->email,
-            'token' => Str::random(64),
-            'inviter_id' => auth()->id(),
-            'permission_level' => $request->role,
-            'expires_at' => now()->addDays(7),
-            'created_by' => auth()->id()
-        ]);
-
-        // Send notification
-        SendTeamInvitation::dispatch($invitation);
-
-
-        log_user_activity(
-            auth()->user(),
-            ActivityType::TEAM_MEMBER_CREATE,
-            "Team member {$request->name} invited to {$team->name} from " . $request->ip(),
-            activity_request_context()
-        );
+        $this->membership->invite($team, $validated['name'] ?? null, $validated['email'], $validated['role']);
 
         return response()->json([
             'success' => true,
@@ -463,7 +424,7 @@ class TeamController extends Controller
                     ->with('error', 'This invitation was issued to a different email address.');
             }
 
-            $this->attachToTeam($request->user(), $invitation);
+            $this->membership->acceptInvitation($invitation, $request->user());
             $invitation->delete();
             return redirect()->route('dashboard.teams')
                 ->with('success', 'Successfully joined the team');
@@ -471,7 +432,7 @@ class TeamController extends Controller
 
         // Handle existing users not logged in
         if ($user = User::where('email', $invitation->email)->first()) {
-            $this->attachToTeam($user, $invitation);
+            $this->membership->acceptInvitation($invitation, $user);
             $invitation->delete();
             return redirect()->route('login')
                 ->with('status', 'Please login to access the team');
@@ -490,41 +451,12 @@ class TeamController extends Controller
             abort(403);
         }
 
-        $email = $invitation->email;
-        $invitation->delete();
-
-        log_user_activity(
-            auth()->user(),
-            ActivityType::TEAM_MEMBER_DELETE,
-            "Invitation to {$email} revoked from " . request()->ip(),
-            activity_request_context()
-        );
+        $this->membership->revokeInvitation($invitation);
 
         return response()->json([
             'success' => true,
             'message' => 'Invitation revoked successfully',
         ]);
-    }
-
-    protected function attachToTeam(Authenticatable|User $user, Invitation $invitation): void
-    {
-        $invitation->team->members()->syncWithoutDetaching([
-            $user->id => [
-                'permission_level' => $invitation->permission_level,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]
-        ]);
-
-        Team::setTeamDatabases($user->id, $invitation->team_id);
-
-
-        log_user_activity(
-            $user,
-            ActivityType::TEAM_MEMBER_CREATE,
-            "Joined team {$invitation->team->name} from " . request()->ip(),
-            activity_request_context()
-        );
     }
 
     public function updateTeamMemberRole(Request $request, Team $team, User $user)
@@ -534,24 +466,7 @@ class TeamController extends Controller
                 'role' => ['required', 'in:super-admin,team-manager,database-maintainer,member']
             ]);
 
-            // Update team membership pivot
-            $team->members()->updateExistingPivot($user->id, [
-                'permission_level' => $validated['role']
-            ]);
-
-            // Clear cached permissions
-            cache()->forget("user-{$user->id}-permissions");
-
-            // Refresh team data in session
-            Team::setTeamDatabases($user->id, $team->id);
-
-
-            log_user_activity(
-                auth()->user(),
-                ActivityType::TEAM_MEMBER_UPDATE,
-                "Team member {$user->name} role updated from " . request()->ip(),
-                activity_request_context()
-            );
+            $this->membership->updateMemberRole($team, $user, $validated['role']);
 
             return redirect()->back()->with('success', 'Role updated successfully.');
         } catch (\Exception $e) {
