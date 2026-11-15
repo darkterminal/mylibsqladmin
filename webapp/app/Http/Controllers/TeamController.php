@@ -11,6 +11,7 @@ use App\Models\Team;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Concerns\RespondsWithInternalError;
+use App\Services\TeamDashboardQuery;
 use App\Services\TeamMembershipService;
 use Inertia\Inertia;
 
@@ -80,54 +81,23 @@ class TeamController extends Controller
                 return $group->members;
             })->count();
 
-            $pendingInvitations = $team->invitations
-                ->where('expires_at', '>', now())
-                ->map(fn($invite) => [
-                    'id' => $invite->id,
-                    'name' => $invite->name,
-                    'email' => $invite->email,
-                    'inviter' => $invite->inviter->name,
-                    'expires_at' => $invite->expires_at->diffForHumans(),
-                    'permission_level' => $invite->permission_level,
-                    'sent_at' => $invite->created_at->format('M d, Y H:i')
-                ]);
+            $pendingInvitations = TeamDashboardQuery::pendingInvitations($team);
 
-            // The 'groups' relationship is already correctly filtered by the main query
-            $groups = $team->groups->map(fn($group) => [
-                'id' => $group->id,
-                'name' => $group->name,
-                'databases' => $group->members->map(fn($database) => [
-                    'id' => $database->id,
-                    'name' => $database->database_name,
-                    'type' => $this->determineDatabaseType($database->is_schema),
-                    'lastActivity' => $database->latestActivity?->created_at->diffForHumans() ?? 'No activity'
-                ])
-            ]);
+            $groups = TeamDashboardQuery::groups($team->groups);
 
             // Filter recent activity based on permissions
             $recentActivityQuery = $team->recentActivities();
             if (!$canViewAll) {
                 $recentActivityQuery->where('user_id', $user->id);
             }
-            $recentActivity = $recentActivityQuery->get()->map(fn($activity) => [
-                'id' => $activity->id,
-                'user' => $activity->user->name,
-                'action' => $activity->action,
-                'database' => $activity->database?->database_name,
-                'time' => $activity->created_at->diffForHumans()
-            ]);
+            $recentActivity = TeamDashboardQuery::recentActivities($recentActivityQuery->get());
 
             return [
                 'id' => $team->id,
                 'name' => $team->name,
                 'description' => $team->description,
                 'members' => $databaseMemberCount,
-                'team_members' => $team->members->map(fn($member) => [
-                    'id' => $member->id,
-                    'name' => $member->name,
-                    'email' => $member->email,
-                    'role' => $member->pivot->permission_level,
-                ]),
+                'team_members' => TeamDashboardQuery::teamMembers($team),
                 'pending_invitations' => $pendingInvitations,
                 'groups' => $groups,
                 'recentActivity' => $recentActivity
@@ -137,19 +107,6 @@ class TeamController extends Controller
         return Inertia::render('dashboard-team', [
             'teams' => $teamData
         ]);
-    }
-
-    private function determineDatabaseType($isSchema)
-    {
-        if (is_numeric($isSchema) && (int) $isSchema === 1) {
-            return 'schema';
-        }
-
-        if (is_numeric($isSchema) && (int) $isSchema === 0) {
-            return 'standalone';
-        }
-
-        return 'child';
     }
 
     public function createTeam(Request $request)
@@ -248,6 +205,13 @@ class TeamController extends Controller
     {
         $user = auth()->user();
 
+        // Archived teams are visible to Super Admins and those with team delete/manage rights.
+        if (!$user->hasRole('Super Admin')
+            && !$user->hasPermission('delete-teams')
+            && !$user->hasPermission('manage-teams')) {
+            abort(403);
+        }
+
         $teamsQuery = Team::onlyTrashed()->with([
             'members',
             'groups' => function ($query) {
@@ -273,47 +237,17 @@ class TeamController extends Controller
             $canAccessDatabases = $user->hasRole('Super Admin') ||
                 ($user->hasPermission('manage-teams') || $isTeamMember);
 
-            $pendingInvitations = $team->invitations
-                ->where('expires_at', '>', now())
-                ->map(fn($invite) => [
-                    'id' => $invite->id,
-                    'name' => $invite->name,
-                    'email' => $invite->email,
-                    'inviter' => $invite->inviter->name,
-                    'expires_at' => $invite->expires_at->diffForHumans(),
-                    'permission_level' => $invite->permission_level,
-                    'sent_at' => $invite->created_at->format('M d, Y H:i')
-                ]);
+            $pendingInvitations = TeamDashboardQuery::pendingInvitations($team);
 
             return [
                 'id' => $team->id,
                 'name' => $team->name,
                 'description' => $team->description,
                 'members' => $team->members->count(),
-                'team_members' => $team->members->map(fn($member) => [
-                    'id' => $member->id,
-                    'name' => $member->name,
-                    'email' => $member->email,
-                    'role' => $member->pivot->permission_level,
-                ]),
+                'team_members' => TeamDashboardQuery::teamMembers($team),
                 'pending_invitations' => $pendingInvitations,
-                'groups' => $canAccessDatabases ? $team->groups->map(fn($group) => [
-                    'id' => $group->id,
-                    'name' => $group->name,
-                    'databases' => $group->members->map(fn($database) => [
-                        'id' => $database->id,
-                        'name' => $database->database_name,
-                        'type' => $this->determineDatabaseType($database->is_schema),
-                        'lastActivity' => $database->latestActivity?->created_at->diffForHumans() ?? 'No activity'
-                    ])
-                ]) : [],
-                'recentActivity' => $canAccessDatabases ? $team->recentActivities()->get()->map(fn($activity) => [
-                    'id' => $activity->id,
-                    'user' => $activity->user->name,
-                    'action' => $activity->action,
-                    'database' => $activity->database?->database_name,
-                    'time' => $activity->created_at->diffForHumans()
-                ]) : []
+                'groups' => $canAccessDatabases ? TeamDashboardQuery::groups($team->groups) : [],
+                'recentActivity' => $canAccessDatabases ? TeamDashboardQuery::recentActivities($team->recentActivities()->get()) : []
             ];
         });
 
