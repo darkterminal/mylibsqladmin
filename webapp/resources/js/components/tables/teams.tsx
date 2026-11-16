@@ -38,6 +38,13 @@ export default function TeamsTable({ teams, isArchived = false }: { teams: Team[
                     </TableRow>
                 </TableHeader>
                 <TableBody>
+                    {teams.length === 0 && (
+                        <TableRow>
+                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                                No teams found.
+                            </TableCell>
+                        </TableRow>
+                    )}
                     {teams.map((team) => (
                         <TeamTableRow
                             key={team.id}

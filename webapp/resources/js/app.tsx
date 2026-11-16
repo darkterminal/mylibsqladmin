@@ -5,9 +5,6 @@ import type { ResolvedComponent as PageComponent } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { route as routeFn } from 'ziggy-js';
 
-import AppLayout from '@/layouts/app-layout';
-import AuthLayout from '@/layouts/auth-layout';
-import SettingsLayout from '@/layouts/settings/layout';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
@@ -66,16 +63,6 @@ const appName = import.meta.env.VITE_APP_NAME || 'MylibSQLAdmin';
 void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob<PageComponent>('./pages/**/*.tsx', { import: 'default' })),
-    layout: (name) => {
-        switch (true) {
-            case name.startsWith('auth/'):
-                return AuthLayout;
-            case name.startsWith('settings/'):
-                return [AppLayout, SettingsLayout];
-            default:
-                return AppLayout;
-        }
-    },
     strictMode: true,
     withApp(app) {
         return (

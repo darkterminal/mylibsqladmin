@@ -1,24 +1,34 @@
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
+/**
+ * Shared role picker used by the create and edit user pages. The backend
+ * validates the two forms with different field names (`roleSelection` on
+ * store, `roleSelections` on update) — `fieldName` keeps this component
+ * honest instead of hardcoding one.
+ */
 export default function UserRoleForm({
     availableRoles,
     data,
     setData,
-    errors
+    errors,
+    fieldName = 'roleSelections',
 }: {
     availableRoles: any[],
     data: any,
     setData: any,
-    errors: any
+    errors: any,
+    fieldName?: string,
 }) {
+    const value = data[fieldName];
+
     return (
         <div className="space-y-4 mb-3">
             <h3 className="text-lg font-medium">User Roles</h3>
 
             <RadioGroup
-                value={data.roleSelections.toString()}
-                onValueChange={(value) => setData('roleSelections', Number(value))}
+                value={value === undefined || value === null ? '' : String(value)}
+                onValueChange={(value) => setData(fieldName, Number(value))}
                 className="grid grid-cols-1 md:grid-cols-2 gap-4"
             >
                 {availableRoles.map(role => (
@@ -36,7 +46,7 @@ export default function UserRoleForm({
                     </div>
                 ))}
             </RadioGroup>
-            {errors.roleSelections && <p className="text-sm text-red-600">{errors.roleSelections}</p>}
+            {errors[fieldName] && <p className="text-sm text-red-600">{errors[fieldName]}</p>}
         </div>
     );
 }

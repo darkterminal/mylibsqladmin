@@ -23,6 +23,10 @@ const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Databases',
         href: '/dashboard/databases',
+    },
+    {
+        title: 'Archived',
+        href: '/dashboard/database-archived',
     }
 ];
 
@@ -123,8 +127,8 @@ export default function DashboardDatabaseArchived({
     return (
         <DatabasesPage<Databases>
             breadcrumbs={breadcrumbs}
-            headTitle="Databases"
-            title="Databases"
+            headTitle="Databases Archived"
+            title="Databases Archived"
             subtitle="List all your archived databases"
             listRouteName="dashboard.database-archived"
             initialData={listOfDatabaseArchives}

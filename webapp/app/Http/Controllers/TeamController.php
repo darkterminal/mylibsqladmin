@@ -77,10 +77,6 @@ class TeamController extends Controller
         // Map the results for the frontend
         $teamData = $teams->map(function ($team) use ($user, $canViewAll) {
 
-            $databaseMemberCount = $team->groups->flatMap(function ($group) {
-                return $group->members;
-            })->count();
-
             $pendingInvitations = TeamDashboardQuery::pendingInvitations($team);
 
             $groups = TeamDashboardQuery::groups($team->groups);
@@ -96,7 +92,7 @@ class TeamController extends Controller
                 'id' => $team->id,
                 'name' => $team->name,
                 'description' => $team->description,
-                'members' => $databaseMemberCount,
+                'members' => $team->members->count(),
                 'team_members' => TeamDashboardQuery::teamMembers($team),
                 'pending_invitations' => $pendingInvitations,
                 'groups' => $groups,
