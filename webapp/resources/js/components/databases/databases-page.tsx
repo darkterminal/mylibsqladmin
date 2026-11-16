@@ -38,6 +38,11 @@ export function DatabasesPage<T>({
         setIsLoading(true)
         router.visit(url, {
             onFinish: () => setIsLoading(false),
+            // a visit superseded by a newer one (rapid typing into the
+            // search box) is cancelled without firing onFinish — without
+            // this the table would stay on the "Loading..." row forever
+            onCancel: () => setIsLoading(false),
+            onError: () => setIsLoading(false),
         })
     }
 
