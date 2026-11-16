@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { getQuery } from "@/lib/utils"
 import type React from "react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { DataTablePagination } from "./data-pagination"
 
 export type LaravelPaginationLink = {
@@ -71,18 +71,17 @@ export function DataTable<T>({
     isLoading = false,
 }: DataTableProps<T>) {
 
-    const search = getQuery('search');
+    const search = getQuery('search', '');
     const [searchQuery, setSearchQuery] = useState(search || '')
-    const skipFirstSearch = useRef(true)
 
     const paginationData = data || emptyPagination
 
     // Debounce: one onSearch call 300ms after the user stops typing.
+    // The mount value (from the URL) is skipped by comparing against it —
+    // a ref-guard alone misfires under StrictMode's double effect invocation
+    // and would fire onSearch('') on mount (phantom ?page=1 visit).
     useEffect(() => {
-        if (skipFirstSearch.current) {
-            skipFirstSearch.current = false
-            return
-        }
+        if (searchQuery === search) return
         const handler = setTimeout(() => {
             onSearch?.(searchQuery)
         }, 300)
