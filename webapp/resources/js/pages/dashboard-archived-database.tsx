@@ -48,8 +48,8 @@ function DatabaseActions({ database }: { database: Databases }) {
     }, [csrfToken])
 
     const handleDeleteDatabase = useCallback((database: string) => {
-        toast('Are you sure you want to delete this database?', {
-            description: "This action cannot be undone.",
+        toast('Permanently delete this database?', {
+            description: 'This removes the database and its data from the server. This cannot be undone.',
             position: 'top-center',
             action: (
                 <Button
@@ -68,15 +68,15 @@ function DatabaseActions({ database }: { database: Databases }) {
                         });
                     }}
                 >
-                    Delete
+                    Delete permanently
                 </Button>
             )
         })
     }, [notifyTeamDatabasesChanged])
 
     const handleRestoreDatabase = useCallback((database: string) => {
-        toast('Are you sure you want to restore this database?', {
-            description: "This action cannot be undone.",
+        toast('Restore this database?', {
+            description: 'It will be available again in your Databases list.',
             position: 'top-center',
             action: (
                 <Button
@@ -106,7 +106,7 @@ function DatabaseActions({ database }: { database: Databases }) {
             {can('manage-databases') && (
                 <>
                     <ButtonRestore handleRestore={() => handleRestoreDatabase(database.name)} text="Restore Database" />
-                    <ButtonDelete handleDelete={() => handleDeleteDatabase(database.name)} text="Delete Database" />
+                    <ButtonDelete handleDelete={() => handleDeleteDatabase(database.name)} text="Delete permanently" />
                 </>
             )}
         </div>

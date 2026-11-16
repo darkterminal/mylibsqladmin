@@ -39,8 +39,8 @@ function DatabaseActions({ database }: { database: Databases }) {
     const { csrfToken } = usePage<SharedData>().props
 
     const handleDeleteDatabase = useCallback((database: string) => {
-        toast('Are you sure you want to delete this database?', {
-            description: "This action cannot be undone.",
+        toast('Archive this database?', {
+            description: 'You can restore it anytime from Databases Archived.',
             position: 'top-center',
             action: (
                 <Button
@@ -50,7 +50,7 @@ function DatabaseActions({ database }: { database: Databases }) {
                         router.delete(route('database.delete', { database }), {
                             preserveScroll: true,
                             onSuccess: () => {
-                                toast.success('Database deleted successfully');
+                                toast.success('Database archived');
                             },
                             onFinish: async () => {
                                 const teamId = getCurrentTeamId();
@@ -72,7 +72,7 @@ function DatabaseActions({ database }: { database: Databases }) {
                         });
                     }}
                 >
-                    Delete
+                    Archive
                 </Button>
             )
         })
@@ -103,7 +103,7 @@ function DatabaseActions({ database }: { database: Databases }) {
                             </Button>
                         </AppTooltip>
                     </ModalGrantUserDatabase>
-                    <ButtonDelete handleDelete={() => handleDeleteDatabase(database.name)} text="Delete Database" />
+                    <ButtonDelete handleDelete={() => handleDeleteDatabase(database.name)} text="Archive Database" />
                 </>
             )}
         </div>
