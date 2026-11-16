@@ -209,13 +209,20 @@ class UserDatabaseController extends Controller
                 'teamId' => 'required|integer|exists:teams,id'
             ]);
 
-            SqldService::createDatabase(
+            $created = SqldService::createDatabase(
                 $validated['database'],
                 $validated['isSchema'],
                 $validated['groupId'],
                 $validated['teamId'],
                 'web'
             );
+
+            if (!$created) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Database could not be created'
+                ], 422);
+            }
 
             $databases = Team::currentTeamDatabases()['databases'] ?? SqldService::getDatabases(config('mylibsqladmin.local_instance'));
             $mostUsedDatabases = UserDatabase::mostUsedDatabases();
