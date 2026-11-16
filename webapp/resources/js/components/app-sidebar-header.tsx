@@ -102,8 +102,8 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                     <Breadcrumbs breadcrumbs={breadcrumbs} />
                 </div>
 
-                {/* Right Section */}
-                <div className="flex flex-shrink-0 items-center gap-2">
+                {/* Right Section — shrinkable on mobile; labels hide below sm */}
+                <div className="flex min-w-0 items-center gap-2">
                     {(can('manage-databases') || can('create-databases')) && (
                         <ModalCreateDatabase
                             existingDatabases={databases}
@@ -113,7 +113,8 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                         >
                             <AppTooltip text='Create new database'>
                                 <Button variant={'outline'} size="default">
-                                    <CirclePlusIcon className='h-4 w-4' /> New Database
+                                    <CirclePlusIcon className='h-4 w-4' />
+                                    <span className="hidden sm:inline">New Database</span>
                                 </Button>
                             </AppTooltip>
                         </ModalCreateDatabase>
@@ -141,7 +142,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                         </div>
                     )}
 
-                    <div className="flex items-center gap-2 ml-2 pl-2 border-l">
+                    <div className="flex min-w-0 items-center gap-2 ml-2 pl-2 border-l">
                         <TeamSwitcher />
                     </div>
                 </div>
