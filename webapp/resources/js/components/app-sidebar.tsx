@@ -101,7 +101,7 @@ export function AppSidebar() {
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent className="flex-none">
+            <SidebarContent>
                 <NavMain items={mainNavItems} />
             </SidebarContent>
 
