@@ -247,11 +247,7 @@ class UserDatabaseController extends Controller
             return redirect()->back()->with(['error' => 'Database deletion failed']);
         }
 
-        return redirect()->back()->with([
-            'databases' => SqldService::getDatabases(config('mylibsqladmin.local_instance')),
-            'mostUsedDatabases' => UserDatabase::mostUsedDatabases(),
-            'databaseMetrics' => QueryMetric::summarized()
-        ]);
+        return redirect()->back();
     }
 
     public function restoreDatabase(Request $request)
@@ -273,11 +269,7 @@ class UserDatabaseController extends Controller
             return redirect()->back()->with(['error' => 'Database restore failed']);
         }
 
-        return redirect()->back()->with([
-            'databases' => SqldService::getDatabases(config('mylibsqladmin.local_instance')),
-            'mostUsedDatabases' => UserDatabase::mostUsedDatabases(),
-            'databaseMetrics' => QueryMetric::summarized()
-        ]);
+        return redirect()->back();
     }
 
     public function forceDeleteDatabase(string $database)
@@ -293,10 +285,6 @@ class UserDatabaseController extends Controller
             return redirect()->back()->with(['error' => 'Database force deletion failed']);
         }
 
-        return redirect()->back()->with([
-            'databases' => SqldService::getDatabases(config('mylibsqladmin.local_instance')),
-            'mostUsedDatabases' => UserDatabase::mostUsedDatabases(),
-            'databaseMetrics' => QueryMetric::summarized()
-        ]);
+        return redirect()->back();
     }
 }

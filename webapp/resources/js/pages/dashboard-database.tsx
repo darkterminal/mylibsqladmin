@@ -64,7 +64,10 @@ function DatabaseActions({ database }: { database: Databases }) {
                                     });
                                 }
 
-                                router.visit(route('dashboard.databases'));
+                                // the delete redirect already re-rendered this page; only
+                                // the shared team props (sidebar list) need to catch up,
+                                // so partial-reload them instead of a full second visit
+                                router.reload({ only: ['databases', 'groups'] });
                             }
                         });
                     }}
