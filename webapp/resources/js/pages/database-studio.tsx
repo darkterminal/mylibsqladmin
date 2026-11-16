@@ -11,7 +11,9 @@ import {
     type DatabaseStatsChangeProps,
     type LibSQLDatabases,
 } from '@/types';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { ArrowRight, Database } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { getCurrentTeamId } from "@/lib/current-team"
 
@@ -105,7 +107,25 @@ export default function DatabaseStudio() {
             <Head title="Database Studio" />
             <div className="flex h-full flex-1">
                 {dataSidebarState === 'collapsed' && <AppDatabaseSidebar databaseName={databaseName} userDatabases={userDatabases} />}
-                <LibsqlStudio databaseName={databaseName} clientUrl={clientUrl} authToken={authToken} />
+                {databaseName ? (
+                    <LibsqlStudio databaseName={databaseName} clientUrl={clientUrl} authToken={authToken} />
+                ) : (
+                    <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
+                        <Database className="h-12 w-12 text-muted-foreground" />
+                        <div className="space-y-1">
+                            <h2 className="text-xl font-semibold">No database selected</h2>
+                            <p className="text-sm text-muted-foreground">
+                                Pick a database from the Databases page to open it in Studio.
+                            </p>
+                        </div>
+                        <Button asChild variant="default">
+                            <Link href={route('dashboard.databases')}>
+                                Go to Databases
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
+                    </div>
+                )}
             </div>
         </AppLayout>
     );

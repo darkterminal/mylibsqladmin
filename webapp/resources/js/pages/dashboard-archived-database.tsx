@@ -23,6 +23,10 @@ const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Databases',
         href: '/dashboard/databases',
+    },
+    {
+        title: 'Archived',
+        href: '/dashboard/database-archived',
     }
 ];
 
@@ -59,7 +63,7 @@ function DatabaseActions({ database }: { database: Databases }) {
                             },
                             onFinish: async () => {
                                 await notifyTeamDatabasesChanged();
-                                router.visit(route('dashboard.databases'));
+                                router.reload({ only: ['listOfDatabaseArchives', 'databases'] });
                             }
                         });
                     }}
@@ -86,7 +90,7 @@ function DatabaseActions({ database }: { database: Databases }) {
                             },
                             onFinish: async () => {
                                 await notifyTeamDatabasesChanged();
-                                router.visit(route('dashboard.databases'));
+                                router.reload({ only: ['listOfDatabaseArchives', 'databases'] });
                             }
                         });
                     }}
@@ -123,12 +127,13 @@ export default function DashboardDatabaseArchived({
     return (
         <DatabasesPage<Databases>
             breadcrumbs={breadcrumbs}
-            headTitle="Databases"
-            title="Databases"
+            headTitle="Databases Archived"
+            title="Databases Archived"
             subtitle="List all your archived databases"
             listRouteName="dashboard.database-archived"
             initialData={listOfDatabaseArchives}
             columns={columns}
+            partialOnly={['listOfDatabaseArchives']}
             headerAction={hasRole('Super Admin') ? (
                 <Button variant={'default'} onClick={() => router.visit(route('dashboard.databases'))}>
                     <ArrowLeft className="h-4 w-4" />

@@ -70,17 +70,13 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams, isAr
             teamId: Number(teamId),
         };
 
-        const response = await apiFetch(route('database.create'), {
+        await apiFetch(route('database.create'), {
             method: 'POST',
             body: JSON.stringify(submittedData),
             headers: {
                 'X-CSRF-TOKEN': csrfToken
             }
         });
-
-        if (!response.ok) {
-            toast.error('Failed to create database');
-        }
 
         const refreshSession = await apiFetch(route('api.teams.databases', Number(teamId)), {
             method: 'GET',
@@ -97,6 +93,19 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams, isAr
             preserveScroll: true
         });
     }
+
+    const handleRestoreTeam = (teamId: number) => {
+        router.put(route('team.restore', teamId), { preserveScroll: true }, {
+            onSuccess: (page) => {
+                const flash = (page.props as { flash?: { success?: string } }).flash;
+                if (flash?.success) {
+                    toast.success(flash.success, { duration: 2500, position: 'top-center' });
+                }
+                router.visit(route('dashboard.teams'), { preserveScroll: true });
+            },
+            onError: () => toast.error('Failed to restore team'),
+        });
+    };
 
     const handleEditTeamOnSave = async (formData: TeamForm) => {
         const response = await apiFetch(route('team.update', team.id), {
@@ -308,7 +317,7 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams, isAr
                                         variant="ghost"
                                         size="icon"
                                         className="h-8 w-8"
-                                        onClick={() => alert("Restore team")}
+                                        onClick={() => handleRestoreTeam(team.id)}
                                     >
                                         <RefreshCcw className="h-4 w-4" />
                                         <span className="sr-only">Restore team</span>

@@ -53,7 +53,7 @@ export default function CreateUserForm({
         password_confirmation: '',
         teamSelections: [],
         teamPermissions: {},
-        roleSelection: 4,
+        roleSelection: availableRoles.find((r) => r.name === 'Member')?.id ?? availableRoles[0]?.id,
     })
 
     const getInitials = (name: string) => {
@@ -193,6 +193,7 @@ export default function CreateUserForm({
                                 data={data}
                                 setData={setData}
                                 errors={errors}
+                                fieldName="roleSelection"
                             />
                         </CardContent>
 
@@ -202,7 +203,7 @@ export default function CreateUserForm({
                             </Button>
                             <Button type="submit" disabled={processing}>
                                 {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Save Changes
+                                Create User
                             </Button>
                         </CardFooter>
                     </form>

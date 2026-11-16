@@ -86,6 +86,7 @@ class SecureHeaders
             . "style-src {$styleSrc}; "
             . "font-src {$fontSrc}; "
             . "img-src 'self' data:; connect-src {$connectSrc}; "
+            . "frame-src 'self' https://libsqlstudio.com; "
             . "form-action 'self'; frame-ancestors 'self'; base-uri 'self'";
     }
 

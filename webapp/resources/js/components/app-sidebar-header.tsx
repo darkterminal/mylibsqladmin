@@ -7,6 +7,7 @@ import { SharedData, type BreadcrumbItem as BreadcrumbItemType } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { CirclePlusIcon, Database, Unlink } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { AppTooltip } from './app-tooltip';
 import AppearanceToggleDropdown from './appearance-dropdown';
 import { DatabaseCommand } from './database-command';
@@ -72,7 +73,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
             teamId: Number(teamId),
         };
 
-        const response = await apiFetch(route('database.create'), {
+        await apiFetch(route('database.create'), {
             method: 'POST',
             body: JSON.stringify(submittedData),
             headers: {
@@ -80,11 +81,11 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
             }
         });
 
-        if (response.ok) {
-            router.visit(window.location.href, {
-                preserveScroll: true,
-            });
-        }
+        toast.success('Database created successfully', { position: 'top-center' });
+
+        // refresh the page-local database list (only present on the databases
+        // pages) and the shared team list — not a full navigation
+        router.reload({ only: ['listOfDatabases', 'databases'] });
     }
 
     const handleDisconnectDatabase = () => {
@@ -98,11 +99,13 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                 {/* Left Section */}
                 <div className="flex flex-1 items-center gap-2 min-w-0">
                     <SidebarTrigger className="-ml-1.5 md:-ml-1" />
-                    <Breadcrumbs breadcrumbs={breadcrumbs} />
+                    <div className="hidden sm:block min-w-0">
+                        <Breadcrumbs breadcrumbs={breadcrumbs} />
+                    </div>
                 </div>
 
-                {/* Right Section */}
-                <div className="flex flex-shrink-0 items-center gap-2">
+                {/* Right Section — shrinkable on mobile; labels hide below sm */}
+                <div className="flex min-w-0 items-center gap-2">
                     {(can('manage-databases') || can('create-databases')) && (
                         <ModalCreateDatabase
                             existingDatabases={databases}
@@ -112,7 +115,8 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                         >
                             <AppTooltip text='Create new database'>
                                 <Button variant={'outline'} size="default">
-                                    <CirclePlusIcon className='h-4 w-4' /> New Database
+                                    <CirclePlusIcon className='h-4 w-4' />
+                                    <span className="hidden sm:inline">New Database</span>
                                 </Button>
                             </AppTooltip>
                         </ModalCreateDatabase>
@@ -140,7 +144,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                         </div>
                     )}
 
-                    <div className="flex items-center gap-2 ml-2 pl-2 border-l">
+                    <div className="hidden md:flex min-w-0 items-center gap-2 ml-2 pl-2 border-l">
                         <TeamSwitcher />
                     </div>
                 </div>

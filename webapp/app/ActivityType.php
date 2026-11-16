@@ -26,6 +26,7 @@ enum ActivityType: string
     case TEAM_CREATE = 'team_create';
     case TEAM_DELETE = 'team_delete';
     case TEAM_UPDATE = 'team_update';
+    case TEAM_RESTORE = 'team_restore';
     case TEAM_MEMBER_CREATE = 'team_member_create';
     case TEAM_MEMBER_DELETE = 'team_member_delete';
     case TEAM_MEMBER_UPDATE = 'team_member_update';

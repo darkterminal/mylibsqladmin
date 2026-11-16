@@ -68,6 +68,7 @@ test('dashboard teams page renders with expected prop shape', function () {
             ->has('teams.0.pending_invitations')
             ->has('teams.0.recentActivity')
             ->has('teams.0.groups.0.databases', 1)
+            ->where('teams.0.members', 1)
         );
 });
 
@@ -89,6 +90,40 @@ test('archived teams page renders with expected prop shape', function () {
             ->has('teams.0.groups.0.databases', 1)
             ->has('teams.0.pending_invitations')
             ->has('teams.0.recentActivity')
+        );
+});
+
+test('the teams list reports team membership, not database count, in members', function () {
+    $admin = dashboardAdmin();
+
+    $team = Team::create(['name' => 'Count Team', 'description' => 'regression']);
+    $team->members()->attach($admin->id, ['permission_level' => 'super-admin']);
+
+    $group = GroupDatabase::create([
+        'name' => 'count-group',
+        'user_id' => $admin->id,
+        'team_id' => $team->id,
+        'created_by' => $admin->id,
+    ]);
+
+    foreach (['count-db-1', 'count-db-2'] as $name) {
+        $db = \App\Models\UserDatabase::create([
+            'user_id' => $admin->id,
+            'database_name' => $name,
+            'is_schema' => '0',
+            'created_by' => $admin->id,
+            'team_id' => $team->id,
+        ]);
+        $group->members()->attach($db->id);
+    }
+
+    $this->actingAs($admin)
+        ->get('/dashboard/teams')
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('dashboard-team')
+            ->has('teams', 1)
+            ->where('teams.0.members', 1)   // NOT 2 (database count)
+            ->has('teams.0.groups.0.databases', 2)
         );
 });
 

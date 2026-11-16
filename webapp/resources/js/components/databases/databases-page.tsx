@@ -19,6 +19,7 @@ export function DatabasesPage<T>({
     listRouteName,
     initialData,
     columns,
+    partialOnly,
 }: {
     breadcrumbs: BreadcrumbItem[]
     headTitle: string
@@ -29,6 +30,8 @@ export function DatabasesPage<T>({
     listRouteName: string
     initialData: LaravelPagination<T>
     columns: Column<T>[]
+    /** Inertia partial-reload props, e.g. ['listOfDatabases'] — unset refetches the whole page. */
+    partialOnly?: string[]
 }) {
     const searchQueryFromUrl = getQuery('search') ?? ''
     const [isLoading, setIsLoading] = useState(false)
@@ -37,7 +40,16 @@ export function DatabasesPage<T>({
     const visit = (url: string) => {
         setIsLoading(true)
         router.visit(url, {
+            preserveState: true,
+            replace: true,
+            preserveScroll: true,
+            only: partialOnly,
             onFinish: () => setIsLoading(false),
+            // a visit superseded by a newer one (rapid typing into the
+            // search box) is cancelled without firing onFinish — without
+            // this the table would stay on the "Loading..." row forever
+            onCancel: () => setIsLoading(false),
+            onError: () => setIsLoading(false),
         })
     }
 
@@ -55,7 +67,7 @@ export function DatabasesPage<T>({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={headTitle} />
-            <div className="container mx-auto py-8">
+            <div className="container mx-auto py-8 px-4">
                 <div className="flex items-center justify-between">
                     <div className="mb-6">
                         <h1 className="text-2xl font-bold">{title}</h1>

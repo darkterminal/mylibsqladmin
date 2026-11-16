@@ -77,10 +77,6 @@ class TeamController extends Controller
         // Map the results for the frontend
         $teamData = $teams->map(function ($team) use ($user, $canViewAll) {
 
-            $databaseMemberCount = $team->groups->flatMap(function ($group) {
-                return $group->members;
-            })->count();
-
             $pendingInvitations = TeamDashboardQuery::pendingInvitations($team);
 
             $groups = TeamDashboardQuery::groups($team->groups);
@@ -96,7 +92,7 @@ class TeamController extends Controller
                 'id' => $team->id,
                 'name' => $team->name,
                 'description' => $team->description,
-                'members' => $databaseMemberCount,
+                'members' => $team->members->count(),
                 'team_members' => TeamDashboardQuery::teamMembers($team),
                 'pending_invitations' => $pendingInvitations,
                 'groups' => $groups,
@@ -267,9 +263,9 @@ class TeamController extends Controller
 
             log_user_activity(
                 $user,
-                ActivityType::TEAM_MEMBER_DELETE,
-                "Team member {$user->name} deleted from {$request->ip()}",
-                activity_request_context()
+                ActivityType::TEAM_RESTORE,
+                "Team {$team->name} restored from {$request->ip()}",
+                activity_request_context($request)
             );
 
             return redirect()->back()->with('success', "Team {$team->name} restored successfully");

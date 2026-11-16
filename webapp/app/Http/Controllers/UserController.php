@@ -92,14 +92,6 @@ class UserController extends Controller
             ['id' => 'member', 'name' => 'Member']
         ];
 
-
-        log_user_activity(
-            auth()->user(),
-            ActivityType::USER_UPDATE,
-            "User {$user->name} updated from " . request()->ip(),
-            activity_request_context()
-        );
-
         return Inertia::render('user/dashboard-user-edit', [
             'user' => $detail,
             'availableRoles' => $roles,

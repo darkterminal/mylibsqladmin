@@ -122,7 +122,7 @@ export default function Login({ status, canResetPassword, disabledSignUpPage }: 
             {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
 
             <div className='text-xs text-center relative bottom-4 w-full'>
-                <p>Develop by <TextLink href="https://github.com/sponsors/darkterminal" target="_blank" rel="noreferrer" className='font-bold'>darkterminal</TextLink> the creator of <TextLink href="https://github.com/tursodatabase/turso-client-php" target="_blank" rel="noreferrer" className='font-bold'>libSQL PHP Extension</TextLink></p>
+                <p>Developed by <TextLink href="https://github.com/sponsors/darkterminal" target="_blank" rel="noreferrer" className='font-bold'>darkterminal</TextLink>, creator of the <TextLink href="https://github.com/tursodatabase/turso-client-php" target="_blank" rel="noreferrer" className='font-bold'>libSQL PHP extension</TextLink></p>
             </div>
         </AuthLayout>
     );
