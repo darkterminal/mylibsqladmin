@@ -1,4 +1,5 @@
 import { triggerEvent } from "@/hooks/use-custom-event";
+import { apiFetch } from "@/lib/api";
 import { groupDatabases } from "@/lib/utils";
 import { type LibSQLDatabases } from "@/types";
 import { router } from "@inertiajs/react";
@@ -61,15 +62,18 @@ export function AppDatabaseSidebar({
             isSchema: formData.useExisting ? formData.database : formData.isSchema,
         };
 
-        router.post(route('database.create'), submittedData, {
-            onSuccess: () => {
-                toast.success('Database created successfully', {
-                    position: 'top-center',
-                    action: {
-                        label: <><Eye className="mr-1 w-4 h-4" /> View Database</>,
-                        onClick: () => handleClickDatabaseOpen(submittedData.database),
-                    }
-                });
+        // Failures must propagate to the modal's catch (toast + dialog stays
+        // open). router.post would swallow validation errors silently.
+        await apiFetch(route('database.create'), {
+            method: 'POST',
+            body: JSON.stringify(submittedData),
+        });
+
+        toast.success('Database created successfully', {
+            position: 'top-center',
+            action: {
+                label: <><Eye className="mr-1 w-4 h-4" /> View Database</>,
+                onClick: () => handleClickDatabaseOpen(submittedData.database),
             }
         });
     }

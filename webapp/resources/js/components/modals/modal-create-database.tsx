@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useCustomEvent } from "@/hooks/use-custom-event"
 import { databaseType } from "@/lib/utils"
+import { toast } from "sonner"
 import { type LibSQLDatabases, type OpenModalStateChangeProps, type Team } from "@/types"
 import { useEffect, useState } from "react"
 import { Combobox, ComboboxOption } from "../ui/combobox"
@@ -134,6 +135,7 @@ export function ModalCreateDatabase({
                 teamId: currentTeam?.id
             })
         } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Failed to create database")
             console.error("Error submitting form:", error)
         } finally {
             setProcessing(false)
@@ -170,6 +172,7 @@ export function ModalCreateDatabase({
                 setAvailableGroups((prev) => [...prev, newGroup])
                 setFormData(prev => ({ ...prev, groupId: newGroupId }))
             } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Failed to create group")
                 console.error("Error creating group:", error)
             }
         }

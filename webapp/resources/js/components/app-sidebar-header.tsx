@@ -7,6 +7,7 @@ import { SharedData, type BreadcrumbItem as BreadcrumbItemType } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { CirclePlusIcon, Database, Unlink } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { AppTooltip } from './app-tooltip';
 import AppearanceToggleDropdown from './appearance-dropdown';
 import { DatabaseCommand } from './database-command';
@@ -72,7 +73,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
             teamId: Number(teamId),
         };
 
-        const response = await apiFetch(route('database.create'), {
+        await apiFetch(route('database.create'), {
             method: 'POST',
             body: JSON.stringify(submittedData),
             headers: {
@@ -80,11 +81,11 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
             }
         });
 
-        if (response.ok) {
-            router.visit(window.location.href, {
-                preserveScroll: true,
-            });
-        }
+        toast.success('Database created successfully', { position: 'top-center' });
+
+        router.visit(window.location.href, {
+            preserveScroll: true,
+        });
     }
 
     const handleDisconnectDatabase = () => {

@@ -8,6 +8,7 @@ export const apiFetch = async <T>(url: string, options: RequestInit = {}): Promi
     const headers = {
         'X-CSRF-TOKEN': getCsrfToken(),
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         ...options.headers,
     }
 
@@ -18,9 +19,19 @@ export const apiFetch = async <T>(url: string, options: RequestInit = {}): Promi
     })
 
     if (!response.ok) {
-        const error = new Error(response.statusText)
-        error.message = `${error.message}. Status: ${response.status}`
-        throw error
+        // Surface the server's message (validation 422s, our JSON 500s)
+        // instead of a bare statusText, so callers can toast something
+        // actionable.
+        let message = response.statusText || `HTTP ${response.status}`
+        try {
+            const body = await response.clone().json()
+            if (body && typeof body.message === 'string' && body.message.trim()) {
+                message = body.message
+            }
+        } catch {
+            // Body was not JSON — fall back to the status text.
+        }
+        throw new Error(`${message} (HTTP ${response.status})`)
     }
 
     return response as Response & { json(): Promise<T> }
