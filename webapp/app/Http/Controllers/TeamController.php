@@ -263,9 +263,9 @@ class TeamController extends Controller
 
             log_user_activity(
                 $user,
-                ActivityType::TEAM_MEMBER_DELETE,
-                "Team member {$user->name} deleted from {$request->ip()}",
-                activity_request_context()
+                ActivityType::TEAM_RESTORE,
+                "Team {$team->name} restored from {$request->ip()}",
+                activity_request_context($request)
             );
 
             return redirect()->back()->with('success', "Team {$team->name} restored successfully");
