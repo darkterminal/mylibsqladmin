@@ -131,6 +131,7 @@ export default function DashboardDatabase({
             listRouteName="dashboard.databases"
             initialData={listOfDatabases}
             columns={columns}
+            partialOnly={['listOfDatabases']}
             headerAction={hasRole('Super Admin') ? (
                 <Button variant={'default'} onClick={() => router.visit(route('dashboard.database-archived'))}>
                     <Trash2Icon className="h-4 w-4" />

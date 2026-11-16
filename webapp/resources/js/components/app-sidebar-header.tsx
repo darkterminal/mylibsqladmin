@@ -83,9 +83,9 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
 
         toast.success('Database created successfully', { position: 'top-center' });
 
-        router.visit(window.location.href, {
-            preserveScroll: true,
-        });
+        // refresh the page-local database list (only present on the databases
+        // pages) and the shared team list — not a full navigation
+        router.reload({ only: ['listOfDatabases', 'databases'] });
     }
 
     const handleDisconnectDatabase = () => {

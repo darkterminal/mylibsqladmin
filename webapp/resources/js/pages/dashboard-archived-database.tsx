@@ -63,7 +63,7 @@ function DatabaseActions({ database }: { database: Databases }) {
                             },
                             onFinish: async () => {
                                 await notifyTeamDatabasesChanged();
-                                router.visit(route('dashboard.databases'));
+                                router.reload({ only: ['listOfDatabaseArchives', 'databases'] });
                             }
                         });
                     }}
@@ -90,7 +90,7 @@ function DatabaseActions({ database }: { database: Databases }) {
                             },
                             onFinish: async () => {
                                 await notifyTeamDatabasesChanged();
-                                router.visit(route('dashboard.databases'));
+                                router.reload({ only: ['listOfDatabaseArchives', 'databases'] });
                             }
                         });
                     }}
@@ -133,6 +133,7 @@ export default function DashboardDatabaseArchived({
             listRouteName="dashboard.database-archived"
             initialData={listOfDatabaseArchives}
             columns={columns}
+            partialOnly={['listOfDatabaseArchives']}
             headerAction={hasRole('Super Admin') ? (
                 <Button variant={'default'} onClick={() => router.visit(route('dashboard.databases'))}>
                     <ArrowLeft className="h-4 w-4" />
