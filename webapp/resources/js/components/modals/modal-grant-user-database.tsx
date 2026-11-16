@@ -13,9 +13,9 @@ import {
     type MostUsedDatabaseProps,
     type UserDatabaseTokenProps
 } from "@/types";
-import { router, useForm, usePage } from "@inertiajs/react";
+import { useForm, usePage } from "@inertiajs/react";
 import { Cylinder, Database, GitBranch } from "lucide-react";
-import React, { FormEventHandler, useState } from "react";
+import React, { FormEventHandler, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
@@ -51,14 +51,41 @@ export function ModalGrantUserDatabase({
     const { props } = usePage();
 
     const [selectedDatabase, setSelectedDatabase] = useState<string | undefined>(mostUsedDatabases.length > 0 ? String(mostUsedDatabases[0].database_id) : undefined)
-    const [selectedUser, setSelectedUser] = useState<string | undefined>(String(users.length > 0 ? users[0].id : undefined))
+    const [selectedUser, setSelectedUser] = useState<string | undefined>(users.length > 0 ? String(users[0].id) : undefined)
     const { standaloneDatabases, parentDatabases, childDatabases } = databaseGroupType(mostUsedDatabases)
-    const flash = props.flash as FlashMessageProps;
+    const flash = props.flash as FlashMessageProps | undefined;
     const [isOpen, setOpen] = useState(false);
     const { data, setData, post, processing, errors, reset } = useForm<GrantUserDatabase>({
         userId: Number(selectedUser),
         databaseId: Number(selectedDatabase)
     });
+
+    // Flash messages travel with the inertia page props; a useEffect is the
+    // reliable reader (reading props inside onSuccess catches a stale closure).
+    // id keeps the sonner toast single — one instance of this modal exists
+    // per table row (+ StrictMode double-invoke), each would fire the same
+    // flash, so without an id the user sees N duplicates.
+    useEffect(() => {
+        if (flash?.success) {
+            toast.success(flash.success, {
+                id: 'flash-success',
+                position: 'bottom-center',
+                duration: 5000,
+            });
+        }
+
+        if (flash?.error) {
+            toast.error(flash.error, {
+                id: 'flash-error',
+                position: 'bottom-center',
+                duration: 5000,
+                style: {
+                    backgroundColor: 'var(--destructive)',
+                    border: '1px solid var(--destructive)',
+                },
+            });
+        }
+    }, [flash?.success, flash?.error]);
 
     const handleSelectChange = (value: string) => {
         setSelectedDatabase(value)
@@ -85,28 +112,6 @@ export function ModalGrantUserDatabase({
                 reset('userId', 'databaseId');
                 setSelectedDatabase(undefined);
                 setSelectedUser(undefined);
-
-                if (flash.success) {
-                    toast.success(flash.success, {
-                        position: 'bottom-center',
-                        duration: 5000,
-                    })
-                }
-
-                if (flash.error) {
-                    toast.error(flash.error, {
-                        position: 'bottom-center',
-                        duration: 5000,
-                        style: {
-                            backgroundColor: 'var(--destructive)',
-                            border: '1px solid var(--destructive)',
-                        },
-                    })
-                }
-
-                router.visit(window.location.href, {
-                    preserveScroll: true
-                });
             }
         });
     }
@@ -175,7 +180,9 @@ export function ModalGrantUserDatabase({
                                 <SelectValue placeholder="Select user" />
                             </SelectTrigger>
                             <SelectContent>
-                                {users && users.map((user) => (
+                                {users.length === 0 ? (
+                                    <div className="px-3 py-2 text-sm text-muted-foreground">No users available to grant</div>
+                                ) : users.map((user) => (
                                     <SelectItem key={user.id} value={String(user.id)}>
                                         {user.name} - {user.roles[0].name}
                                     </SelectItem>
