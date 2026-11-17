@@ -86,7 +86,7 @@ function DatabaseActions({ database }: { database: Databases }) {
     return (
         <div className="flex items-center gap-2">
             <ButtonOpenDatabaseStudio databaseName={database.name} text="Studio" />
-            <ButtonSDks />
+            <ButtonSDks databaseName={database.name} />
             {database.token && (
                 <>
                     <ButtonCopyFullAccessToken token={database.token.full_access_token} />
