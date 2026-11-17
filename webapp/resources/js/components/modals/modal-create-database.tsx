@@ -187,7 +187,7 @@ export function ModalCreateDatabase({
             onOpenChange={setOpen}
             onSubmit={handleSubmit}
             isSubmitting={processing}
-            isSubmitDisabled={!formData.database || (formData.useExisting && !formData.childDatabase)}
+            isSubmitDisabled={!formData.database || (formData.useExisting && !formData.childDatabase) || !formData.groupId}
             submitLabel={processing ? "Processing..." : formData.useExisting ? "Select Database" : "Create Database"}
         >
             <RadioGroup
