@@ -12,7 +12,7 @@ function CodeBlock({ code, label }: { code: string; label?: string }) {
             {label && (
                 <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
             )}
-            <pre className="max-h-64 overflow-auto rounded-md border bg-muted p-3 text-xs leading-relaxed">
+            <pre className="max-h-96 overflow-auto rounded-md border bg-muted p-3 text-xs leading-relaxed">
                 <code>{code}</code>
             </pre>
         </div>
@@ -105,7 +105,7 @@ export function ButtonSDks({ databaseName }: { databaseName?: string }) {
                     <span className="ml-1">SDK</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto p-0 gap-0">
+            <DialogContent className="flex w-full max-w-[calc(100%-1rem)] flex-col gap-0 p-0 max-h-[94vh] overflow-hidden sm:max-w-6xl sm:w-[96vw]">
                 <DialogHeader className="border-b px-6 py-4">
                     <DialogTitle className="flex items-center gap-2">
                         Connect with an SDK
@@ -120,21 +120,21 @@ export function ButtonSDks({ databaseName }: { databaseName?: string }) {
                     </DialogDescription>
                 </DialogHeader>
 
-                <Tabs defaultValue="official" className="flex flex-col">
+                <Tabs defaultValue="official" className="flex min-h-0 flex-1 flex-col">
                     <div className="border-b px-6 pt-3">
                         <TabsList className="grid w-48 grid-cols-2">
                             <TabsTrigger value="official">Official</TabsTrigger>
                             <TabsTrigger value="community">Community</TabsTrigger>
                         </TabsList>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr]">
+                    <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto md:grid-cols-[240px_minmax(0,1fr)]">
                         <TabsContent value="official" className="mt-0 border-r p-2">
                             <div className="space-y-1">{officialSDKs.map(listButton)}</div>
                         </TabsContent>
                         <TabsContent value="community" className="mt-0 border-r p-2">
                             <div className="space-y-1">{communitySDKs.map(listButton)}</div>
                         </TabsContent>
-                        <div className="p-5">
+                        <div className="min-w-0 overflow-y-auto p-5">
                             <SDKDetail sdk={selectedSDK} />
                         </div>
                     </div>
