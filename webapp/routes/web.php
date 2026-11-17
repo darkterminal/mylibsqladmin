@@ -18,6 +18,7 @@ Route::get('/', fn() => redirect()->route('login'))->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('database-studio', fn() => Inertia::render('database-studio'))->name('database.studio');
+    Route::post('database-studio/token', [\App\Http\Controllers\StudioTokenController::class, 'issue'])->name('database-studio.token');
 
     Route::prefix('dashboard')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
