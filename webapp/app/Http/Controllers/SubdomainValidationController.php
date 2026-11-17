@@ -18,12 +18,10 @@ use DateTimeZone;
 class SubdomainValidationController extends Controller
 {
     private string $subdomain;
-    private string|int $uid;
 
     public function __construct()
     {
         $this->subdomain = '';
-        $this->uid = 0;
     }
 
     public function validateSubdomain(Request $request)
@@ -38,13 +36,17 @@ class SubdomainValidationController extends Controller
         try {
             $jwtToken = $this->parseJwtToken($token);
             $this->validateTokenExpiration($jwtToken);
-        } catch (\Exception $e) {
-            logger()->error('Token validation failed: ' . $e->getMessage());
-            return $this->createResponse('none');
-        }
 
-        $accessLevel = $this->determineAccessLevel($jwtToken, $token, $this->subdomain);
-        return $this->handleFinalResponse($this->subdomain, $accessLevel);
+            $accessLevel = $this->determineAccessLevel($jwtToken, $token, $this->subdomain);
+
+            return $this->handleFinalResponse($this->subdomain, $accessLevel);
+        } catch (\Exception $e) {
+            // Not a JWT we can read — the user-token family is a random
+            // string matched by SHA-256 hash, not a JWT, so it lands here.
+            $accessLevel = $this->handleUserTokenAccess($token, $this->subdomain);
+
+            return $this->handleFinalResponse($this->subdomain, $accessLevel);
+        }
     }
 
     private function extractToken(Request $request): string
@@ -107,28 +109,23 @@ class SubdomainValidationController extends Controller
 
     private function handleUserTokenAccess(string $token, string $subdomain): string
     {
+        // Stored tokens are SHA-256 hashes of the bearer token — the
+        // presented token must be hashed before any comparison.
+        $hashed = hash('sha256', $token);
+
         $databaseToken = UserDatabaseToken::with('database')
             ->whereHas('database', fn($q) => $q->where('database_name', $subdomain))
-            ->where('user_id', $this->uid)
-            ->latest()->first();
+            ->where(fn($q) => $q->where('full_access_token', $hashed)
+                ->orWhere('read_only_token', $hashed))
+            ->first();
 
         if (!$databaseToken) {
             return 'none';
         }
 
-        if (config('app.debug') === true) {
-            logger()->debug('Access level', [
-                'subdomain' => $subdomain,
-                'token_fingerprint' => substr((string) $token, 0, 8),
-                'access_level' => match (true) {
-                    hash_equals((string) $databaseToken->full_access_token, hash('sha256', $token)) => 'full-access',
-                    hash_equals((string) $databaseToken->read_only_token, hash('sha256', $token)) => 'read-only',
-                    default => 'none',
-                }
-            ]);
-        }
-
-        return $databaseToken->full_access_token === $token ? 'full-access' : 'read-only';
+        return hash_equals((string) $databaseToken->full_access_token, $hashed)
+            ? 'full-access'
+            : 'read-only';
     }
 
     private function handleFinalResponse(string $subdomain, string $accessLevel)
