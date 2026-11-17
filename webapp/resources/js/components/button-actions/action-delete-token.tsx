@@ -13,8 +13,8 @@ export default function ButtonDeleteToken({ token }: { token: UserDatabaseTokenP
                 variant="destructive"
                 size="sm"
                 onClick={() => {
-                    toast("Are you sure you want to delete this token?", {
-                        description: "This action cannot be undone.",
+                    toast("Permanently delete this token?", {
+                        description: "Applications using it will lose access immediately. This cannot be undone.",
                         duration: 7000,
                         position: "top-center",
                         style: {

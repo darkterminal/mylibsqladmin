@@ -237,16 +237,26 @@ export interface UserDatabaseTokenProps {
     name: string;
     full_access_token: string;
     read_only_token: string;
+    /** Tail of the stored hash — the only stable identifier a hashed token has. */
+    fingerprint: string;
     expiration_day: number;
+    /** Absolute expiry date (created_at + expiration_day), or null when never. */
+    expires_at: string | null;
+    /** 'never' | 'active' | 'expired' — anchored at creation, immune to render-time drift. */
+    expiration_state: 'never' | 'active' | 'expired';
+    /** Signed days until expiry (null when never). Negative when expired. */
+    days_remaining: number | null;
+    created_at: string;
+    /** Display name resolved server-side ('Super Admin', or fall back to id). */
     created_by: string;
     database: LibSQLDatabases;
-    user: User;
+    user: { id: number; name: string } | null;
     groups: {
         id: number;
         name: string;
         team: Team;
     },
-    team: Team
+    team: Team | null
 }
 
 export interface DatabaseInGroupProps {
