@@ -48,8 +48,8 @@ function DatabaseActions({ database }: { database: Databases }) {
     }, [csrfToken])
 
     const handleDeleteDatabase = useCallback((database: string) => {
-        toast('Are you sure you want to delete this database?', {
-            description: "This action cannot be undone.",
+        toast('Permanently delete this database?', {
+            description: 'This removes the database and its data from the server. This cannot be undone.',
             position: 'top-center',
             action: (
                 <Button
@@ -58,8 +58,13 @@ function DatabaseActions({ database }: { database: Databases }) {
                     onClick={() => {
                         router.delete(route('database.force-delete', { database }), {
                             preserveScroll: true,
-                            onSuccess: () => {
-                                toast.success('Database deleted successfully');
+                            onSuccess: (page) => {
+                                const error = page?.props?.flash?.error;
+                                if (error) {
+                                    toast.error(String(error), { position: 'top-center' });
+                                } else {
+                                    toast.success('Database deleted successfully');
+                                }
                             },
                             onFinish: async () => {
                                 await notifyTeamDatabasesChanged();
@@ -68,15 +73,15 @@ function DatabaseActions({ database }: { database: Databases }) {
                         });
                     }}
                 >
-                    Delete
+                    Delete permanently
                 </Button>
             )
         })
     }, [notifyTeamDatabasesChanged])
 
     const handleRestoreDatabase = useCallback((database: string) => {
-        toast('Are you sure you want to restore this database?', {
-            description: "This action cannot be undone.",
+        toast('Restore this database?', {
+            description: 'It will be available again in your Databases list.',
             position: 'top-center',
             action: (
                 <Button
@@ -85,8 +90,13 @@ function DatabaseActions({ database }: { database: Databases }) {
                     onClick={() => {
                         router.post(route('database.restore'), { name: database }, {
                             preserveScroll: true,
-                            onSuccess: () => {
-                                toast.success('Database restore successfully');
+                            onSuccess: (page) => {
+                                const error = page?.props?.flash?.error;
+                                if (error) {
+                                    toast.error(String(error), { position: 'top-center' });
+                                } else {
+                                    toast.success('Database restore successfully');
+                                }
                             },
                             onFinish: async () => {
                                 await notifyTeamDatabasesChanged();
@@ -106,7 +116,7 @@ function DatabaseActions({ database }: { database: Databases }) {
             {can('manage-databases') && (
                 <>
                     <ButtonRestore handleRestore={() => handleRestoreDatabase(database.name)} text="Restore Database" />
-                    <ButtonDelete handleDelete={() => handleDeleteDatabase(database.name)} text="Delete Database" />
+                    <ButtonDelete handleDelete={() => handleDeleteDatabase(database.name)} text="Delete permanently" />
                 </>
             )}
         </div>

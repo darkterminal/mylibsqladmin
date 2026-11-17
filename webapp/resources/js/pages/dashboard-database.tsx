@@ -39,8 +39,8 @@ function DatabaseActions({ database }: { database: Databases }) {
     const { csrfToken } = usePage<SharedData>().props
 
     const handleDeleteDatabase = useCallback((database: string) => {
-        toast('Are you sure you want to delete this database?', {
-            description: "This action cannot be undone.",
+        toast('Archive this database?', {
+            description: 'You can restore it anytime from Databases Archived.',
             position: 'top-center',
             action: (
                 <Button
@@ -49,8 +49,13 @@ function DatabaseActions({ database }: { database: Databases }) {
                     onClick={() => {
                         router.delete(route('database.delete', { database }), {
                             preserveScroll: true,
-                            onSuccess: () => {
-                                toast.success('Database deleted successfully');
+                            onSuccess: (page) => {
+                                const error = page?.props?.flash?.error;
+                                if (error) {
+                                    toast.error(String(error), { position: 'top-center' });
+                                } else {
+                                    toast.success('Database archived');
+                                }
                             },
                             onFinish: async () => {
                                 const teamId = getCurrentTeamId();
@@ -72,7 +77,7 @@ function DatabaseActions({ database }: { database: Databases }) {
                         });
                     }}
                 >
-                    Delete
+                    Archive
                 </Button>
             )
         })
@@ -81,7 +86,7 @@ function DatabaseActions({ database }: { database: Databases }) {
     return (
         <div className="flex items-center gap-2">
             <ButtonOpenDatabaseStudio databaseName={database.name} text="Studio" />
-            <ButtonSDks />
+            <ButtonSDks databaseName={database.name} />
             {database.token && (
                 <>
                     <ButtonCopyFullAccessToken token={database.token.full_access_token} />
@@ -103,7 +108,7 @@ function DatabaseActions({ database }: { database: Databases }) {
                             </Button>
                         </AppTooltip>
                     </ModalGrantUserDatabase>
-                    <ButtonDelete handleDelete={() => handleDeleteDatabase(database.name)} text="Delete Database" />
+                    <ButtonDelete handleDelete={() => handleDeleteDatabase(database.name)} text="Archive Database" />
                 </>
             )}
         </div>

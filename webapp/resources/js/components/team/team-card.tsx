@@ -225,7 +225,7 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams, isAr
         });
 
         if (!response.ok) {
-            toast.error('Failed to delete team');
+            toast.error('Failed to archive team');
             return;
         }
 
@@ -244,6 +244,10 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams, isAr
                     preserveScroll: true,
                 });
             }
+        });
+        toast.info('If this was your current team, it has been switched to another team automatically.', {
+            duration: 4500,
+            position: 'top-center',
         });
     }
 
@@ -390,7 +394,7 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams, isAr
                                                         disabled={totalTeams === 1}
                                                         onClick={() => handleDeleteTeam(team.id)}
                                                     >
-                                                        Delete team
+                                                        Archive team
                                                     </Button>
                                                 </DropdownMenuItem>
                                             </>

@@ -13,9 +13,9 @@ import {
     type MostUsedDatabaseProps,
     type UserDatabaseTokenProps
 } from "@/types";
-import { useForm, usePage } from "@inertiajs/react";
+import { useForm } from "@inertiajs/react";
 import { Cylinder, Database, GitBranch } from "lucide-react";
-import React, { FormEventHandler, useEffect, useState } from "react";
+import React, { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
@@ -48,24 +48,16 @@ export function ModalGrantUserDatabase({
     mostUsedDatabases: MostUsedDatabaseProps[] | MostUsedDatabaseMinimalProps[],
 }) {
 
-    const { props } = usePage();
-
     const [selectedDatabase, setSelectedDatabase] = useState<string | undefined>(mostUsedDatabases.length > 0 ? String(mostUsedDatabases[0].database_id) : undefined)
     const [selectedUser, setSelectedUser] = useState<string | undefined>(users.length > 0 ? String(users[0].id) : undefined)
     const { standaloneDatabases, parentDatabases, childDatabases } = databaseGroupType(mostUsedDatabases)
-    const flash = props.flash as FlashMessageProps | undefined;
     const [isOpen, setOpen] = useState(false);
     const { data, setData, post, processing, errors, reset } = useForm<GrantUserDatabase>({
         userId: Number(selectedUser),
         databaseId: Number(selectedDatabase)
     });
 
-    // Flash messages travel with the inertia page props; a useEffect is the
-    // reliable reader (reading props inside onSuccess catches a stale closure).
-    // id keeps the sonner toast single — one instance of this modal exists
-    // per table row (+ StrictMode double-invoke), each would fire the same
-    // flash, so without an id the user sees N duplicates.
-    useEffect(() => {
+    const showFlashToast = (flash?: FlashMessageProps) => {
         if (flash?.success) {
             toast.success(flash.success, {
                 id: 'flash-success',
@@ -85,7 +77,7 @@ export function ModalGrantUserDatabase({
                 },
             });
         }
-    }, [flash?.success, flash?.error]);
+    }
 
     const handleSelectChange = (value: string) => {
         setSelectedDatabase(value)
@@ -107,11 +99,12 @@ export function ModalGrantUserDatabase({
 
         post(route('database.grant-access'), {
             preserveScroll: true,
-            onSuccess: () => {
+            onSuccess: (page) => {
                 setOpen(false);
                 reset('userId', 'databaseId');
                 setSelectedDatabase(undefined);
                 setSelectedUser(undefined);
+                showFlashToast(page?.props?.flash as FlashMessageProps | undefined);
             }
         });
     }

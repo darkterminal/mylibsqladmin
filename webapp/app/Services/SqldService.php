@@ -179,28 +179,41 @@ class SqldService
      */
     public static function archiveDatabase(string $database, ?string $source = null): bool
     {
-        $deletedCount = UserDatabase::where('database_name', $database)
+        $userDatabase = UserDatabase::where('database_name', $database)
             ->where('user_id', auth()->user()->id)
-            ->delete();
+            ->first();
 
-        if (!$deletedCount) {
+        if (!$userDatabase) {
             logger()->error("No user database found: $database");
             return false;
         }
 
         $host = self::useEndpoint('db', $source);
 
+        // Fork the sqld namespace BEFORE touching the local record: if the
+        // fork fails, the database stays fully visible and nothing is lost.
         try {
             $request = self::createBaseRequest();
             $response = $request->retry(5, 100)
                 ->post("$host/v1/namespaces/$database/fork/$database-archived");
 
-            if ($response->status() === 200) {
-                $deleteResponse = $request->delete("$host/v1/namespaces/$database");
-                return $deleteResponse->status() === 200;
+            if ($response->status() !== 200) {
+                Log::error('Failed to fork database during archive', [
+                    'database' => $database,
+                    'status' => $response->status(),
+                ]);
+                return false;
             }
 
-            return false;
+            $deleteResponse = $request->delete("$host/v1/namespaces/$database");
+
+            if ($deleteResponse->status() !== 200) {
+                // The archived copy exists in sqld; keep it archived and log.
+                Log::warning('Fork succeeded but namespace delete did not return 200', [
+                    'database' => $database,
+                    'status' => $deleteResponse->status(),
+                ]);
+            }
         } catch (RequestException $e) {
             Log::error('Failed to archive database', [
                 'database' => $database,
@@ -209,34 +222,59 @@ class SqldService
             ]);
 
             return false;
+        } catch (\Throwable $e) {
+            Log::error('Failed to archive database', [
+                'database' => $database,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
         }
+
+        $userDatabase->delete();
+
+        return true;
     }
 
     public static function restoreDatabase(string $database, ?string $source = null): bool
     {
-        $restored = UserDatabase::where('database_name', $database)
+        $userDatabase = UserDatabase::where('database_name', $database)
             ->where('user_id', auth()->user()->id)
-            ->restore();
+            ->onlyTrashed()
+            ->first();
 
-        if (!$restored) {
+        if (!$userDatabase) {
             logger()->error("No user database found: $database");
             return false;
         }
 
         $host = self::useEndpoint('db', $source);
 
+        // Fork the archived namespace back BEFORE touching the local record:
+        // if the fork fails, the database stays archived and nothing is lost.
         try {
             $request = self::createBaseRequest();
 
             $result = $request->retry(5, 100)
                 ->post("$host/v1/namespaces/$database-archived/fork/$database");
 
-            if ($result->status() == 200) {
-                $result = $request->delete("$host/v1/namespaces/$database-archived");
-                return $result->status() == 200 ? true : false;
+            if ($result->status() !== 200) {
+                Log::error('Failed to fork the archived namespace back', [
+                    'database' => $database,
+                    'status' => $result->status(),
+                ]);
+
+                return false;
             }
 
-            return false;
+            $deleteResponse = $request->delete("$host/v1/namespaces/$database-archived");
+
+            if ($deleteResponse->status() !== 200) {
+                Log::warning('Archived namespace fork succeeded but delete did not return 200', [
+                    'database' => $database,
+                    'status' => $deleteResponse->status(),
+                ]);
+            }
         } catch (RequestException $e) {
             // Log the error for debugging
             Log::error('Failed to restore database', [
@@ -246,7 +284,18 @@ class SqldService
             ]);
 
             return false;
+        } catch (\Throwable $e) {
+            Log::error('Failed to restore database', [
+                'database' => $database,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
         }
+
+        $userDatabase->restore();
+
+        return true;
     }
 
     public static function createDatabase(string $database, mixed $isSchema, int $groupId, int $teamId, ?string $source = null): bool
@@ -303,6 +352,28 @@ class SqldService
             $archivedDatabase = "$database-archived";
         }
 
+        $databaseShouldBeDeleted = $archivedDatabase ?? $database;
+        $host = self::useEndpoint('db', $source);
+        $request = self::createBaseRequest();
+
+        // Delete the sqld namespace BEFORE the local record: if it fails,
+        // the database stays safely archived (or listed) — never lost.
+        try {
+            $response = $request->delete("$host/v1/namespaces/$databaseShouldBeDeleted");
+        } catch (\Throwable $e) {
+            Log::error('SQLD deletion threw', [
+                'database' => $databaseShouldBeDeleted,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+
+        if ($response->status() !== 200) {
+            logger()->error("SQLD deletion failed for: $databaseShouldBeDeleted");
+            return false;
+        }
+
         $deletedCount = UserDatabase::where('database_name', $database)
             ->where('user_id', auth()->user()->id)
             ->forceDelete();
@@ -312,17 +383,8 @@ class SqldService
             return false;
         }
 
-        $databaseShouldBeDeleted = $archivedDatabase ?? $database;
-        $host = self::useEndpoint('db', $source);
-        $request = self::createBaseRequest();
-        $response = $request->delete("$host/v1/namespaces/$databaseShouldBeDeleted");
-
-        if ($response->status() !== 200) {
-            logger()->error("SQLD deletion failed for: $databaseShouldBeDeleted");
-            return false;
-        }
-
         logger()->info("Deleted database: $databaseShouldBeDeleted");
+
         return true;
     }
 

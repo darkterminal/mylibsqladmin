@@ -184,13 +184,13 @@ class TeamController extends Controller
             log_user_activity(
                 auth()->user(),
                 ActivityType::TEAM_DELETE,
-                "Team {$teamName} deleted from {$request->ip()}",
+                "Team {$teamName} archived from {$request->ip()}",
                 activity_request_context()
             );
 
             return response()->json([
                 'success' => true,
-                'message' => "Team {$teamName} deleted successfully"
+                'message' => "Team {$teamName} archived successfully"
             ]);
         } catch (\Exception $e) {
             return $this->jsonNotFoundOrError($e);
