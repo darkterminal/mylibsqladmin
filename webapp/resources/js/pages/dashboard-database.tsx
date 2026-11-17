@@ -49,8 +49,13 @@ function DatabaseActions({ database }: { database: Databases }) {
                     onClick={() => {
                         router.delete(route('database.delete', { database }), {
                             preserveScroll: true,
-                            onSuccess: () => {
-                                toast.success('Database archived');
+                            onSuccess: (page) => {
+                                const error = page?.props?.flash?.error;
+                                if (error) {
+                                    toast.error(String(error), { position: 'top-center' });
+                                } else {
+                                    toast.success('Database archived');
+                                }
                             },
                             onFinish: async () => {
                                 const teamId = getCurrentTeamId();

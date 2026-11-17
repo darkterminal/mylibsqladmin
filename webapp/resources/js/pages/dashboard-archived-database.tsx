@@ -58,8 +58,13 @@ function DatabaseActions({ database }: { database: Databases }) {
                     onClick={() => {
                         router.delete(route('database.force-delete', { database }), {
                             preserveScroll: true,
-                            onSuccess: () => {
-                                toast.success('Database deleted successfully');
+                            onSuccess: (page) => {
+                                const error = page?.props?.flash?.error;
+                                if (error) {
+                                    toast.error(String(error), { position: 'top-center' });
+                                } else {
+                                    toast.success('Database deleted successfully');
+                                }
                             },
                             onFinish: async () => {
                                 await notifyTeamDatabasesChanged();
@@ -85,8 +90,13 @@ function DatabaseActions({ database }: { database: Databases }) {
                     onClick={() => {
                         router.post(route('database.restore'), { name: database }, {
                             preserveScroll: true,
-                            onSuccess: () => {
-                                toast.success('Database restore successfully');
+                            onSuccess: (page) => {
+                                const error = page?.props?.flash?.error;
+                                if (error) {
+                                    toast.error(String(error), { position: 'top-center' });
+                                } else {
+                                    toast.success('Database restore successfully');
+                                }
                             },
                             onFinish: async () => {
                                 await notifyTeamDatabasesChanged();
