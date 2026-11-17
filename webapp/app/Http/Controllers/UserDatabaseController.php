@@ -219,7 +219,7 @@ class UserDatabaseController extends Controller
 
             $databases = Team::currentTeamDatabases()['databases'] ?? SqldService::getDatabases(config('mylibsqladmin.local_instance'));
             $mostUsedDatabases = UserDatabase::mostUsedDatabases();
-            $databaseMetrics = QueryMetric::summarized();
+            $databaseMetrics = QueryMetric::dashboard();
 
             Team::setTeamDatabases(auth()->user()->id, $validated['teamId']);
 

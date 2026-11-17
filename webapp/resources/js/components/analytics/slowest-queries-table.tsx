@@ -5,6 +5,7 @@ interface Query {
     query: string
     rows_written: number
     rows_read: number
+    occurrences?: number
 }
 
 interface SlowestQueriesTableProps {
@@ -18,26 +19,28 @@ export function SlowestQueriesTable({ queries }: SlowestQueriesTableProps) {
                 <TableHeader>
                     <TableRow>
                         <TableHead>Query</TableHead>
-                        <TableHead className="w-[100px] text-right">Elapsed (ms)</TableHead>
-                        <TableHead className="w-[100px] text-right">Rows Read</TableHead>
-                        <TableHead className="w-[100px] text-right">Rows Written</TableHead>
+                        <TableHead className="w-[110px] text-right">Elapsed (ms)</TableHead>
+                        <TableHead className="w-[110px] text-right">Rows Read</TableHead>
+                        <TableHead className="w-[110px] text-right">Rows Written</TableHead>
+                        <TableHead className="w-[80px] text-right">Runs</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {queries.length > 0 ? (
                         queries.map((query, index) => (
                             <TableRow key={index}>
-                                <TableCell className="font-mono text-xs">
+                                <TableCell className="font-mono text-xs" title={query.query}>
                                     {query.query.length > 60 ? `${query.query.substring(0, 60)}...` : query.query}
                                 </TableCell>
-                                <TableCell className="text-right">{query.elapsed_ms}</TableCell>
-                                <TableCell className="text-right">{query.rows_read}</TableCell>
-                                <TableCell className="text-right">{query.rows_written}</TableCell>
+                                <TableCell className="text-right tabular-nums">{query.elapsed_ms.toLocaleString()}</TableCell>
+                                <TableCell className="text-right tabular-nums">{query.rows_read.toLocaleString()}</TableCell>
+                                <TableCell className="text-right tabular-nums">{query.rows_written.toLocaleString()}</TableCell>
+                                <TableCell className="text-right tabular-nums">{query.occurrences ?? "—"}</TableCell>
                             </TableRow>
                         ))
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={4} className="text-center">
+                            <TableCell colSpan={5} className="text-center text-muted-foreground">
                                 No data available
                             </TableCell>
                         </TableRow>

@@ -108,16 +108,18 @@ export interface LibSQLDatabases {
 }
 
 export interface TopQueryProps {
-    rows_written: number;
-    rows_read: number;
     query: string;
+    rows_read: number;
+    rows_written: number;
+    occurrences: number;
 }
 
 export interface SlowestQueryProps {
-    elapsed_ms: number;
     query: string;
-    rows_written: number;
+    elapsed_ms: number;
     rows_read: number;
+    rows_written: number;
+    occurrences: number;
 }
 
 export interface QueriesInMatrictsStatsProps {
@@ -136,21 +138,55 @@ export interface QueriesInMatrictsProps {
     elapsed: unknown;
 }
 
-export interface QueryMetrics {
-    id: number;
-    name: string;
-    rows_read_count: number;
-    rows_written_count: number;
-    storage_bytes_used: number;
+/** One zero-filled hourly bucket in the dashboard window. */
+export interface DashboardSeriesPoint {
+    t: string; // 'YYYY-MM-DD HH:00' in the app timezone
+    queries: number;
+    rows_read: number;
+    rows_written: number;
+    storage_bytes: number;
+}
+
+export interface DashboardMetricWindow {
     query_count: number;
-    elapsed_ms: number;
-    write_requests_delegated: number;
-    replication_index: number;
-    embedded_replica_frames_replicated: number;
-    queries: QueriesInMatrictsProps | undefined | null;
+    rows_read: number;
+    rows_written: number;
+}
+
+export interface DashboardDatabaseMetrics {
+    database_id: number;
+    name: string;
+    is_schema: boolean;
+    samples: number;
+    query_count: number;
+    rows_read: number;
+    rows_written: number;
+    storage_bytes: number;
+    avg_elapsed_ms: number | null;
+    series: DashboardSeriesPoint[];
+    previous: DashboardMetricWindow;
     top_queries: TopQueryProps[];
     slowest_queries: SlowestQueryProps[];
-    created_at: string;
+}
+
+/** Server-computed aggregation of the last 24h for the /dashboard page. */
+export interface DashboardMetrics {
+    generated_at: string;
+    window_hours: number;
+    totals: DashboardMetricWindow & { storage_bytes: number };
+    previous: DashboardMetricWindow;
+    series: DashboardSeriesPoint[];
+    top_queries: TopQueryProps[];
+    slowest_queries: SlowestQueryProps[];
+    databases: DashboardDatabaseMetrics[];
+}
+
+export interface RecentActivityItem {
+    id: number;
+    type: string;
+    description: string;
+    user_name: string | null;
+    time_ago: string | null;
 }
 
 export interface MostUsedDatabaseProps {
