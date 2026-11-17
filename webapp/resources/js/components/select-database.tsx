@@ -104,7 +104,7 @@ export function SelectDatabase() {
                                 router.delete(`/databases/delete/${database.database_name}`, {
                                     onFinish: () => {
                                         router.visit('/dashboard', {
-                                            only: ['databases', 'mostUsedDatabases', 'databaseMetrics'],
+                                            only: ['databases', 'mostUsedDatabases', 'databaseMetrics', 'recentActivity'],
                                             replace: true,
                                             preserveScroll: true
                                         });

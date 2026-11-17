@@ -94,7 +94,10 @@ class UserDatabase extends Model
             });
         }
 
-        $mostUsedDatabases = $query->get();
+        $mostUsedDatabases = $query
+            ->orderByDesc('query_metrics_sum_query_count')
+            ->orderBy('database_name')
+            ->get();
 
         return $mostUsedDatabases->map(function ($db) {
             return [
