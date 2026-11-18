@@ -1,6 +1,7 @@
 "use client"
 
 import { ModalCreateTeam } from "@/components/modals/modal-create-team"
+import { PaginationControls } from "@/components/pagination-controls"
 import TeamsTable from "@/components/tables/teams"
 import TeamCard from "@/components/team/team-card"
 import { Button } from "@/components/ui/button"
@@ -8,10 +9,10 @@ import { Input } from "@/components/ui/input"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import AppLayout from "@/layouts/app-layout"
 import { usePermission } from "@/lib/auth"
-import { BreadcrumbItem, Team, TeamForm } from "@/types"
+import { BreadcrumbItem, PaginatedResults, Team, TeamForm } from "@/types"
 import { Head, router } from "@inertiajs/react"
-import { Grid3X3, List, Search, Trash, Users } from "lucide-react"
-import { useState } from "react"
+import { Grid3X3, List, Search, SearchX, Trash, Users, X } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 import { useCurrentTeamId } from "@/lib/current-team"
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -25,11 +26,41 @@ const breadcrumbs: BreadcrumbItem[] = [
     }
 ];
 
-export default function DashboardTeam({ teams }: { teams: Team[] }) {
+export default function DashboardTeam({ teams }: { teams: PaginatedResults<Team> }) {
     const { can } = usePermission();
-    const [searchQuery, setSearchQuery] = useState<string>("")
-    const [viewMode, setViewMode] = useState("table")
-    
+    const [searchQuery, setSearchQuery] = useState<string>(() => {
+        if (typeof window === 'undefined') return '';
+        return new URLSearchParams(window.location.search).get('search') ?? '';
+    })
+    // Small screens default to the card view — the dense table only works
+    // once there is room for it; users can still flip the toggle.
+    const [viewMode, setViewMode] = useState(() =>
+        typeof window !== "undefined" && window.innerWidth < 768 ? "grid" : "table"
+    )
+
+    const persistSearch = (value: string) => {
+        const query = value.trim();
+        router.visit(query ? `/dashboard/teams?search=${encodeURIComponent(query)}` : '/dashboard/teams', {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            only: ['teams'],
+        });
+    };
+
+    const isFirstRender = useRef(true);
+
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
+
+        const handle = window.setTimeout(() => persistSearch(searchQuery), 350);
+
+        return () => window.clearTimeout(handle);
+    }, [searchQuery])
+
     const handleOnSave = (team: TeamForm) => {
         router.post(route('team.create'), team, {
             onSuccess: () => {
@@ -41,17 +72,7 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
     }
 
     const currentTeamId = useCurrentTeamId()
-
-    const sortedAndFilteredTeams = teams
-        .filter(team =>
-            team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            team.description.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        .sort((a, b) => {
-            if (a.id === currentTeamId) return -1
-            if (b.id === currentTeamId) return 1
-            return a.name.localeCompare(b.name)
-        })
+    const visibleTeams = teams.data
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -62,8 +83,8 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
                         <h1 className="text-3xl font-bold tracking-tight">Team Dashboard</h1>
                         <p className="text-muted-foreground">Manage your teams, groups, and databases</p>
                     </div>
-                    <div className="flex items-center gap-2 w-full md:w-auto">
-                        <div className="relative w-full md:w-[300px]">
+                    <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
+                        <div className="relative w-full sm:w-[300px]">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
                                 type="search"
@@ -104,20 +125,52 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
                     </div>
                 </div>
 
-                {viewMode === "table" ? (
-                    <TeamsTable teams={sortedAndFilteredTeams} />
+                {visibleTeams.length === 0 && (
+                    searchQuery ? (
+                        <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-md border text-center">
+                            <SearchX className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+                            <h2 className="text-lg font-semibold">No teams match “{searchQuery}”</h2>
+                            <p className="max-w-sm text-sm text-muted-foreground">Try a different name or description, or create a new team.</p>
+                            <Button variant="outline" onClick={() => setSearchQuery('')}>
+                                <X className="h-4 w-4" aria-hidden="true" />
+                                Clear search
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-md border text-center">
+                            <Users className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+                            <h2 className="text-lg font-semibold">No teams yet</h2>
+                            <p className="max-w-sm text-sm text-muted-foreground">Teams you create or join will appear here.</p>
+                            {can('manage-teams') && (
+                                <ModalCreateTeam
+                                    trigger={
+                                        <Button>
+                                            <Users className="mr-2 h-4 w-4" />
+                                            New Team
+                                        </Button>
+                                    }
+                                    onSave={handleOnSave}
+                                    validate={(team) => team.name.length < 3 ? "Name must be at least 3 characters" : null}
+                                />
+                            )}
+                        </div>
+                    )
+                )}
+                {visibleTeams.length > 0 && (viewMode === "table" ? (
+                    <TeamsTable teams={visibleTeams} />
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {sortedAndFilteredTeams.map((team) => (
+                        {visibleTeams.map((team) => (
                             <TeamCard
                                 key={team.id}
                                 team={team}
                                 isCurrent={team.id === currentTeamId}
-                                totalTeams={teams.length}
+                                totalTeams={teams.total}
                             />
                         ))}
                     </div>
-                )}
+                ))}
+                <PaginationControls pagination={teams} />
             </div>
         </AppLayout>
     )

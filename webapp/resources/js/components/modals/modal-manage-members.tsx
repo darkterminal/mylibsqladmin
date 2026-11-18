@@ -16,7 +16,7 @@ import { useInitials } from "@/hooks/use-initials"
 import { usePermission } from "@/lib/auth"
 import { Member, MemberForm, PendingInvitationMember, SharedData } from "@/types"
 import { usePage } from "@inertiajs/react"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Send, Trash2 } from "lucide-react"
 import { ReactNode, useState } from "react"
 import { Badge } from "../ui/badge"
 
@@ -27,6 +27,8 @@ export function ModalManageMembers({
     onAddMember,
     onRemoveMember,
     onUpdateRole,
+    onResendInvitation,
+    onRevokeInvitation,
     teamName,
 }: {
     members: Member[]
@@ -35,6 +37,8 @@ export function ModalManageMembers({
     onAddMember: (member: MemberForm) => void
     onRemoveMember: (memberId: number) => void
     onUpdateRole: (memberId: number, role: string) => void
+    onResendInvitation?: (invitationId: number) => void
+    onRevokeInvitation?: (invitationId: number) => void
     teamName?: string
 }) {
     const getInitials = useInitials()
@@ -96,7 +100,7 @@ export function ModalManageMembers({
                                             <SelectItem value="super-admin">Super Admin</SelectItem>
                                             <SelectItem value="team-manager">Team Manager</SelectItem>
                                             <SelectItem value="member">Member</SelectItem>
-                                            <SelectItem value="database-maintainer">Database Maintener</SelectItem>
+                                            <SelectItem value="database-maintainer">Database Maintainer</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -138,7 +142,7 @@ export function ModalManageMembers({
                                             <SelectItem value="super-admin">Super Admin</SelectItem>
                                             <SelectItem value="team-manager">Team Manager</SelectItem>
                                             <SelectItem value="member">Member</SelectItem>
-                                            <SelectItem value="database-maintainer">Database Maintener</SelectItem>
+                                            <SelectItem value="database-maintainer">Database Maintainer</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     {member.role !== "super-admin" && (
@@ -163,34 +167,50 @@ export function ModalManageMembers({
                         </div>
                     ))}
                     {pendingInvitation.map((member) => (
-                        <div key={member.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-                            <div className="flex items-center gap-2">
+                        <div key={member.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted/50 p-2">
+                            <div className="flex min-w-0 items-center gap-2">
                                 <Avatar className="flex items-center justify-center text-primary-foreground bg-primary">
                                     <span className="text-xs">{getInitials(member.name)}</span>
                                 </Avatar>
-                                <div>
-                                    <p className="font-medium">{member.name}</p>
-                                    <p className="text-sm text-muted-foreground blur-sm hover:blur-none">{member.email}</p>
+                                <div className="min-w-0">
+                                    <p className="truncate font-medium" title={member.name}>{member.name}</p>
+                                    <p className="break-all text-xs text-muted-foreground">{member.email}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Invited by {member.inviter} · Invited {member.sent_at}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">Expires {member.expires_at} · {member.permission_level}</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Badge variant="outline">Pending Invitation</Badge>
-                                <Badge variant="outline">Expires {member.expires_at}</Badge>
-                                <Select
-                                    value={member.permission_level}
-                                    onValueChange={(value) => onUpdateRole(member.id, value)}
-                                    disabled={true}
-                                >
-                                    <SelectTrigger className="w-[200px]">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="super-admin">Super Admin</SelectItem>
-                                        <SelectItem value="team-manager">Team Manager</SelectItem>
-                                        <SelectItem value="member">Member</SelectItem>
-                                        <SelectItem value="database-maintainer">Database Maintener</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+                                <Badge variant="outline">Pending</Badge>
+                                {can('manage-team-members') && (onResendInvitation || onRevokeInvitation) && (
+                                    <div className="flex items-center gap-1.5">
+                                        {onResendInvitation && (
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                className="h-7 w-7"
+                                                aria-label="Resend invitation"
+                                                title="Resend invitation"
+                                                onClick={() => onResendInvitation(member.id)}
+                                            >
+                                                <Send className="h-3.5 w-3.5" />
+                                            </Button>
+                                        )}
+                                        {onRevokeInvitation && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                                aria-label="Revoke invitation"
+                                                title="Revoke invitation"
+                                                onClick={() => onRevokeInvitation(member.id)}
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}

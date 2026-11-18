@@ -128,6 +128,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('{team}/invitations', [TeamController::class, 'invite'])
             ->name('teams.invitations.store');
 
+        Route::post('invitations/{invitation}/resend', [TeamController::class, 'resendInvite'])
+            ->name('teams.invitations.resend');
         Route::delete('invitations/{invitation}', [TeamController::class, 'revokeInvite'])
             ->name('teams.invitations.destroy');
     });

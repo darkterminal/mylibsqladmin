@@ -59,16 +59,19 @@ test('dashboard teams page renders with expected prop shape', function () {
         ->get('/dashboard/teams')
         ->assertInertia(fn (Assert $page) => $page
             ->component('dashboard-team')
-            ->has('teams', 1)
-            ->has('teams.0.id')
-            ->has('teams.0.name')
-            ->has('teams.0.members')
-            ->has('teams.0.team_members', 1)
-            ->has('teams.0.groups', 1)
-            ->has('teams.0.pending_invitations')
-            ->has('teams.0.recentActivity')
-            ->has('teams.0.groups.0.databases', 1)
-            ->where('teams.0.members', 1)
+            ->has('teams.data', 1)
+            ->has('teams.data.0.id')
+            ->has('teams.data.0.name')
+            ->has('teams.data.0.members')
+            ->has('teams.data.0.team_members', 1)
+            ->has('teams.data.0.groups', 1)
+            ->has('teams.data.0.pending_invitations')
+            ->has('teams.data.0.recentActivity')
+            ->has('teams.data.0.groups.0.databases', 1)
+            ->has('teams.current_page')
+            ->has('teams.last_page')
+            ->has('teams.total')
+            ->where('teams.data.0.members', 1)
         );
 });
 
@@ -81,15 +84,17 @@ test('archived teams page renders with expected prop shape', function () {
         ->get('/teams/archives')
         ->assertInertia(fn (Assert $page) => $page
             ->component('dashboard-team-archives')
-            ->has('teams', 1)
-            ->has('teams.0.id')
-            ->has('teams.0.name')
-            ->has('teams.0.members')
-            ->has('teams.0.team_members', 1)
-            ->has('teams.0.groups', 1)
-            ->has('teams.0.groups.0.databases', 1)
-            ->has('teams.0.pending_invitations')
-            ->has('teams.0.recentActivity')
+            ->has('teams.data', 1)
+            ->has('teams.data.0.id')
+            ->has('teams.data.0.name')
+            ->has('teams.data.0.members')
+            ->has('teams.data.0.team_members', 1)
+            ->has('teams.data.0.groups', 1)
+            ->has('teams.data.0.groups.0.databases', 1)
+            ->has('teams.data.0.pending_invitations')
+            ->has('teams.data.0.recentActivity')
+            ->has('teams.current_page')
+            ->has('teams.last_page')
         );
 });
 
@@ -121,9 +126,9 @@ test('the teams list reports team membership, not database count, in members', f
         ->get('/dashboard/teams')
         ->assertInertia(fn (Assert $page) => $page
             ->component('dashboard-team')
-            ->has('teams', 1)
-            ->where('teams.0.members', 1)   // NOT 2 (database count)
-            ->has('teams.0.groups.0.databases', 2)
+            ->has('teams.data', 1)
+            ->where('teams.data.0.members', 1)   // NOT 2 (database count)
+            ->has('teams.data.0.groups.0.databases', 2)
         );
 });
 
@@ -142,7 +147,7 @@ test('a regular member sees only teams they belong to and only granted groups', 
         ->get('/dashboard/teams')
         ->assertInertia(fn (Assert $page) => $page
             ->component('dashboard-team')
-            ->has('teams', 1)
-            ->where('teams.0.name', 'Member Team A')
+            ->has('teams.data', 1)
+            ->where('teams.data.0.name', 'Member Team A')
         );
 });

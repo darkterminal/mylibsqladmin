@@ -1,275 +1,42 @@
 import { useInitials } from "@/hooks/use-initials";
-import { apiFetch } from "@/lib/api";
 import { usePermission } from "@/lib/auth";
-import { MemberForm, SharedData, TeamCardProps, TeamForm } from "@/types";
-import { router, usePage } from "@inertiajs/react";
+import { useTeamActions } from "@/hooks/use-team-actions";
+import { SharedData, TeamCardProps } from "@/types";
+import { usePage } from "@inertiajs/react";
 import { Activity, CheckCircle, CirclePlusIcon, FolderClosed, MoreHorizontal, RefreshCcw, Users } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
 import { AppTooltip } from "../app-tooltip";
-import { CreateDatabaseProps, ModalCreateDatabase } from "../modals/modal-create-database";
-import { CreateGroupOnlyForm, ModalCreateGroupOnly } from "../modals/modal-create-group-only";
+import { ModalCreateDatabase } from "../modals/modal-create-database";
+import { ModalCreateGroupOnly } from "../modals/modal-create-group-only";
 import { ModalEditTeam } from "../modals/modal-edit-team";
 import { ModalManageMembers } from "../modals/modal-manage-members";
 import { Avatar } from "../ui/avatar";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { ComboboxOption } from "../ui/combobox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { ScrollArea } from "../ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { GroupTree } from "./group-tree";
-import { getCurrentTeamId } from "@/lib/current-team"
+import { GroupTree } from "./group-tree"
 
 export default function TeamCard({ team, isCurrent, totalTeams: totalTeams, isArchived = false }: TeamCardProps) {
     const getInitials = useInitials();
     const { can } = usePermission();
+    const { databases } = usePage<SharedData>().props;
 
-    const { csrfToken, databases, groups: databaseGroups } = usePage<SharedData>().props;
-    const groupedDatabases = (databaseGroups || [])
-        .map?.(group => ({
-            label: group.name,
-            value: group.id.toString()
-        }))
-        ?.sort((a, b) => Number(b.value) - Number(a.value)) || [];
-    const [groups, setGroups] = useState<ComboboxOption[]>(groupedDatabases);
-
-    const handleCreateGroup = async (name: string): Promise<string> => {
-        try {
-            const teamId = getCurrentTeamId();
-            const response = await apiFetch(route('api.group.create-only'), {
-                method: 'POST',
-                body: JSON.stringify({ name, team_id: teamId }),
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to create group');
-            }
-
-            const data = await response.json();
-            const newGroupId = data.group.id as string;
-            const newGroup: ComboboxOption = { value: newGroupId, label: name };
-            setGroups((prev) => [...prev, newGroup].sort((a, b) => Number(b.value) - Number(a.value)));
-            return newGroupId;
-        } catch (error) {
-            console.error("Error creating group:", error);
-            throw error;
-        }
-    }
-
-    const handleDatabaseSubmit = async (formData: CreateDatabaseProps) => {
-        const teamId = formData.teamId || getCurrentTeamId();
-        const submittedData = {
-            database: formData.useExisting ? formData.childDatabase : formData.database,
-            isSchema: formData.useExisting ? formData.database : formData.isSchema,
-            groupId: Number(formData.groupId),
-            teamId: Number(teamId),
-        };
-
-        await apiFetch(route('database.create'), {
-            method: 'POST',
-            body: JSON.stringify(submittedData),
-            headers: {
-                'X-CSRF-TOKEN': csrfToken
-            }
-        });
-
-        const refreshSession = await apiFetch(route('api.teams.databases', Number(teamId)), {
-            method: 'GET',
-            headers: {
-                'X-CSRF-TOKEN': csrfToken
-            }
-        });
-
-        if (!refreshSession.ok) {
-            toast.error('Failed to refresh session');
-        }
-
-        router.visit(window.location.href, {
-            preserveScroll: true
-        });
-    }
-
-    const handleRestoreTeam = (teamId: number) => {
-        router.put(route('team.restore', teamId), { preserveScroll: true }, {
-            onSuccess: (page) => {
-                const flash = (page.props as { flash?: { success?: string } }).flash;
-                if (flash?.success) {
-                    toast.success(flash.success, { duration: 2500, position: 'top-center' });
-                }
-                router.visit(route('dashboard.teams'), { preserveScroll: true });
-            },
-            onError: () => toast.error('Failed to restore team'),
-        });
-    };
-
-    const handleEditTeamOnSave = async (formData: TeamForm) => {
-        const response = await apiFetch(route('team.update', team.id), {
-            method: 'PUT',
-            body: JSON.stringify(formData),
-            headers: {
-                'X-CSRF-TOKEN': csrfToken
-            }
-        });
-        if (response.ok) {
-            router.visit(window.location.href, {
-                preserveScroll: true,
-            });
-        }
-    }
-
-    const handleAddMember = async (member: MemberForm) => {
-        const response = await apiFetch(route('teams.invitations.store', team.id), {
-            method: 'POST',
-            body: JSON.stringify(member),
-            headers: {
-                'X-CSRF-TOKEN': csrfToken
-            }
-        });
-
-        if (response.ok) {
-            router.visit(window.location.href, {
-                preserveScroll: true,
-            });
-        }
-    }
-
-    const handleCreateGroupSubmit = async (groupOnlyForm: CreateGroupOnlyForm) => {
-        try {
-            const response = await apiFetch(route('api.group.create-only'), {
-                method: 'POST',
-                body: JSON.stringify({ name: groupOnlyForm.groupName, team_id: Number(groupOnlyForm.teamId) }),
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken
-                }
-            });
-
-            // Parse response regardless of status
-            const responseData = await response.json();
-
-            if (!response.ok) {
-                // Handle validation errors (422)
-                if (response.status === 422) {
-                    throw {
-                        message: 'Validation failed',
-                        errors: responseData.errors,
-                        status: response.status
-                    };
-                }
-
-                // Handle other errors
-                throw {
-                    message: responseData.message || 'Request failed',
-                    status: response.status
-                };
-            }
-
-            // Handle success
-            const refreshSession = await apiFetch(route('api.teams.databases', Number(groupOnlyForm.teamId)), {
-                method: 'GET',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken
-                }
-            });
-
-            if (!refreshSession.ok) {
-                throw new Error('Failed to refresh session');
-            }
-
-            router.visit(window.location.href, {
-                preserveScroll: true,
-            });
-
-            return responseData;
-
-        } catch (error: { message: string, status: number } | any) {
-            console.error("Error creating group:", error);
-            toast.error('Failed to create group: ' + error.message);
-
-            // Throw structured error for UI handling
-            if (error instanceof Error) {
-                throw {
-                    message: error.message,
-                    status: 500
-                };
-            }
-
-            // Preserve backend error structure
-            throw error;
-        }
-    };
-
-    const handleUpdateRole = async (userId: number, role: string) => {
-        router.put(route('teams.members.update-role', {
-            team: team.id,
-            user: userId
-        }), { role }, {
-            onSuccess: () => {
-                router.visit(window.location.href, {
-                    preserveScroll: true,
-                });
-            }
-        });
-    }
-
-    const handleDeleteTeam = async (teamId: number) => {
-        const response = await apiFetch(route('team.delete', teamId), {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': csrfToken
-            }
-        });
-
-        if (!response.ok) {
-            toast.error('Failed to archive team');
-            return;
-        }
-
-        const data = await response.json();
-
-        toast.success(data.message, {
-            duration: 2500,
-            position: 'top-center',
-            onAutoClose: () => {
-                router.visit(window.location.href, {
-                    preserveScroll: true,
-                });
-            },
-            onDismiss: () => {
-                router.visit(window.location.href, {
-                    preserveScroll: true,
-                });
-            }
-        });
-        toast.info('If this was your current team, it has been switched to another team automatically.', {
-            duration: 4500,
-            position: 'top-center',
-        });
-    }
-
-    const handleRemoveMember = async (userId: number, teamId: number) => {
-        const response = await apiFetch(route('teams.members.delete', {
-            team: teamId,
-            user: userId
-        }), {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': csrfToken
-            }
-        })
-
-        if (response.ok) {
-            router.visit(window.location.href, {
-                preserveScroll: true,
-            });
-        }
-
-        toast.error('Failed to remove member');
-    }
+    const {
+        groups,
+        handleCreateGroup,
+        handleDatabaseSubmit,
+        handleRestoreTeam,
+        handleEditTeamOnSave,
+        handleAddMember,
+        handleRemoveMember,
+        handleUpdateRole,
+        handleCreateGroupSubmit,
+        handleDeleteTeam,
+        handleResendInvitation,
+        handleRevokeInvitation,
+    } = useTeamActions({ team });
 
     return (
         <Card className="h-full flex flex-col">
@@ -362,6 +129,8 @@ export default function TeamCard({ team, isCurrent, totalTeams: totalTeams, isAr
                                                     }
                                                     members={team.team_members}
                                                     pendingInvitation={team.pending_invitations}
+                                                    onResendInvitation={(invitationId) => handleResendInvitation(invitationId)}
+                                                    onRevokeInvitation={(invitationId) => handleRevokeInvitation(invitationId)}
                                                     onAddMember={(member) => handleAddMember(member)}
                                                     onRemoveMember={(memberId) => handleRemoveMember(memberId, team.id)}
                                                     onUpdateRole={(memberId, role) => handleUpdateRole(memberId, role)}
