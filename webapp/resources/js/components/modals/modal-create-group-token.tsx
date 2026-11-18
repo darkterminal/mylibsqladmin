@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { router, useForm } from "@inertiajs/react";
+import { useForm } from "@inertiajs/react";
 import React, { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
 
@@ -39,10 +39,11 @@ export function ModalCreateGroupToken({
         e.preventDefault();
         post(route('group.token.create', { group: groupId }), {
             onSuccess: () => {
+                // Do NOT navigate — the reveal panel renders from the flash
+                // and needs the props to survive until the user saves it.
                 setOpen(false);
                 reset();
                 onSuccess?.();
-                router.visit(route('dashboard.groups'));
             },
             onError: () => {
                 toast.error('Failed to create group token');

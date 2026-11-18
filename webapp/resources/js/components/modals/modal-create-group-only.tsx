@@ -22,19 +22,33 @@ export function ModalCreateGroupOnly({
     onSave,
 }: {
     trigger: ReactNode
-    onSave: (groupForm: CreateGroupOnlyForm) => void
+    onSave: (groupForm: CreateGroupOnlyForm) => void | Promise<boolean | void>
 }) {
     const [isOpen, setIsOpen] = useState(false)
     const [groupForm, setGroupForm] = useState<CreateGroupOnlyForm>({
         groupName: "",
         teamId: undefined
     })
+    const [submitting, setSubmitting] = useState(false)
 
-    const handleSubmit = () => {
-        if (!groupForm.groupName.trim()) return
-        onSave(groupForm)
-        setIsOpen(false)
-        setGroupForm({ groupName: "", teamId: undefined })
+    const handleSubmit = async () => {
+        const name = groupForm.groupName.trim();
+
+        if (!name || submitting) return
+
+        setSubmitting(true)
+        try {
+            // Keep the dialog open on failure so the error stays visible
+            // (toast from onSave); close only on success.
+            const result = await onSave(groupForm)
+
+            if (result !== false) {
+                setIsOpen(false)
+                setGroupForm({ groupName: "", teamId: undefined })
+            }
+        } finally {
+            setSubmitting(false)
+        }
     }
 
     return (
@@ -61,7 +75,9 @@ export function ModalCreateGroupOnly({
 
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                    <Button onClick={handleSubmit} disabled={!groupForm.groupName.trim()}>Create</Button>
+                    <Button onClick={handleSubmit} disabled={!groupForm.groupName.trim() || submitting}>
+                        {submitting ? 'Creating…' : 'Create'}
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

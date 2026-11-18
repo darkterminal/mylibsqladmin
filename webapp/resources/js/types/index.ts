@@ -265,6 +265,21 @@ export interface DatabaseInGroupProps {
     is_schema: string
 }
 
+export interface GroupMemberTokenProps {
+    id: number;
+    name: string;
+    full_access_token: string;
+    read_only_token: string;
+    fingerprint: string;
+    expiration_day: number;
+    expires_at: string | null;
+    expiration_state: 'never' | 'active' | 'expired';
+    days_remaining: number | null;
+    created_at: string;
+    database_id: number;
+    user_id: number;
+}
+
 export interface GroupDatabaseTokenProps {
     id: number;
     group_id: number;
@@ -274,6 +289,10 @@ export interface GroupDatabaseTokenProps {
     read_only_token: string;
     fingerprint?: string;
     expiration_day: number;
+    /** Creation-anchored expiry; present on list payloads. */
+    expires_at?: string | null;
+    expiration_state?: 'never' | 'active' | 'expired';
+    days_remaining?: number | null;
     created_at: string
 }
 
@@ -286,9 +305,9 @@ export interface GroupDatabaseProps {
         name: string;
     };
     members: DatabaseInGroupProps[];
-    database_tokens: UserDatabaseTokenProps[];
+    database_tokens: GroupMemberTokenProps[];
     has_token: boolean;
-    group_token: GroupDatabaseTokenProps
+    group_token: GroupDatabaseTokenProps | null
 }
 
 export interface Member {

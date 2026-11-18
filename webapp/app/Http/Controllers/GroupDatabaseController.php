@@ -6,6 +6,7 @@ use App\ActivityType;
 use App\Models\GroupDatabase;
 use App\Models\GroupDatabaseToken;
 use App\Models\Team;
+use App\Models\User;
 use App\Models\UserDatabase;
 use App\Services\DatabaseTokenGenerator;
 use App\Services\SqldService;
@@ -27,9 +28,7 @@ class GroupDatabaseController extends Controller
             $databaseGroups = GroupDatabase::databaseGroups($user->id, null);
         }
 
-        $databaseNotInGroup = UserDatabase::where('user_id', $user->id)
-            ->whereDoesntHave('groups')
-            ->get(['id', 'database_name', 'is_schema']);
+        $databaseNotInGroup = self::unassignedDatabasesFor($user, $teamId);
 
         return Inertia::render('dashboard-group', [
             'databaseGroups' => $databaseGroups,
@@ -113,7 +112,7 @@ class GroupDatabaseController extends Controller
             ]);
         }
 
-        $token->delete();
+        $token->forceDelete();
 
 
         log_user_activity(
@@ -258,26 +257,25 @@ class GroupDatabaseController extends Controller
         ]);
     }
 
-    public function deleteGroup($groupId)
+    public function deleteGroup(GroupDatabase $group)
     {
-        $group = GroupDatabase::with(['members', 'tokens'])
-            ->where('user_id', auth()->id())
-            ->where('id', $groupId)
-            ->firstOrFail();
+        // Policy allows Super Admin / Team Manager / manage-groups anywhere in
+        // the same team (or any team for a super admin) — not just the owner.
+        abort_unless(auth()->user()->can('delete', $group), 403, 'Unauthorized');
+
+        $group->loadMissing(['members', 'tokens']);
 
         DB::transaction(function () use ($group) {
             $group->members()->sync([]);
-            $group->tokens()->delete();
-            $group->delete();
+            $group->tokens()->forceDelete();
+            $group->forceDelete();
         });
 
         Team::setTeamDatabases(auth()->id(), $group->team_id);
 
         $databaseGroups = GroupDatabase::databaseGroups(auth()->id(), $group->team_id);
 
-        $databaseNotInGroup = UserDatabase::where('user_id', auth()->id())
-            ->whereDoesntHave('groups')
-            ->get(['id', 'database_name']);
+        $databaseNotInGroup = self::unassignedDatabasesFor(auth()->user(), $group->team_id);
 
 
         log_user_activity(
@@ -296,19 +294,20 @@ class GroupDatabaseController extends Controller
 
     public function addDatabasesToGroup(GroupDatabase $group, Request $request)
     {
+        // Attaching must match exactly what the picker lists — same source of
+        // truth (team-scoped visibility for privileged managers, own DBs else).
+        $allowedIds = self::unassignedDatabasesFor(auth()->user(), (int) $group->team_id)
+            ->pluck('id')
+            ->all();
+
         $validated = $request->validate([
             'databases' => 'required|array|min:1',
             'databases.*' => [
                 'required',
                 'integer',
-                function ($attribute, $value, $fail) use ($group) {
-                    $exists = UserDatabase::where('id', $value)
-                        ->where('user_id', auth()->id())
-                        ->whereDoesntHave('groups', fn($q) => $q->where('group_id', $group->id))
-                        ->exists();
-
-                    if (!$exists) {
-                        $fail('Invalid database selected.');
+                function ($attribute, $value, $fail) use ($allowedIds) {
+                    if (! in_array((int) $value, array_map('intval', $allowedIds), true)) {
+                        $fail('Invalid database selected — it is either not in your scope or already assigned to a group.');
                     }
                 },
             ],
@@ -372,5 +371,61 @@ class GroupDatabaseController extends Controller
         return redirect()->back()->with([
             'success' => 'Database removed from group successfully'
         ]);
+    }
+
+    /**
+     * Rename a group. Same authorization as the rest of group management —
+     * team admins / manage-groups anywhere in the team, or a super admin.
+     */
+    public function renameGroup(GroupDatabase $group, Request $request)
+    {
+        abort_unless(auth()->user()->can('update', $group), 403, 'Unauthorized');
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:120',
+        ]);
+
+        $oldName = $group->name;
+        $group->update(['name' => $validated['name']]);
+
+        Team::setTeamDatabases(auth()->id(), $group->team_id);
+
+        log_user_activity(
+            auth()->user(),
+            ActivityType::GROUP_DATABASE_UPDATE,
+            "Group {$oldName} renamed to {$validated['name']} from " . request()->ip(),
+            activity_request_context(request())
+        );
+
+        return redirect()->back()->with([
+            'success' => 'Group renamed successfully',
+            'databaseGroups' => GroupDatabase::databaseGroups(auth()->id(), $group->team_id),
+        ]);
+    }
+
+    /**
+     * Ungrouped databases the current user may attach to a group:
+     * their own, plus (for privileged team managers) the ungrouped DBs
+     * belonging to members of the given team — never the whole installation.
+     */
+    private static function unassignedDatabasesFor(User $user, ?int $teamId)
+    {
+        $query = UserDatabase::whereDoesntHave('groups');
+
+        $isPrivileged = $user->hasRole('Super Admin')
+            || $user->hasRole('Team Manager')
+            || $user->hasPermission('manage-teams');
+
+        if ($isPrivileged && $teamId) {
+            $teamMemberIds = Team::with('members')->find($teamId)?->members->pluck('id') ?? collect();
+
+            $query->where(function ($q) use ($user, $teamMemberIds) {
+                $q->where('user_id', $user->id)->orWhereIn('user_id', $teamMemberIds);
+            });
+
+            return $query->get(['id', 'database_name', 'is_schema']);
+        }
+
+        return $query->where('user_id', $user->id)->get(['id', 'database_name', 'is_schema']);
     }
 }
