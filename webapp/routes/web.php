@@ -84,7 +84,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('group.add-databases')
             ->middleware('can:update,group');
         Route::delete('delete-database/{database}', [GroupDatabaseController::class, 'deleteDatabaseFromGroup'])
-            ->name('group.delete-databases');
+            ->name('group.detach-database');
+        Route::patch('{group}/rename', [GroupDatabaseController::class, 'renameGroup'])
+            ->name('group.rename')
+            ->middleware('can:update,group');
         Route::post('{group}/tokens', [GroupDatabaseController::class, 'createGroupToken'])
             ->middleware('permission:create-group-tokens')
             ->name('group.token.create');

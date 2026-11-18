@@ -13,8 +13,9 @@ import {
     type MostUsedDatabaseProps,
     type UserDatabaseTokenProps
 } from "@/types";
+import TokenCopyRow from "@/components/token-copy-row";
 import { router, useForm, usePage } from "@inertiajs/react";
-import { Check, Copy, Cylinder, Database, GitBranch, ShieldCheck, TriangleAlert } from "lucide-react";
+import { Cylinder, Database, GitBranch, ShieldCheck, TriangleAlert } from "lucide-react";
 import React, { FormEventHandler, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
@@ -39,43 +40,6 @@ type FlashMessageProps = {
     success?: string;
     error?: string;
     newToken?: UserDatabaseTokenProps;
-}
-
-function CopyRow({ label, value }: { label: string; value: string }) {
-    // useCopyToClipboard composes keys as `${identifier}-${type}` which never
-    // matches a bare prefix — the reveal panel tracks its own copied state.
-    const [copied, setCopied] = useState(false);
-
-    const copy = async () => {
-        try {
-            await navigator.clipboard.writeText(value);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
-            console.error('Failed to copy text: ', err);
-        }
-    };
-
-    return (
-        <div className="flex flex-col gap-1.5">
-            <Label>{label}</Label>
-            <div className="flex items-stretch gap-2">
-                <code className="min-w-0 flex-1 break-all rounded-md border bg-muted px-2 py-2 font-mono text-[10px] leading-relaxed">
-                    {value}
-                </code>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="shrink-0"
-                    aria-label={`Copy ${label}`}
-                    onClick={copy}
-                >
-                    {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
-                </Button>
-            </div>
-        </div>
-    );
 }
 
 export function ModalCreateToken({
@@ -201,8 +165,8 @@ export function ModalCreateToken({
                                 <p className="font-semibold">Copy both tokens now — this is the only time they are shown.</p>
                                 <p className="mt-1">Only SHA-256 hashes are stored from here on. If you lose them, you must generate new ones.</p>
                             </div>
-                            <CopyRow label="Full Access Token" value={createdToken.full_access_token} />
-                            <CopyRow label="Read-only Token" value={createdToken.read_only_token} />
+                            <TokenCopyRow label="Full Access Token" value={createdToken.full_access_token} />
+                            <TokenCopyRow label="Read-only Token" value={createdToken.read_only_token} />
                             <Button type="button" className="mt-1 w-full" onClick={closeReveal}>
                                 I&apos;ve saved these tokens
                             </Button>

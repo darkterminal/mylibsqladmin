@@ -12,6 +12,7 @@ use App\Models\Team;
 use App\Models\User;
 use App\Models\UserDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Inertia\Testing\AssertableInertia as Assert;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
@@ -115,4 +116,108 @@ test('a team manager can mint a group token for their team group', function () {
 
     $token = GroupDatabaseToken::where('group_id', $group->id)->firstOrFail();
     expect($token->full_access_token)->toMatch('/^[a-f0-9]{64}$/');
+});
+test('a privileged viewer sees teammates ungrouped databases in the picker', function () {
+    $admin = groupAdmin();
+    $team = Team::create(['name' => 'Scope Team', 'description' => 'x']);
+    $team->members()->attach($admin->id, ['permission_level' => 'super-admin']);
+
+    $mate = memberOf($team, 'Member');
+    $mateDb = ownedDatabase($mate);
+
+    $this->actingAs($admin)
+        ->withSession(['team_databases.team_id' => $team->id])
+        ->get('/dashboard/groups')
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('dashboard-group')
+            ->has('databaseNotInGroup', 1)
+            ->where('databaseNotInGroup.0.database_name', $mateDb->database_name));
+});
+
+test('a regular member sees only their own ungrouped databases in the picker', function () {
+    $member = memberOf(Team::create(['name' => 'Scope Member Team', 'description' => 'x']), 'Member');
+    $team = $member->teams()->firstOrFail();
+
+    $own = ownedDatabase($member);
+    ownedDatabase(memberOf($team, 'Member')); // teammate's DB, not the viewer's own
+
+    $this->actingAs($member)
+        ->withSession(['team_databases.team_id' => $team->id])
+        ->get('/dashboard/groups')
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('dashboard-group')
+            ->has('databaseNotInGroup', 1)
+            ->where('databaseNotInGroup.0.database_name', $own->database_name));
+});
+
+test('a super admin can rename a group in their team, a member cannot', function () {
+    $admin = groupAdmin();
+    $team = Team::create(['name' => 'Rename Team', 'description' => 'x']);
+    $team->members()->attach($admin->id, ['permission_level' => 'super-admin']);
+
+    $group = GroupDatabase::create([
+        'name' => 'rename-me',
+        'user_id' => $admin->id,
+        'team_id' => $team->id,
+        'created_by' => $admin->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->patch("/groups/{$group->id}/rename", ['name' => 'renamed-group'])
+        ->assertRedirect();
+
+    expect($group->fresh()->name)->toBe('renamed-group');
+
+    $member = memberOf($team, 'Member');
+    $this->actingAs($member)
+        ->patch("/groups/{$group->id}/rename", ['name' => 'hijacked-group'])
+        ->assertStatus(403);
+
+    expect($group->fresh()->name)->toBe('renamed-group');
+});
+
+test('a super admin can delete a teammate group, a member cannot', function () {
+    $admin = groupAdmin();
+    $team = Team::create(['name' => 'Delete Team', 'description' => 'x']);
+    $team->members()->attach($admin->id, ['permission_level' => 'super-admin']);
+
+    $mate = memberOf($team, 'Member');
+    $group = GroupDatabase::create([
+        'name' => 'mate-group',
+        'user_id' => $mate->id,
+        'team_id' => $team->id,
+        'created_by' => $mate->id,
+    ]);
+
+    $this->actingAs($mate)
+        ->delete("/groups/delete/{$group->id}")
+        ->assertStatus(403);
+    expect(GroupDatabase::find($group->id))->not->toBeNull();
+
+    $this->actingAs($admin)
+        ->delete("/groups/delete/{$group->id}")
+        ->assertRedirect();
+    expect(GroupDatabase::find($group->id))->toBeNull();
+});
+
+test('attaching a database to a group respects the same scope as the picker', function () {
+    $admin = groupAdmin();
+    $team = Team::create(['name' => 'Attach Team', 'description' => 'x']);
+    $team->members()->attach($admin->id, ['permission_level' => 'super-admin']);
+
+    $mate = memberOf($team, 'Member');
+    $mateDb = ownedDatabase($mate);
+
+    $group = GroupDatabase::create([
+        'name' => 'attach-group',
+        'user_id' => $admin->id,
+        'team_id' => $team->id,
+        'created_by' => $admin->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->postJson("/groups/{$group->id}/add-databases", ['databases' => [$mateDb->id]])
+        ->assertStatus(302);
+
+    expect($group->fresh()->members()->where('database_id', $mateDb->id)->exists())->toBeTrue();
 });

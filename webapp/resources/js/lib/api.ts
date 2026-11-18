@@ -25,8 +25,19 @@ export const apiFetch = async <T>(url: string, options: RequestInit = {}): Promi
         let message = response.statusText || `HTTP ${response.status}`
         try {
             const body = await response.clone().json()
+
             if (body && typeof body.message === 'string' && body.message.trim()) {
                 message = body.message
+            } else if (body && body.errors && typeof body.errors === 'object') {
+                // Laravel validation failures often omit the top-level message
+                // (e.g. { success: false, errors: { name: ["Group name already exists."] } }).
+                const first = Object.values(body.errors as Record<string, unknown>)
+                    .flatMap((value) => Array.isArray(value) ? value : [])
+                    .find((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
+
+                if (first) {
+                    message = first
+                }
             }
         } catch {
             // Body was not JSON — fall back to the status text.

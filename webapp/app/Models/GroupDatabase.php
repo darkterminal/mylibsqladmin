@@ -130,15 +130,7 @@ class GroupDatabase extends Model
                     'is_schema' => $m->is_schema
                 ]),
                 'database_tokens' => $group->members->flatMap(
-                    fn($member) => $member->tokens->map(fn($token) => [
-                        'id' => $token->id,
-                        'name' => $token->name,
-                        'full_access_token' => '••••••••' . substr((string) $token->full_access_token, -8),
-                        'read_only_token' => '••••••••' . substr((string) $token->read_only_token, -8),
-                        'expiration_day' => $token->expiration_day,
-                        'database_id' => $token->database_id,
-                        'user_id' => $token->user_id,
-                    ])
+                    fn($member) => $member->tokens->map(fn($token) => self::mapMemberToken($token))
                 ),
                 'has_token' => $group->tokens()->exists(),
                 'group_token' => self::sanitisedGroupToken($group),
@@ -164,9 +156,60 @@ class GroupDatabase extends Model
                 'name' => $token->name,
                 'full_access_token' => '••••••••' . substr((string) $token->full_access_token, -8),
                 'read_only_token' => '••••••••' . substr((string) $token->read_only_token, -8),
+                'fingerprint' => substr((string) $token->full_access_token, -8),
                 'expiration_day' => $token->expiration_day,
+                'expires_at' => self::expiryFor($token)['expires_at'],
+                'expiration_state' => self::expiryFor($token)['expiration_state'],
+                'days_remaining' => self::expiryFor($token)['days_remaining'],
                 'created_at' => $token->created_at,
             ];
+    }
+
+    /**
+     * Shared payload for a user database token attached to a member of a group —
+     * identical shape to UserDatabaseToken's list rendering (masked hash,
+     * fingerprint, creation-anchored expiry).
+     */
+    private static function mapMemberToken($token): array
+    {
+        return [
+            'id' => $token->id,
+            'name' => $token->name,
+            'full_access_token' => '••••••••' . substr((string) $token->full_access_token, -8),
+            'read_only_token' => '••••••••' . substr((string) $token->read_only_token, -8),
+            'fingerprint' => substr((string) $token->full_access_token, -8),
+            'expiration_day' => (int) $token->expiration_day,
+            'expires_at' => self::expiryFor($token)['expires_at'],
+            'expiration_state' => self::expiryFor($token)['expiration_state'],
+            'days_remaining' => self::expiryFor($token)['days_remaining'],
+            'created_at' => $token->created_at,
+            'database_id' => $token->database_id,
+            'user_id' => $token->user_id,
+        ];
+    }
+
+    /**
+     * Creation-anchored expiry for member/group tokens — the renderer must not
+     * drift daily, so never accept $token->expiration_day days from now.
+     *
+     * @return array{expires_at: ?string, expiration_state: string, days_remaining: ?int}
+     */
+    private static function expiryFor($token): array
+    {
+        $createdAt = $token->created_at;
+        $days = (int) $token->expiration_day;
+
+        if ($days === 0 || ! $createdAt) {
+            return ['expires_at' => null, 'expiration_state' => 'never', 'days_remaining' => null];
+        }
+
+        $expiresAt = $createdAt->copy()->addDays($days);
+
+        return [
+            'expires_at' => $expiresAt->format('Y-m-d'),
+            'expiration_state' => now()->isAfter($expiresAt) ? 'expired' : 'active',
+            'days_remaining' => (int) now()->diffInDays($expiresAt, false),
+        ];
     }
 
     private static function countMemberTokens()

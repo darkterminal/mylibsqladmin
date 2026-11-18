@@ -8,15 +8,16 @@ import { apiFetch } from "@/lib/api";
 import { usePermission } from "@/lib/auth";
 import {
     SharedData,
-    UserDatabaseTokenProps,
     type BreadcrumbItem,
     type DatabaseInGroupProps,
-    type GroupDatabaseProps
+    type GroupDatabaseProps,
+    type GroupMemberTokenProps,
 } from "@/types";
 import { Head, router, usePage } from "@inertiajs/react";
-import { Users2Icon } from "lucide-react";
+import { FolderOpen, KeyRound, Users2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getCurrentTeamId } from "@/lib/current-team"
+import { getCurrentTeamId } from "@/lib/current-team";
+import { toast } from "sonner";;
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -39,23 +40,32 @@ export default function DashboardGroup({
     const { can } = usePermission();
     const { csrfToken } = usePage<SharedData>().props;
     const [groups, setGroups] = useState<GroupDatabaseProps[]>(databaseGroups);
-    const [selectedGroup, setSelectedGroup] = useState<GroupDatabaseProps | null>(null);
+    const [selectedGroupId, setSelectedGroupId] = useState<number | null>(() => databaseGroups[0]?.id ?? null);
+
+    const selectedGroup = groups.find((group) => group.id === selectedGroupId) ?? null;
 
     useEffect(() => {
         setGroups(databaseGroups);
-        if (!databaseGroups.find(g => g.id === selectedGroup?.id)) {
-            setSelectedGroup(null);
+    }, [databaseGroups]);
+
+    useEffect(() => {
+        if (selectedGroupId === null && databaseGroups.length > 0) {
+            setSelectedGroupId(databaseGroups[0].id);
         }
-    }, [databaseGroups, selectedGroup]);
+    }, [databaseGroups, selectedGroupId]);
 
-    const handleGroupClick = (group: (typeof databaseGroups)[0]) => {
-        setSelectedGroup(group)
-    }
-
-    const handleCreateGroup = async (name: string) => {
+    const handleCreateGroup = async (name: string): Promise<boolean> => {
         try {
             const teamId = getCurrentTeamId();
-            const response = await apiFetch(route('api.group.create-only'), {
+
+            if (!teamId) {
+                toast.error('Select a team first');
+                return false;
+            }
+
+            // apiFetch throws with the server's message on non-2xx — that is
+            // the contract; do not double-handle response.ok here.
+            await apiFetch(route('api.group.create-only'), {
                 method: 'POST',
                 body: JSON.stringify({ name, team_id: teamId }),
                 headers: {
@@ -63,113 +73,141 @@ export default function DashboardGroup({
                 }
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to create group');
-            }
-
-            const refreshSession = await apiFetch(route('api.teams.databases', Number(teamId)), {
+            // Best-effort session refresh — the groups page reloads anyway.
+            await apiFetch(route('api.teams.databases', Number(teamId)), {
                 method: 'GET',
                 headers: {
                     'X-CSRF-TOKEN': csrfToken
                 }
-            });
-
-            if (!refreshSession.ok) {
-                throw new Error('Failed to refresh session');
-            }
+            }).catch(() => { /* non-fatal */ });
 
             router.visit(window.location.href, {
                 preserveScroll: true,
             });
-        } catch (error) {
-            console.error("Error creating group:", error);
-            throw error;
+
+            return true;
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Failed to create group');
+            return false;
         }
     }
 
-    useCustomEvent('token-created-from-group', ({ groupId, databaseId, newToken }: { groupId: number, databaseId: number, newToken: UserDatabaseTokenProps }) => {
+    useCustomEvent('token-created-from-group', ({ groupId, databaseId, newToken }: { groupId: number, databaseId: number, newToken: import('@/types').UserDatabaseTokenProps }) => {
         setGroups(prev => prev.map(g => {
-            if (g.id === groupId) {
-                const exists = g.database_tokens.some(t => t.database_id === databaseId);
-
-                return {
-                    ...g,
-                    database_tokens: exists ? g.database_tokens : [
-                        ...g.database_tokens,
-                        {
-                            ...newToken,
-                            database_id: databaseId
-                        }
-                    ]
-                }
+            if (g.id !== groupId) {
+                return g;
             }
-            return g;
+
+            const adapted: GroupMemberTokenProps = {
+                id: newToken.id,
+                name: newToken.name,
+                full_access_token: newToken.full_access_token,
+                read_only_token: newToken.read_only_token,
+                fingerprint: newToken.fingerprint,
+                expiration_day: newToken.expiration_day,
+                expires_at: newToken.expires_at,
+                expiration_state: newToken.expiration_state,
+                days_remaining: newToken.days_remaining,
+                created_at: newToken.created_at,
+                database_id: databaseId,
+                user_id: newToken.user_id,
+            };
+
+            const exists = g.database_tokens.some(t => t.database_id === databaseId);
+
+            return {
+                ...g,
+                database_tokens: exists ? g.database_tokens : [...g.database_tokens, adapted]
+            };
         }));
-        setSelectedGroup(prev => prev?.id === groupId ? { ...prev, database_tokens: [...prev.database_tokens, newToken] } : prev);
     });
+
+    const createGroupButton = can('create-groups') && (
+        <ModalCreateGroupOnly
+            trigger={
+                <Button variant="default">
+                    <Users2Icon className="mr-1 h-4 w-4" aria-hidden="true" /> New group
+                </Button>
+            }
+            onSave={(group) => handleCreateGroup(group.groupName)}
+        />
+    );
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Group" />
-            <div className="container mx-auto p-8">
-                <h1 className="text-2xl font-bold mb-6">Database Groups Management</h1>
+            <Head title="Groups" />
+            <div className="min-w-0 w-full">
+                <div className="container mx-auto flex w-full min-w-0 flex-col gap-4 p-4 sm:p-6 lg:p-8">
+                    <div className="flex items-start justify-between gap-4">
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight">Database Groups</h1>
+                            <p className="text-sm text-muted-foreground">
+                                {groups.length} {groups.length === 1 ? 'group' : 'groups'} · share one credential across several databases
+                            </p>
+                        </div>
+                        {groups.length > 0 && createGroupButton}
+                    </div>
 
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-semibold">Groups</h2>
-                    {can('create-groups') && (
-                        <ModalCreateGroupOnly
-                            trigger={
-                                <Button variant="default">
-                                    <Users2Icon className="mr-1 h-4 w-4" /> New group
-                                </Button>
-                            }
-                            onSave={(group) => handleCreateGroup(group.groupName)}
-                        />
-                    )}
-                </div>
+                    {groups.length === 0 ? (
+                        <div className="flex h-80 flex-col items-center justify-center gap-3 text-center">
+                            <div className="rounded-full bg-muted p-4">
+                                <FolderOpen className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+                            </div>
+                            <h2 className="text-xl font-semibold">No groups yet</h2>
+                            <p className="max-w-md text-sm text-muted-foreground">
+                                Groups give several databases a shared credential — create one, attach the
+                                databases, and hand out a single token your apps authenticate with.
+                            </p>
+                            {createGroupButton}
+                        </div>
+                    ) : (
+                        <div className="grid min-w-0 grid-cols-1 gap-6 md:grid-cols-3">
+                            <div className="min-w-0 md:col-span-1">
+                                <ScrollArea className="h-[70vh] min-h-48 pr-1">
+                                    <div className="flex flex-col gap-2">
+                                        {groups.map((group) => {
+                                            const selected = selectedGroupId === group.id;
 
-                <div className="grid md:grid-cols-3 gap-6">
-                    <div className="md:col-span-1">
-                        <ScrollArea className="h-[700px]">
-                            <div className="space-y-3">
-                                {groups.map((group) => (
-                                    <div
-                                        key={group.id}
-                                        className={`p-4 border rounded-md cursor-pointer transition-colors ${selectedGroup?.id === group.id ? "bg-primary/10 border-primary" : "hover:bg-muted"
-                                            }`}
-                                        onClick={() => handleGroupClick(group)}
-                                    >
-                                        <h3 className="font-medium">{group.name}</h3>
-                                        <p className="text-sm text-muted-foreground">
-                                            {group.members_count} {group.members_count === 1 ? "database" : "databases"}
-                                        </p>
+                                            return (
+                                                <button
+                                                    key={group.id}
+                                                    type="button"
+                                                    onClick={() => setSelectedGroupId(group.id)}
+                                                    aria-pressed={selected}
+                                                    className={`w-full rounded-md border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${selected ? "border-primary bg-primary/10" : "hover:bg-muted"}`}
+                                                >
+                                                    <span className="flex items-center justify-between gap-2">
+                                                        <span className="min-w-0 truncate font-medium" title={group.name}>
+                                                            {group.name}
+                                                        </span>
+                                                        {group.has_token && (
+                                                            <KeyRound className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                                                        )}
+                                                    </span>
+                                                    <span className="mt-0.5 block text-sm text-muted-foreground">
+                                                        {group.members_count} {group.members_count === 1 ? "database" : "databases"}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
-                                ))}
+                                </ScrollArea>
+                            </div>
 
-                                {groups.length === 0 && (
-                                    <div className="p-4 border rounded-md text-center text-muted-foreground">
-                                        No groups yet. Create your first group!
+                            <div className="min-w-0 md:col-span-2">
+                                {selectedGroup ? (
+                                    <GroupDetail
+                                        group={selectedGroup}
+                                        availableDatabases={databaseNotInGroup}
+                                    />
+                                ) : (
+                                    <div className="flex h-64 items-center justify-center rounded-md border p-8 text-center text-sm text-muted-foreground">
+                                        Select a group to view its databases
                                     </div>
                                 )}
                             </div>
-                        </ScrollArea>
-                    </div>
-
-                    <div className="md:col-span-2">
-                        {selectedGroup ? (
-                            <GroupDetail
-                                group={selectedGroup}
-                                availableDatabases={databaseNotInGroup}
-                            />
-                        ) : (
-                            <div className="h-full flex items-center justify-center border rounded-md p-8 text-center">
-                                <div>
-                                    <h3 className="font-medium mb-2">Select a group to view details</h3>
-                                    <p className="text-sm text-muted-foreground">Click on a group from the list to view its databases</p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </AppLayout>
