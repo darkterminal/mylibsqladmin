@@ -30,6 +30,8 @@ class TeamController extends Controller
         $isCanManage = $user->hasRole('Super Admin') || $user->hasRole('Team Manager');
         $hasManageTeamsPermission = $user->hasPermission('manage-teams');
         $canViewAll = $isCanManage || $hasManageTeamsPermission;
+        $search = trim((string) $request->query('search', ''));
+        $currentTeamId = (int) (session('team_databases.team_id') ?? 0);
 
         // Start building the query for teams
         $teamsQuery = Team::query();
@@ -65,17 +67,30 @@ class TeamController extends Controller
             }
         ]);
 
+        // Search by name or description — server-side so pagination stays honest.
+        if ($search !== '') {
+            $teamsQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Current team first (stable), then alphabetical — same visual order the
+        // SPA used to apply client-side, now pagination-safe.
+        $teamsQuery->orderByRaw('CASE WHEN id = ? THEN 0 ELSE 1 END', [$currentTeamId])
+            ->orderBy('name');
+
         // Apply top-level query constraints based on user role
         if (!$isCanManage) {
             // Both team managers and regular members should only see teams they belong to.
             $teamsQuery->whereHas('members', fn($q) => $q->where('user_id', $userId));
         }
 
-        // Execute the query
-        $teams = $teamsQuery->get();
+        $teams = $teamsQuery->paginate(10)->withQueryString();
 
-        // Map the results for the frontend
-        $teamData = $teams->map(function ($team) use ($user, $canViewAll) {
+        // Decorate each page entry — querying/decorating stays server-side so
+        // pagination costs are bounded.
+        $teamData = $teams->through(function ($team) use ($user, $canViewAll) {
 
             $pendingInvitations = TeamDashboardQuery::pendingInvitations($team);
 
@@ -220,15 +235,28 @@ class TeamController extends Controller
             }
         ]);
 
-        if ($user->hasRole('Super Admin')) {
-            $teams = $teamsQuery->get();
-        } elseif ($user->hasPermission('manage-teams')) {
-            $teams = $teamsQuery->whereHas('members', fn($q) => $q->where('user_id', $user->id))->get();
-        } else {
-            $teams = $teamsQuery->whereHas('members', fn($q) => $q->where('user_id', $user->id))->get();
+        $search = trim((string) $request->query('search', ''));
+
+        if ($search !== '') {
+            $teamsQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
         }
 
-        $teamData = $teams->map(function ($team) use ($user) {
+        $teamsQuery->orderByDesc('deleted_at')->orderBy('name');
+
+        if ($user->hasRole('Super Admin')) {
+            // everyone
+        } elseif ($user->hasPermission('manage-teams')) {
+            $teamsQuery->whereHas('members', fn($q) => $q->where('user_id', $user->id));
+        } else {
+            $teamsQuery->whereHas('members', fn($q) => $q->where('user_id', $user->id));
+        }
+
+        $teams = $teamsQuery->paginate(10)->withQueryString();
+
+        $teamData = $teams->through(function ($team) use ($user) {
             $isTeamMember = $team->members->contains('id', $user->id);
             $canAccessDatabases = $user->hasRole('Super Admin') ||
                 ($user->hasPermission('manage-teams') || $isTeamMember);
