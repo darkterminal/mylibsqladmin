@@ -71,8 +71,8 @@ class UserDatabaseController extends Controller
                 'name' => $token->name,
                 'full_access_token' => '••••••••' . substr((string) $token->full_access_token, -8),
                 'read_only_token' => '••••••••' . substr((string) $token->read_only_token, -8),
-                'expires_at' => $token->expiration_day ?
-                    now()->addDays($token->expiration_day)->format('Y-m-d') :
+                'expires_at' => $token->expiration_day && $token->created_at ?
+                    $token->created_at->copy()->addDays((int) $token->expiration_day)->format('Y-m-d') :
                     'Never'
             ])->first(),
             'stats' => [
@@ -182,8 +182,8 @@ class UserDatabaseController extends Controller
                 'name' => $token->name,
                 'full_access_token' => '••••••••' . substr((string) $token->full_access_token, -8),
                 'read_only_token' => '••••••••' . substr((string) $token->read_only_token, -8),
-                'expires_at' => $token->expiration_day ?
-                    now()->addDays($token->expiration_day)->format('Y-m-d') :
+                'expires_at' => $token->expiration_day && $token->created_at ?
+                    $token->created_at->copy()->addDays((int) $token->expiration_day)->format('Y-m-d') :
                     'Never'
             ])->first(),
             'stats' => [

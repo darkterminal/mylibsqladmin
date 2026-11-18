@@ -14,10 +14,11 @@ use Inertia\Inertia;
 
 class TokenController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $userId = auth()->id();
         $teamId = session('team_databases.team_id');
+        $search = trim((string) $request->query('search', ''));
 
         // Get tokenized database IDs in a single query (team-filtered)
         $tokenizedDatabaseIds = UserDatabaseToken::where('user_id', $userId)
@@ -40,6 +41,8 @@ class TokenController extends Controller
             ];
         });
 
+        $like = $search !== '' ? '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search) . '%' : null;
+
         // Main tokens query with team filtering
         $userDatabaseTokens = UserDatabaseToken::with([
             'database.groups' => fn($q) => $q->whereHas('team', fn($q) => $q->where('id', $teamId))->with('team:id,name'),
@@ -47,7 +50,14 @@ class TokenController extends Controller
         ])
             ->whereHas('database.groups.team', fn($q) => $q->where('id', $teamId))
             ->when(!auth()->user()->hasRole('Super Admin') && !auth()->user()->hasRole('Team Manager'), fn($q) => $q->where('user_id', $userId))
-            ->paginate(10);
+            ->when($like, fn($q) => $q->where(function ($q) use ($like) {
+                $q->where('name', 'like', $like)
+                    ->orWhereHas('database', fn($d) => $d->where('database_name', 'like', $like))
+                    ->orWhereHas('user', fn($u) => $u->where('name', 'like', $like));
+            }))
+            ->orderByDesc('id')
+            ->paginate(10)
+            ->withQueryString();
 
         // Batched lookup for display names (no per-row queries, no 500 on
         // dangling created_by references).
@@ -59,21 +69,38 @@ class TokenController extends Controller
 
         $userDatabaseTokens = $userDatabaseTokens
             ->through(function ($token) use ($creators) {
-                $expirationDate = $token->expiration_day !== 0 ? now()->addDays($token->expiration_day) : null;
+                $createdAt = $token->created_at;
+                // Expiry is anchored at creation time, not at render time —
+                // the old now()->addDays() drift made every token look fresh daily.
+                $expiresAt = $token->expiration_day && $createdAt
+                    ? $createdAt->copy()->addDays((int) $token->expiration_day)
+                    : null;
+                $state = 'never';
+                $daysRemaining = null;
+                if ($expiresAt) {
+                    $state = now()->isAfter($expiresAt) ? 'expired' : 'active';
+                    $daysRemaining = (int) now()->diffInDays($expiresAt, false);
+                }
 
                 // Get team from filtered groups
                 $team = $token->database->groups->first()?->team;
 
                 $createdByName = $creators->get($token->created_by) ?? 'Unknown';
 
+                // The stored hash's tail doubles as the fingerprint — the only
+                // stable identifier a hashed token has.
+                $fingerprint = substr((string) $token->getRawOriginal('full_access_token'), -8);
+
                 return [
                     ...$token->toArray(),
-                    'full_access_token' => '••••••••' . substr((string) $token->full_access_token, -8),
-                    'read_only_token' => '••••••••' . substr((string) $token->read_only_token, -8),
+                    'full_access_token' => '••••••••' . $fingerprint,
+                    'read_only_token' => '••••••••' . substr((string) $token->getRawOriginal('read_only_token'), -8),
+                    'fingerprint' => $fingerprint,
                     'created_by' => $createdByName,
-                    'expiration_day' => $expirationDate
-                        ? now()->isAfter($expirationDate) ? "Expired" : $expirationDate->format('Y-m-d')
-                        : "Never",
+                    'expiration_day' => (int) $token->expiration_day,
+                    'expires_at' => $expiresAt?->format('Y-m-d'),
+                    'expiration_state' => $state,
+                    'days_remaining' => $daysRemaining,
                     'groups' => $token->database->groups->map(fn($group) => [
                         'id' => $group->id,
                         'name' => $group->name,
@@ -94,7 +121,6 @@ class TokenController extends Controller
         return Inertia::render('dashboard-token', [
             'allUsers' => $allUsers,
             'mostUsedDatabases' => $databases,
-            'isAllTokenized' => $databases->every('is_tokenized'),
             'userDatabaseTokens' => $userDatabaseTokens
         ]);
     }
@@ -102,13 +128,18 @@ class TokenController extends Controller
     public function createToken(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string',
+            'name' => 'nullable|string|max:120',
             'databaseId' => 'required|integer|exists:user_databases,id',
-            'expiration' => 'required|integer',
+            'expiration' => 'required|integer|min:0',
             'userId' => 'required|integer|exists:users,id'
         ]);
 
         $user = User::find($validated['userId']);
+
+        // The submitted name is honoured when it is a real string; otherwise
+        // fall back to the per-user default so the list never shows blanks.
+        $requestedName = trim((string) ($validated['name'] ?? ''));
+        $tokenName = $requestedName !== '' ? $requestedName : "Token for {$user->name}";
 
         $pair = (new DatabaseTokenGenerator())->generateToken(
             $validated['databaseId'],
@@ -125,7 +156,7 @@ class TokenController extends Controller
         $formData = [
             'user_id' => $validated['userId'],
             'database_id' => $validated['databaseId'],
-            'name' => "Token for {$user->name}",
+            'name' => $tokenName,
             'full_access_token' => hash('sha256', $pair['full_access_token']),
             'read_only_token' => hash('sha256', $pair['read_only_token']),
             'expiration_day' => $validated['expiration'],
@@ -185,7 +216,8 @@ class TokenController extends Controller
         );
         abort_unless($isOwn || $isSuperAdmin || $canManage, 403, 'Unauthorized');
 
-        $token->delete();
+        // Permanent removal — a leaked/rotated credential must not linger.
+        $token->forceDelete();
 
 
         log_user_activity(
