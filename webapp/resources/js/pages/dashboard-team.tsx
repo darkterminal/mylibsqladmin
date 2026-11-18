@@ -28,7 +28,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function DashboardTeam({ teams }: { teams: Team[] }) {
     const { can } = usePermission();
     const [searchQuery, setSearchQuery] = useState<string>("")
-    const [viewMode, setViewMode] = useState("table")
+    // Small screens default to the card view — the dense table only works
+    // once there is room for it; users can still flip the toggle.
+    const [viewMode, setViewMode] = useState(() =>
+        typeof window !== "undefined" && window.innerWidth < 768 ? "grid" : "table"
+    )
     
     const handleOnSave = (team: TeamForm) => {
         router.post(route('team.create'), team, {
@@ -104,17 +108,38 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
                     </div>
                 </div>
 
-                {sortedAndFilteredTeams.length === 0 ? (
-                    <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-md border text-center">
-                        <SearchX className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
-                        <h2 className="text-lg font-semibold">No teams match “{searchQuery}”</h2>
-                        <p className="max-w-sm text-sm text-muted-foreground">Try a different name or description, or create a new team instead.</p>
-                        <Button variant="outline" onClick={() => setSearchQuery('')}>
-                            <X className="h-4 w-4" aria-hidden="true" />
-                            Clear search
-                        </Button>
-                    </div>
-                ) : viewMode === "table" ? (
+                {sortedAndFilteredTeams.length === 0 && (
+                    searchQuery ? (
+                        <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-md border text-center">
+                            <SearchX className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+                            <h2 className="text-lg font-semibold">No teams match “{searchQuery}”</h2>
+                            <p className="max-w-sm text-sm text-muted-foreground">Try a different name or description, or create a new team.</p>
+                            <Button variant="outline" onClick={() => setSearchQuery('')}>
+                                <X className="h-4 w-4" aria-hidden="true" />
+                                Clear search
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-md border text-center">
+                            <Users className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+                            <h2 className="text-lg font-semibold">No teams yet</h2>
+                            <p className="max-w-sm text-sm text-muted-foreground">Teams you create or join will appear here.</p>
+                            {can('manage-teams') && (
+                                <ModalCreateTeam
+                                    trigger={
+                                        <Button>
+                                            <Users className="mr-2 h-4 w-4" />
+                                            New Team
+                                        </Button>
+                                    }
+                                    onSave={handleOnSave}
+                                    validate={(team) => team.name.length < 3 ? "Name must be at least 3 characters" : null}
+                                />
+                            )}
+                        </div>
+                    )
+                )}
+                {sortedAndFilteredTeams.length > 0 && (viewMode === "table" ? (
                     <TeamsTable teams={sortedAndFilteredTeams} />
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -127,7 +152,7 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
                             />
                         ))}
                     </div>
-                )}
+                ))}
             </div>
         </AppLayout>
     )
