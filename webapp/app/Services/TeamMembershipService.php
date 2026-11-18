@@ -114,6 +114,28 @@ class TeamMembershipService
         );
     }
 
+    /**
+     * Re-send a pending invitation: a fresh single-use token and a fresh
+     * expiry are issued (the previous link stops working immediately), the
+     * existing pending record is reused, and the notification is re-queued.
+     */
+    public function resendInvitation(Invitation $invitation): void
+    {
+        $invitation->forceFill([
+            'token' => \Illuminate\Support\Str::random(64),
+            'expires_at' => now()->addDays(7),
+        ])->save();
+
+        SendTeamInvitation::dispatch($invitation);
+
+        log_user_activity(
+            auth()->user(),
+            ActivityType::TEAM_MEMBER_UPDATE,
+            "Invitation to {$invitation->email} re-sent from " . request()->ip(),
+            activity_request_context()
+        );
+    }
+
     public function revokeInvitation(Invitation $invitation): void
     {
         $email = $invitation->email;

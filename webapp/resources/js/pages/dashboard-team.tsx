@@ -10,7 +10,7 @@ import AppLayout from "@/layouts/app-layout"
 import { usePermission } from "@/lib/auth"
 import { BreadcrumbItem, Team, TeamForm } from "@/types"
 import { Head, router } from "@inertiajs/react"
-import { Grid3X3, List, Search, Trash, Users } from "lucide-react"
+import { Grid3X3, List, Search, SearchX, Trash, Users, X } from "lucide-react"
 import { useState } from "react"
 import { useCurrentTeamId } from "@/lib/current-team"
 
@@ -62,8 +62,8 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
                         <h1 className="text-3xl font-bold tracking-tight">Team Dashboard</h1>
                         <p className="text-muted-foreground">Manage your teams, groups, and databases</p>
                     </div>
-                    <div className="flex items-center gap-2 w-full md:w-auto">
-                        <div className="relative w-full md:w-[300px]">
+                    <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
+                        <div className="relative w-full sm:w-[300px]">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
                                 type="search"
@@ -104,7 +104,17 @@ export default function DashboardTeam({ teams }: { teams: Team[] }) {
                     </div>
                 </div>
 
-                {viewMode === "table" ? (
+                {sortedAndFilteredTeams.length === 0 ? (
+                    <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-md border text-center">
+                        <SearchX className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+                        <h2 className="text-lg font-semibold">No teams match “{searchQuery}”</h2>
+                        <p className="max-w-sm text-sm text-muted-foreground">Try a different name or description, or create a new team instead.</p>
+                        <Button variant="outline" onClick={() => setSearchQuery('')}>
+                            <X className="h-4 w-4" aria-hidden="true" />
+                            Clear search
+                        </Button>
+                    </div>
+                ) : viewMode === "table" ? (
                     <TeamsTable teams={sortedAndFilteredTeams} />
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

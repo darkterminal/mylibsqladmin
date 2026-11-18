@@ -388,6 +388,41 @@ class TeamController extends Controller
     }
 
 
+    /**
+     * Re-send a pending invitation: rotate the token (invalidating the
+     * previous link), refresh the expiry, and queue a fresh notification.
+     * Authorization mirrors invite() — any member of the team can resend
+     * while holding manage-team-members; super admins can resend anywhere.
+     */
+    public function resendInvite(Invitation $invitation)
+    {
+        $isMember = \DB::table('team_user')
+            ->where('team_id', $invitation->team_id)
+            ->where('user_id', auth()->id())
+            ->exists();
+
+        abort_unless(
+            auth()->user()->hasRole('Super Admin')
+                || ($isMember && auth()->user()->hasPermission('manage-team-members')),
+            403,
+            'Unauthorized'
+        );
+
+        if ($invitation->expires_at->isPast()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This invitation has expired. Send a new one instead.',
+            ], 422);
+        }
+
+        $this->membership->resendInvitation($invitation);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Invitation re-sent successfully',
+        ]);
+    }
+
     public function revokeInvite(Invitation $invitation)
     {
         if (!auth()->user()->can('delete', $invitation->team)) {
