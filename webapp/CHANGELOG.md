@@ -1,3 +1,51 @@
+## [1.6.2] - 2026-11-19
+
+Patch release. Two fresh-install defects found and fixed; no schema or
+internal-interface changes; upgrade is safe without a backup beyond normal
+operational hygiene.
+
+### Security fix — Database Studio iframe
+
+- `window.addEventListener("message", …)` no longer accepts events from
+  origins other than `https://libsqlstudio.com`. Previously **any window
+  that could postMessage into the page** (all frames/openers on the page)
+  could execute arbitrary SQL through the embedded libSQL client using the
+  in-memory full-access token — a cross-origin SQL-execution channel.
+- `postMessage(..., "*")` now targets `https://libsqlstudio.com` — query
+  results no longer broadcast to arbitrary origins.
+- The iframe now carries `sandbox="allow-scripts allow-same-origin"` — no
+  top-level navigation, plugins, forms or popups from the embed.
+
+### Installer fix — `scripts/installer.sh`
+
+- **`LIBSQL_API_HOST=db`** (was `proxy`) — installer-generated fresh
+  installs can now reach the sqld admin API (`db:8081`); previously fresh
+  installer installs could never create a database.
+- Dead `8081:8081` mapping on the proxy dropped (no listener; misleading).
+- **`LIBSQL_SEED_DEFAULTS=true`** is now written to the generated compose —
+  fresh installs produce a logged-in super-admin automatically (docs/README
+  Option A), no manual artisan step.
+- `db` service `user: "$(id -u):$(id -g)"` resolved at install time
+  (was hard-coded `1000:1000`, wrong for any non-uid-1000 host).
+- The installer now pre-creates `./libsql-data` owned by the invoking user
+  (mode `0700`) **before** writing compose.yml; if the directory already
+  exists and is unwritable, the installer fails fast with an actionable
+  error naming the uid and the exact fix — `compose.yml` is not written.
+- New optional **`IMAGE_TAG`** prompt (default `latest`) — web and proxy
+  images can be pinned at install time (e.g. `1.6.2`) for reproducible
+  deploys; sqld stays at `latest` (upstream).
+
+### Tests
+
+- `StudioTokenIssueTest` gains a Team Manager mint test (token mint
+  for a database with no explicit `GrantedDatabase`), covering the
+  role-vs-grant contract.
+
+### Docs
+
+- `AGENTS.md` — fresh-install smoke is promoted to a mandatory release
+  gate; code inspection alone is not a valid substitute.
+
 ## [1.6.1] - 2026-11-19
 
 v1.6.0 fresh installs could not create a database. This hotfix is required

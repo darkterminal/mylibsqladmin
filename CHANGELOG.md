@@ -1,3 +1,8 @@
+## [1.6.2] - 2026-11-19
+
+- Patch: Database Studio iframe pinned to libsqlstudio.com (no foreign-origin SQL execution); installer fixes (admin API host, auto seed, uid:gid, pre-owned data dir, optional IMAGE_TAG).
+- Details + verification in `webapp/CHANGELOG.md`
+
 ## [1.6.1] - 2026-11-19
 
 - HOTFIX for v1.6.0: fresh installs could not create a database. Every
