@@ -103,7 +103,13 @@ export function DataTable<T>({
                 <div className="space-y-4">
                     {onSearch && (
                         <div className="flex items-center">
-                            <Input placeholder={searchPlaceholder} value={searchQuery} onChange={handleSearch} className="max-w-sm" />
+                            <Input
+                                placeholder={searchPlaceholder}
+                                aria-label={searchPlaceholder}
+                                value={searchQuery}
+                                onChange={handleSearch}
+                                className="max-w-sm"
+                            />
                         </div>
                     )}
 
@@ -126,7 +132,9 @@ export function DataTable<T>({
                                 ) : !paginationData.data || paginationData.data.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={columns.length} className="h-24 text-center">
-                                            No results found.
+                                            {searchQuery.trim() !== ''
+                                                ? <>No results for <span className="font-medium">&ldquo;{searchQuery.trim()}&rdquo;</span>.</>
+                                                : 'No records yet.'}
                                         </TableCell>
                                     </TableRow>
                                 ) : (

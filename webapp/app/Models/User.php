@@ -49,6 +49,11 @@ class User extends Authenticatable
             ->withPivot('created_at');
     }
 
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(UserActivityLog::class);
+    }
+
     public function hasRole(string|array $roles): bool
     {
         if (is_string($roles)) {
@@ -152,8 +157,10 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
-    public static function allUsers()
+    public static function allUsers(?string $search = null)
     {
+        $search = trim((string) $search);
+
         return User::select(['id', 'name', 'username', 'email', 'is_active', 'created_at', 'updated_at', 'deleted_at'])
             ->with([
                 'teams' => fn($query) => $query->select('teams.id', 'name', 'description')
@@ -161,16 +168,25 @@ class User extends Authenticatable
                 'roles' => fn($query) => $query->select('roles.id', 'name')
                     ->withPivot('created_at'),
             ])
+            ->withMax('activityLogs', 'timestamp')
+            ->when($search !== '', fn($query) => $query->where(fn($inner) => $inner
+                ->where('name', 'like', "%{$search}%")
+                ->orWhere('username', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+            ))
             ->orderBy('id')
             ->paginate(10)
+            ->withQueryString()
             ->through(fn($user) => [
                 'id' => $user->id,
                 'name' => $user->name,
+                'username' => $user->username,
                 'email' => $user->email,
                 'is_active' => $user->is_active,
                 'created_at' => $user->created_at,
                 'updated_at' => $user->updated_at,
                 'deleted_at' => $user->deleted_at,
+                'last_active_at' => $user->activity_logs_max_timestamp,
                 'teams' => $user->teams->map(fn($team) => [
                     'id' => $team->id,
                     'name' => $team->name,
@@ -181,8 +197,10 @@ class User extends Authenticatable
             ]);
     }
 
-    public static function allUserArchives()
+    public static function allUserArchives(?string $search = null)
     {
+        $search = trim((string) $search);
+
         return User::onlyTrashed()
             ->select(['id', 'name', 'username', 'email', 'is_active', 'created_at', 'updated_at', 'deleted_at'])
             ->with([
@@ -191,16 +209,25 @@ class User extends Authenticatable
                 'roles' => fn($query) => $query->select('roles.id', 'name')
                     ->withPivot('created_at'),
             ])
+            ->withMax('activityLogs', 'timestamp')
+            ->when($search !== '', fn($query) => $query->where(fn($inner) => $inner
+                ->where('name', 'like', "%{$search}%")
+                ->orWhere('username', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+            ))
             ->orderBy('id')
             ->paginate(10)
+            ->withQueryString()
             ->through(fn($user) => [
                 'id' => $user->id,
                 'name' => $user->name,
+                'username' => $user->username,
                 'email' => $user->email,
                 'is_active' => $user->is_active,
                 'created_at' => $user->created_at,
                 'updated_at' => $user->updated_at,
                 'deleted_at' => $user->deleted_at,
+                'last_active_at' => $user->activity_logs_max_timestamp,
                 'teams' => $user->teams->map(fn($team) => [
                     'id' => $team->id,
                     'name' => $team->name,

@@ -45,7 +45,7 @@ const getActivityTypeColor = (type: string) => {
         case ActivityType.USER_DEACTIVATE:
         case ActivityType.USER_REACTIVATE:
         case ActivityType.USER_FORCE_DELETE:
-            return "bg-red-100 text-red-800"
+            return "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200"
         default:
             return "bg-gray-100 text-gray-800"
     }
@@ -101,7 +101,9 @@ export default function DashboardUserActivities({ activities }: { activities: Ac
             <div className="container mx-auto py-6">
                 <div className="flex flex-col space-y-4">
                     <div className="flex items-center justify-between">
-                        <h1 className="text-2xl font-bold">User Activity Logs</h1>
+                        <h1 className="text-2xl font-bold">User Activity Logs
+                            <span className="ml-2 align-middle text-xs font-medium text-muted-foreground">Showing the latest 50 events</span>
+                        </h1>
                         <div className="flex items-center space-x-2">
                             <Button
                                 variant={viewMode === "table" ? "default" : "outline"}
@@ -116,11 +118,13 @@ export default function DashboardUserActivities({ activities }: { activities: Ac
                         </div>
                     </div>
 
+                    <p className="text-xs text-muted-foreground">Filtered client-side from the latest 50 events fetched for this user.</p>
                     <div className="flex flex-col sm:flex-row gap-4">
                         <div className="relative flex-1">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Search activities..."
+                                aria-label="Search activities"
                                 className="pl-8"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -161,7 +165,7 @@ export default function DashboardUserActivities({ activities }: { activities: Ac
                                 <TableBody>
                                     {filteredLogs.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={6} className="text-center py-4">
+                                            <TableCell colSpan={5} className="text-center py-4">
                                                 No activity logs found
                                             </TableCell>
                                         </TableRow>

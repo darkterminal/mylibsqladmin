@@ -71,7 +71,7 @@ export default function CreateUserForm({
             onSuccess: () => {
                 toast.success('User created successfully', {
                     duration: 1500,
-                    onAutoClose(toast) {
+                    onAutoClose() {
                         router.visit(window.location.href, {
                             preserveScroll: true
                         });
@@ -79,7 +79,7 @@ export default function CreateUserForm({
                 })
             },
             onError: () => {
-                console.log(errors)
+                toast.error('Please review the highlighted fields.');
             }
         })
     }
