@@ -80,8 +80,31 @@ also runs in CI — keep `composer.json` clean (no `version` field).
 1. PR -> CI green -> merge to `main`.
 2. Tag `vX.Y.Z` -> `publish.yml` builds and pushes production images to GHCR
    and creates a GitHub Release (prerelease when the tag contains `-`).
-3. Smoke-test before widening to stable: fresh install -> `BootstrapSeeder`
-   -> login -> create database -> create token -> delete user.
+3. **Fresh-install smoke gate (mandatory).** Before any tag or widening to
+   stable, verify the exact artifact about to ship on a throwaway stack —
+   never on the primary development stack, never by code inspection alone.
+
+   The gate covers the whole path, end to end:
+   - boot logs show migrations applying and `BootstrapSeeder` emitting new
+     bootstrap credentials (read once, then delete `storage/app/bootstrap-credentials.txt`);
+   - login succeeds as the seeded super-admin;
+   - the group create -> database create flow succeeds; the namespace is
+     physically written to sqld (`data.sqld/dbs/<name>`), not merely a 2xx
+     from the UI;
+   - token creation renders the one-time reveal; a member can be created and
+     archived through the UI; whole flow finishes with **0 console errors**.
+
+   A pull of the exact images to ship (`<owner>/mylibsqladmin-web:<tag>` and
+   `...-proxy:<tag>`) is required; "it worked in my local build" is not a
+   substitute. If a release slips through without this gate (or the gate
+   fails) — v1.6.0 fresh installs could not create a database — cut a hotfix
+   **before anything else**, instead of announcing or widening the release.
+   When in doubt, rollback is simpler than a silently broken image: do not
+   publish a new `latest` pointer for a broken release. For in-place upgrades
+   carrying an irreversible migration, prove the migration on a full copy of
+   a production-like database and document the backup requirement in the
+   release notes.
+
 4. `latest` on GHCR moves on every publish — pin images by version tag for
    reproducible deployments.
 
