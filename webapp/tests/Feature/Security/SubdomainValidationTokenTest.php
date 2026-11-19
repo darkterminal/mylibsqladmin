@@ -123,3 +123,9 @@ test('a valid token for a DIFFERENT database validates as none', function () {
         ->assertStatus(403)
         ->assertHeader('X-Access-Level', 'none');
 });
+
+test('a missing X-Subdomain header returns 400, not 500', function () {
+    $this->get('/validate-subdomain')
+        ->assertStatus(400)
+        ->assertHeader('X-Access-Level', 'none');
+});

@@ -58,6 +58,11 @@ if (!function_exists('activity_request_context')) {
 if (!function_exists('mylibsqladmin_env')) {
     function mylibsqladmin_env(string $variable_name): string
     {
-        return in_array(php_sapi_name(), ['cli']) && env('APP_ENV') === 'production' ? env($variable_name, 'db') : 'localhost';
+        // One rule everywhere: honour the env var, default to the docker
+        // topology's admin API host. The historical "localhost for non-CLI
+        // production" special case broke every HTTP call to the sqld admin
+        // API from Octane/FrankenPHP workers (nothing listens on localhost
+        // inside the container).
+        return env($variable_name, 'db');
     }
 }

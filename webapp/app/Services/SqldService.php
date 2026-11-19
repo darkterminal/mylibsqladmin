@@ -16,9 +16,14 @@ class SqldService
     {
         switch ($service) {
             case 'db':
-                $host = $source === 'web' && env('APP_ENV') === 'production' ? env('LIBSQL_HOST') : config('mylibsqladmin.libsql.api.host');
-                # Change the host if we're using the local instance
-                $host = filter_var(env('LIBSQL_LOCAL_INSTANCE', false), FILTER_VALIDATE_BOOLEAN) ? env('LIBSQL_HOST') : $host;
+                // Admin calls (create/delete/stats) always target the sqld
+                // admin API. That is what LIBSQL_API_HOST/LIBSQL_API_PORT
+                // are for. The client-facing LIBSQL_HOST (hrana) is a
+                // different endpoint — dev installs happen to work with
+                // LIBSQL_HOST=db because the admin API lives on the same
+                // host, but fresh installs that follow the LLI docs
+                // (LIBSQL_HOST=proxy) hit a closed port and 500.
+                $host = config('mylibsqladmin.libsql.api.host');
                 $port = config('mylibsqladmin.libsql.api.port');
 
                 $scheme = filter_var(env('LIBSQL_API_USE_HTTPS', false), FILTER_VALIDATE_BOOLEAN) ? 'https' : 'http';
