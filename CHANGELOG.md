@@ -1,3 +1,20 @@
+## [1.6.0] - 2026-11-19
+
+- see `webapp/CHANGELOG.md` for the full release notes and the upgrade
+  warning that applies to this release
+- **backup before upgrading**: this release includes an irreversible,
+  in-place migration that re-bases all written timestamps to UTC. See the
+  changelog for details; the wall-clock shown in the UI is unchanged.
+- feat: all storage is now UTC; display timezone configurable via
+  `APP_TIMEZONE` env or `/settings/general` (Super Admin), display-only
+- feat: container engine is pluggable in the dev Makefile; Docker stays the
+  default, Kiri is opt-in for local development only
+- fix: honest User Management (working search, Last Active column, password-
+  confirmed force delete), Tokens one-time reveal, Groups honest reveal,
+  Teams archives/invitations management, Dashboard truthful 24h metrics
+- notes: this file is kept for pre-1.5 history mirrors; new entries are
+  maintained in `webapp/CHANGELOG.md`
+
 ## [1.5.6] - 2026-11-16
 
 - see `webapp/CHANGELOG.md` for the full 1.5.x release history.

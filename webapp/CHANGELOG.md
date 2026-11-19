@@ -1,8 +1,7 @@
-## [Unreleased] - 2026-11-19
+## [1.6.0] - 2026-11-19
 
-Accumulated since [1.5.6]. **Do not interpret as a release yet** - notes are
-kept here until a maintainer cuts a tag. Highlights first, then the one item
-that can lose data.
+Highlights since [1.5.6]. The one item that can lose data is listed
+explicitly below — read it before upgrading.
 
 ### Highlights
 
