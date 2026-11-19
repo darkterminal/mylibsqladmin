@@ -1,3 +1,66 @@
+## [Unreleased] - 2026-11-19
+
+Accumulated since [1.5.6]. **Do not interpret as a release yet** - notes are
+kept here until a maintainer cuts a tag. Highlights first, then the one item
+that can lose data.
+
+### Highlights
+
+- feat(timezone): **all storage is now UTC, always**; `APP_TIMEZONE` is
+  demoted to a display-only setting and is also configurable at runtime via
+  the new Super Admin `/settings/general` page (env > UI setting; precedence:
+  system setting > `APP_TIMEZONE` env > built-in UTC). Display timezone is
+  applied to every rendered timestamp regardless of the viewer's browser
+  locale. (PR #51)
+- fix(users): honest User Management (working search, teamable filters,
+  server-side self-guards, password-confirmed force delete, Last Active
+  column, honest empty states) (PR #48); icon-only buttons are now
+  accessible; deactivate confirmation moved from a 5s toast to a dialog
+  (PR #49).
+- feat(pages): Dashboard/Tokens/Groups/Teams rework toward honest data -
+  real 24h baselines, one-time token reveal, rotation warnings, invitations
+  management, archives, pagination and search (PRs #42-#47).
+- feat(dx): container engine is now pluggable in `Makefile`; **Docker remains
+  the default, Kiri is strictly opt-in** for local development
+  (`CONTAINER_ENGINE=kiri make …`). CI/CD and release are Docker, unchanged.
+  (PR #46)
+- fix(users): tooltip on Tokens page no longer dead (Fragment under
+  Radix Slot child) (PR #47).
+- docs: Mailpit documented as the local email trap; development stack routes
+  mail there instead of `laravel.log` (PR #50). See `CONTRIBUTING.md`.
+- chore(test): local `pest` now matches CI exactly (153 passed / 591
+  assertions) with no env overrides (PR #52).
+
+### Beware - irreversible data migration in PR #51
+
+Upgrading runs `2026_11_20_000001_convert_written_timestamps_to_utc`
+automatically on first boot. Every naive datetime written in the previous
+`APP_TIMEZONE` (default `Asia/Jakarta`) is re-based to UTC in one
+fail-closed transaction. `jobs.failed_at` (SQLite `CURRENT_TIMESTAMP`,
+already UTC) and INTEGER epoch columns are intentionally untouched.
+
+**Take a database backup before upgrading.** The migration has no `down()`.
+Existing installations see their wall-clock times in the interface stay
+exactly as before (display honours `APP_TIMEZONE`), only storage moved.
+
+### Not changed on purpose
+
+- Unique validation still counts soft-deleted users (email/username reuse
+  requires force-deleting the archived account).
+- `.env.example` deliberately ships `MAIL_MAILER=log` (safe production
+  default); dev installs switch to `smtp`/`mailpit` per `CONTRIBUTING.md`.
+- Kiri is not the default engine anywhere; release/CI remain Docker.
+
+### Verification snapshots
+
+- `vendor/bin/pest`: 153 passed (591 assertions) - identical locally and on CI.
+- `npm run types`: clean.
+- Browser checks (Playwright): every admin page renders without console
+  errors; tokens one-time reveal, teams flows, user lifecycle verified
+  end-to-end on the dev stack.
+- The full verification trail lives in the project's audit tracker
+  (REMEDIATION-STATUS.md) maintained during the 2026-11-16..19 sessions.
+
 ## [1.5.6] - 2026-11-16
 
 - fix(critical): the web UI rendered a blank white page in v1.5.0..v1.5.5 -
