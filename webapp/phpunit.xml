@@ -15,7 +15,9 @@
         </include>
     </source>
     <php>
-        <env name="APP_ENV" value="testing"/>
+        <env name="APP_ENV" value="testing" force="true"/>
+        <!-- Docker bakes APP_ENV=development into $_SERVER (Dockerfile ENV) with no override switch, and Laravel reads $_SERVER before putenv/$_ENV. Overriding it here makes local pest behave exactly like CI, where the var does not exist. -->
+        <server name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
