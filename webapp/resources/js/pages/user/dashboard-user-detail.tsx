@@ -11,8 +11,8 @@ import AppLayout from "@/layouts/app-layout"
 import { BreadcrumbItem } from "@/types"
 import { Head, Link, router } from "@inertiajs/react"
 import { ArrowLeftIcon, CalendarClock, Mail, Shield, Users } from "lucide-react"
-import { toast } from "sonner"
 import { useState } from "react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { UserDataTable } from "./datatable/user-columns"
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -44,15 +44,12 @@ export default function DashboardUserDetail({ userData }: { userData: UserDataTa
         })
     }
 
+    const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false)
+
     const handleDeactivateAccount = () => {
-        toast('Deactivate this account?', {
-            description: 'The user is blocked on their next request and all API tokens are revoked. Existing tokens cannot be brought back.',
-            position: 'top-center',
-            duration: 5000,
-            action: {
-                label: 'Deactivate',
-                onClick: () => router.put(route('user.deactivate', userData.id)),
-            },
+        router.put(route('user.deactivate', userData.id), undefined, {
+            preserveScroll: true,
+            onSuccess: () => setIsDeactivateDialogOpen(false),
         })
     }
 
@@ -190,13 +187,40 @@ export default function DashboardUserDetail({ userData }: { userData: UserDataTa
                             </Tabs>
                         </CardContent>
                         <CardFooter className="flex justify-between border-t pt-6">
-                            <Button
-                                variant="outline"
-                                className={userData.is_active ? 'text-destructive border-destructive/20 hover:bg-destructive/10 hover:text-destructive' : 'text-muted-foreground border-muted-foreground/20 hover:bg-muted-foreground/10 hover:text-muted-foreground'}
-                                onClick={userData.is_active ? handleDeactivateAccount : handleReactivateAccount}
-                            >
-                                {userData.is_active ? 'Deactivate' : 'Reactivate'} Account
-                            </Button>
+                            {userData.is_active ? (
+                                <Dialog open={isDeactivateDialogOpen} onOpenChange={setIsDeactivateDialogOpen}>
+                                    <Button
+                                        variant="outline"
+                                        className="text-destructive border-destructive/20 hover:bg-destructive/10 hover:text-destructive"
+                                        onClick={() => setIsDeactivateDialogOpen(true)}
+                                    >
+                                        Deactivate Account
+                                    </Button>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Deactivate this account?</DialogTitle>
+                                            <DialogDescription>
+                                                <span className="font-medium text-foreground">{userData.name}</span> (@{userData.username}) will be blocked on their next request,
+                                                and all of their API tokens are revoked. Existing tokens cannot be brought back.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <DialogFooter className="gap-2">
+                                            <Button type="button" variant="outline" onClick={() => setIsDeactivateDialogOpen(false)}>Cancel</Button>
+                                            <Button variant="destructive" onClick={handleDeactivateAccount}>
+                                                Deactivate Account
+                                            </Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            ) : (
+                                <Button
+                                    variant="outline"
+                                    className="text-muted-foreground border-muted-foreground/20 hover:bg-muted-foreground/10 hover:text-muted-foreground"
+                                    onClick={handleReactivateAccount}
+                                >
+                                    Reactivate Account
+                                </Button>
+                            )}
                             <Button variant="outline" onClick={() => router.get(route('user.activities', userData.id))}>View Activity Log</Button>
                         </CardFooter>
                     </Card>

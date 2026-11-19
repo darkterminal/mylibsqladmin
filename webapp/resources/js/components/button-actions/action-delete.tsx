@@ -10,6 +10,7 @@ export default function ButtonDelete({ handleDelete, text = undefined, disabled 
                 size="sm"
                 onClick={handleDelete}
                 disabled={disabled}
+                aria-label={text || "Delete"}
             >
                 <TrashIcon className="h-5 w-5" />
             </Button>

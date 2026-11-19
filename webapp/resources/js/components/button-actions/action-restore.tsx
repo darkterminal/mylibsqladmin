@@ -9,6 +9,7 @@ export default function ButtonRestore({ handleRestore, text = undefined }: { han
                 variant="outline"
                 size="sm"
                 onClick={handleRestore}
+                aria-label={text || "Restore"}
             >
                 <RefreshCcw className="h-5 w-5" />
             </Button>

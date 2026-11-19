@@ -101,7 +101,7 @@ export default function DataTableActions({ user }: { user: UserDataTable }) {
                     />
                 )}
                 <AppTooltip text="View User">
-                    <Button variant={"default"} asChild>
+                    <Button variant={"default"} asChild aria-label="View User">
                         <Link href={route('user.show', user.id)}>
                             <EyeIcon className="h-4 w-4" />
                         </Link>
