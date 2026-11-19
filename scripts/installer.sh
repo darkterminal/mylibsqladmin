@@ -67,7 +67,7 @@ prompt() {
   if [ "$LIBSQL_LOCAL_INSTANCE" = "true" ]; then
     LIBSQL_HOST="proxy"
     LIBSQL_PORT="8080"
-    LIBSQL_API_HOST="proxy"
+    LIBSQL_API_HOST="db"
     LIBSQL_API_PORT="8081"
     LIBSQL_API_USERNAME=""
     LIBSQL_API_PASSWORD=""
@@ -114,6 +114,7 @@ prompt() {
     echo "      - LIBSQL_API_PORT=$LIBSQL_API_PORT" >>compose.yml
     echo "      - LIBSQL_API_USERNAME=$LIBSQL_API_USERNAME" >>compose.yml
     echo "      - LIBSQL_API_PASSWORD=$LIBSQL_API_PASSWORD" >>compose.yml
+    echo "      - LIBSQL_SEED_DEFAULTS=true" >>compose.yml
     echo "    depends_on:" >>compose.yml
     echo "      - db" >>compose.yml
     echo "" >>compose.yml
@@ -125,7 +126,6 @@ prompt() {
     echo "    ports:" >>compose.yml
     echo '      - "8080:8080"' >>compose.yml
     echo '      - "5001:5001"' >>compose.yml
-    echo '      - "8081:8081"' >>compose.yml
     echo "    networks:" >>compose.yml
     echo "      - mylibsqladmin-network" >>compose.yml
     echo "    restart: unless-stopped" >>compose.yml
@@ -180,6 +180,7 @@ prompt() {
     echo "      - LIBSQL_API_PORT=$LIBSQL_API_PORT" >>compose.yml
     echo "      - LIBSQL_API_USERNAME=$LIBSQL_API_USERNAME" >>compose.yml
     echo "      - LIBSQL_API_PASSWORD=$LIBSQL_API_PASSWORD" >>compose.yml
+    echo "      - LIBSQL_SEED_DEFAULTS=true" >>compose.yml
   fi
 
   # Verify file creation
