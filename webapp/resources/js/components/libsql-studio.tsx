@@ -69,6 +69,10 @@ export function LibsqlStudio({ databaseName, clientUrl, authToken }: LibSQLStudi
         const contentWindow = iframeRef.current?.contentWindow;
         if (contentWindow) {
             const handler = (e: MessageEvent<ClientRequest>) => {
+                // Only accept requests from the embedded Studio itself;
+                // any other window must not be able to run SQL through us.
+                if (e.origin !== 'https://libsqlstudio.com') return;
+
                 if (e.data.type === "query" && e.data.statement) {
                     client
                         .execute(e.data.statement)
@@ -79,7 +83,7 @@ export function LibsqlStudio({ databaseName, clientUrl, authToken }: LibSQLStudi
                                     id: e.data.id,
                                     data: transformRawResult(r),
                                 },
-                                "*"
+                                "https://libsqlstudio.com"
                             );
                         })
                         .catch((err) => {
@@ -89,7 +93,7 @@ export function LibsqlStudio({ databaseName, clientUrl, authToken }: LibSQLStudi
                                     id: e.data.id,
                                     error: (err as Error).message,
                                 },
-                                "*"
+                                "https://libsqlstudio.com"
                             );
                         });
                 } else if (e.data.type === "transaction" && e.data.statements) {
@@ -102,7 +106,7 @@ export function LibsqlStudio({ databaseName, clientUrl, authToken }: LibSQLStudi
                                     id: e.data.id,
                                     data: r.map(transformRawResult),
                                 },
-                                "*"
+                                "https://libsqlstudio.com"
                             );
                         })
                         .catch((err) => {
@@ -112,7 +116,7 @@ export function LibsqlStudio({ databaseName, clientUrl, authToken }: LibSQLStudi
                                     id: e.data.id,
                                     error: (err as Error).message,
                                 },
-                                "*"
+                                "https://libsqlstudio.com"
                             );
                         });
                 }
@@ -130,6 +134,7 @@ export function LibsqlStudio({ databaseName, clientUrl, authToken }: LibSQLStudi
         <iframe
             className="iframe-screen-borderless focus:outline-none"
             ref={iframeRef}
+            sandbox="allow-scripts allow-same-origin"
             src={`https://libsqlstudio.com/embed/sqlite?name=${databaseName}&theme=${appearance}`}
         />
     )
