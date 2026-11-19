@@ -48,6 +48,17 @@ Thank you for considering contributing to **MylibSQLAdmin**—a modern, open-sou
   - Verified on Linux: pull (Docker Hub and GHCR), full image build (~400 MB build context), stack startup with health checks, web/vite/proxy/mailpit/db end-to-end. A host service pre-binding port 53 (e.g. BIND9) blocks Kiri's user-defined bridge networks — keep port 53 free or use the Docker default.
   - Do **not** use Kiri for CI/CD, releases, or production installs; those remain Docker.
 
+- **Email (dev)**: No real email ever leaves your machine — the development stack traps all outbound mail with [Mailpit](https://github.com/axllent/mailpit) (`mailpit` service, SMTP `1025`, web UI `8025`). To use it, make sure your local `webapp/.env` points at it:
+
+  ```bash
+  MAIL_MAILER=smtp
+  MAIL_HOST=mailpit
+  MAIL_PORT=1025
+  MAIL_SCHEME=null
+  ```
+
+  Then any email the app sends lands in Mailpit instead of `storage/logs/laravel.log`. Read captured mail at <http://localhost:8025>. Note: `.env.example` deliberately ships `MAIL_MAILER=log` — that is a safe default for production installs; switch to the values above only for local development.
+
 - **Makefile**: Utilize the provided `Makefile` for common tasks.
 - **Environment Variables**: Use `.env.example` as a template for your environment configuration.
 
