@@ -30,7 +30,24 @@ Thank you for considering contributing to **MylibSQLAdmin**—a modern, open-sou
 
 ## Development Environment
 
-- **Docker**: The project uses Docker for development. Refer to the `compose.yml` files for setup.
+- **Docker**: The project uses Docker for development. This is the **default** engine — CI, the release process and all published images stay on Docker. Refer to the `compose.yml` files for setup.
+- **Kiri (opt-in, local only)**: The development stack can also run on the Kiri container runtime. Docker remains the default — Kiri is selected per invocation, never implicitly:
+
+  ```bash
+  # Docker (default)
+  make compose-dev/upd
+
+  # Kiri
+  CONTAINER_ENGINE=kiri make compose-dev/up|upd|down|restart|...
+  ```
+
+  How it works:
+  - `CONTAINER_ENGINE` defaults to `docker` in the `Makefile`; `kiri compose` is used only when you set it to `kiri`.
+  - For builds to go through Kiri, run once per machine: `kiri build-with kiri`. `docker buildx` targets (`compose-dev/build`, `compose-prod/build`, `compose-proxy/build`) intentionally stay on Docker.
+  - `kiri exec` / `kiri compose` / `kiri logs` accept the same flags as their Docker counterparts; substitute them in commands below.
+  - Verified on Linux: pull (Docker Hub and GHCR), full image build (~400 MB build context), stack startup with health checks, web/vite/proxy/mailpit/db end-to-end. A host service pre-binding port 53 (e.g. BIND9) blocks Kiri's user-defined bridge networks — keep port 53 free or use the Docker default.
+  - Do **not** use Kiri for CI/CD, releases, or production installs; those remain Docker.
+
 - **Makefile**: Utilize the provided `Makefile` for common tasks.
 - **Environment Variables**: Use `.env.example` as a template for your environment configuration.
 
