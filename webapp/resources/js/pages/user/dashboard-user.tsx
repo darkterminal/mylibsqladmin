@@ -2,11 +2,9 @@ import { Button } from "@/components/ui/button";
 import { DataTable, LaravelPagination } from "@/components/ui/data-table/data-table";
 import AppLayout from "@/layouts/app-layout";
 import { usePermission } from "@/lib/auth";
-import { getQuery } from "@/lib/utils";
 import { BreadcrumbItem } from "@/types";
 import { Head, router } from "@inertiajs/react";
-import { PlusCircle, Trash2Icon } from "lucide-react";
-import { useState } from "react";
+import { Archive, PlusCircle } from "lucide-react";
 import { userColumns, UserDataTable } from "./datatable/user-columns";
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -20,47 +18,32 @@ const breadcrumbs: BreadcrumbItem[] = [
     }
 ];
 
-export default function DashboardDatabase({
+export default function DashboardUser({
     users
 }: {
     users: LaravelPagination<UserDataTable>
 }) {
     const { hasRole } = usePermission();
-    const search = getQuery('search');
-    const [data, setData] = useState<LaravelPagination<UserDataTable>>(users)
-    const [isLoading, setIsLoading] = useState(false)
-    const [searchQuery, setSearchQuery] = useState(search)
 
-    const fetchData = async (page: number, search?: string) => {
-        setIsLoading(true)
-
-        if (search) {
-            router.visit(`${route('dashboard.users')}?search=${search}&page=${page}`)
-        } else {
-            router.visit(route('dashboard.users'))
-        }
-
-        setData({
-            ...users,
-            current_page: page,
-        })
-
-        setIsLoading(false)
+    const visit = (page: number, search?: string) => {
+        const params = new URLSearchParams();
+        if (search && search.trim() !== '') params.set('search', search.trim());
+        if (page > 1) params.set('page', String(page));
+        router.visit(`${route('dashboard.users')}?${params.toString()}`);
     }
 
     const handlePageChange = (page: number) => {
-        fetchData(page, searchQuery)
+        visit(page, new URLSearchParams(window.location.search).get('search') ?? undefined);
     }
 
     const handleSearch = (query: string) => {
-        setSearchQuery(query)
-        fetchData(1, query)
+        visit(1, query);
     }
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Users" />
-            <div className="container mx-auto py-8">
+            <div className="container mx-auto p-6 space-y-6">
                 <div className="flex items-center justify-between">
                     <div className="mb-6">
                         <h1 className="text-2xl font-bold">Users</h1>
@@ -72,20 +55,19 @@ export default function DashboardDatabase({
                                 <PlusCircle className="h-4 w-4" />
                                 Add User
                             </Button>
-                            <Button variant={'destructive'} onClick={() => router.get(route('user.archive'))}>
-                                <Trash2Icon className="h-4 w-4" />
+                            <Button variant="outline" onClick={() => router.get(route('user.archive'))}>
+                                <Archive className="h-4 w-4" />
                                 Users Archived
                             </Button>
                         </div>
                     )}
                 </div>
                 <DataTable
-                    data={data}
+                    data={users}
                     columns={userColumns}
                     onPageChange={handlePageChange}
                     onSearch={handleSearch}
-                    searchPlaceholder="Search users..."
-                    isLoading={isLoading}
+                    searchPlaceholder="Search users by name, username or email..."
                 />
             </div>
         </AppLayout>

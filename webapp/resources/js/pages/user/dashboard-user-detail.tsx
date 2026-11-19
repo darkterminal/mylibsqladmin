@@ -11,6 +11,7 @@ import AppLayout from "@/layouts/app-layout"
 import { BreadcrumbItem } from "@/types"
 import { Head, Link, router } from "@inertiajs/react"
 import { ArrowLeftIcon, CalendarClock, Mail, Shield, Users } from "lucide-react"
+import { toast } from "sonner"
 import { useState } from "react"
 import { UserDataTable } from "./datatable/user-columns"
 
@@ -44,7 +45,15 @@ export default function DashboardUserDetail({ userData }: { userData: UserDataTa
     }
 
     const handleDeactivateAccount = () => {
-        router.put(route('user.deactivate', userData.id))
+        toast('Deactivate this account?', {
+            description: 'The user is blocked on their next request and all API tokens are revoked. Existing tokens cannot be brought back.',
+            position: 'top-center',
+            duration: 5000,
+            action: {
+                label: 'Deactivate',
+                onClick: () => router.put(route('user.deactivate', userData.id)),
+            },
+        })
     }
 
     const handleReactivateAccount = () => {
@@ -80,8 +89,8 @@ export default function DashboardUserDetail({ userData }: { userData: UserDataTa
                                     <div>
                                         <div className="flex items-center gap-2">
                                             <CardTitle className="text-2xl">{userData.name}</CardTitle>
-                                            <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50 border-green-200">
-                                                Active
+                                            <Badge variant={userData.is_active ? 'outline' : 'destructive'} className="text-muted-foreground">
+                                                {userData.is_active ? 'Active' : 'Inactive'}
                                             </Badge>
                                         </div>
                                         <CardDescription className="text-base">@{userData.username}</CardDescription>

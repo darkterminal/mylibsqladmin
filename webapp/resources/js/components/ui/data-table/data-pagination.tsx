@@ -95,7 +95,7 @@ export function DataTablePagination({
                                 }}
                                 disabled={!link.url}
                             >
-                                <span dangerouslySetInnerHTML={{ __html: link.label }} />
+                                <span>{link.label}</span>
                             </Button>
                         ))}
                     </div>

@@ -14,9 +14,9 @@ use Inertia\Inertia;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::allUsers();
+        $users = User::allUsers($request->query('search'));
         return Inertia::render('user/dashboard-user', [
             'users' => $users
         ]);
@@ -59,15 +59,19 @@ class UserController extends Controller
             'roleSelection' => 'required|exists:roles,id'
         ]);
 
-        $user = User::create($request->only('name', 'username', 'email', 'password'));
+        $user = DB::transaction(function () use ($request) {
+            $user = User::create($request->only('name', 'username', 'email', 'password'));
 
-        if ($request->teamSelections && $request->teamPermissions) {
-            $teamsWithPermissions = collect($request->teamSelections)
-                ->mapWithKeys(fn($teamId) => [$teamId => ['permission_level' => $request->teamPermissions[$teamId]]]);
-            $user->teams()->sync($teamsWithPermissions);
-        }
+            if ($request->teamSelections && $request->teamPermissions) {
+                $teamsWithPermissions = collect($request->teamSelections)
+                    ->mapWithKeys(fn($teamId) => [$teamId => ['permission_level' => $request->teamPermissions[$teamId]]]);
+                $user->teams()->sync($teamsWithPermissions);
+            }
 
-        $user->roles()->attach($request->roleSelection);
+            $user->roles()->attach($request->roleSelection);
+
+            return $user;
+        });
 
 
         log_user_activity(
@@ -173,6 +177,8 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        abort_if($user->id === auth()->user()->id, 403, 'You cannot delete your own account.');
+
         $name = $user->name;
         $user->delete();
 
@@ -186,9 +192,9 @@ class UserController extends Controller
         return redirect()->route('dashboard.users');
     }
 
-    public function archive()
+    public function archive(Request $request)
     {
-        $users = User::allUserArchives();
+        $users = User::allUserArchives($request->query('search'));
         return Inertia::render('user/dashboard-user-archived', [
             'users' => $users
         ]);
@@ -210,8 +216,17 @@ class UserController extends Controller
         return redirect()->route('dashboard.users');
     }
 
-    public function forceDelete(User $user)
+    public function forceDelete(Request $request, User $user)
     {
+        abort_if($user->id === auth()->user()->id, 403, 'You cannot permanently delete your own account.');
+
+        // Permanent deletion is irreversible — require the acting admin's own
+        // password before anything happens. current_password validates
+        // against the authenticated user's stored hash.
+        $request->validate([
+            'password' => ['required', 'current_password'],
+        ]);
+
         $name = $user->name;
         $user->forceDelete();
 
@@ -228,6 +243,8 @@ class UserController extends Controller
 
     public function deactivate(User $user)
     {
+        abort_if($user->id === auth()->user()->id, 403, 'You cannot deactivate your own account.');
+
         $name = $user->name;
         $user->deactivate();
         // Revoke outstanding Sanctum/API tokens so deactivated users cannot
@@ -265,7 +282,7 @@ class UserController extends Controller
 
     public function activities(User $user)
     {
-        $activities = UserActivityLogger::getActivitiesForUser($user, 10);
+        $activities = UserActivityLogger::getActivitiesForUser($user, 50);
         return Inertia::render('user/dashboard-user-activities', [
             'activities' => $activities
         ]);
