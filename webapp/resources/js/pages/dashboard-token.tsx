@@ -96,11 +96,11 @@ export default function DatabaseToken({
                             <ModalCreateToken mostUsedDatabases={mostUsedDatabases} users={allUsers}>
                                 <Button variant="default">
                                     <AppTooltip text="Generate New Token">
-                                        <>
+                                        <span className="inline-flex items-center gap-1.5">
                                             <Plus className="h-4 w-4" />
                                             <span className="hidden sm:inline">Generate New Token</span>
                                             <span className="sm:hidden">Generate</span>
-                                        </>
+                                        </span>
                                     </AppTooltip>
                                 </Button>
                             </ModalCreateToken>
