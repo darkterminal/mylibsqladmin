@@ -54,7 +54,7 @@ In the age of data-driven applications, the demand for lightweight, scalable, an
 
 ## Requirements
 
--   Docker & Docker Compose
+-   Docker & Docker Compose (default engine). Kiri can be used instead for local development — see [Contributing: Development Environment](CONTRIBUTING.md#development-environment).
 -   openssl
 
 ## Getting Started

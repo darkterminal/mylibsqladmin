@@ -2,7 +2,8 @@
 
 Working with this repository means working with five things: the **web UI**
 (Laravel + Inertia/React), the **libsql3 CLI**, the **nginx proxy**, the
-**docker compose stacks**, and the **release process**.
+**docker compose stacks** (Docker by default; Kiri is an opt-in for local
+development only), and the **release process**.
 
 ## Repository layout
 
@@ -14,6 +15,20 @@ scripts/    installer.sh (production bootstrap helper)
 docs/       installation and operations guides
 examples/   minimal client snippets (PHP/JS/TS — read LIBSQL_AUTH_TOKEN from env)
 ```
+
+## Container engines
+
+- **Docker is the default.** `make compose-dev/upd` == `docker compose …`. CI and
+  the release process are Docker, full stop; GHCR publish stays on `docker buildx`
+  (`--push` targets are intentionally not routed through Kiri).
+- **Kiri is opt-in for local development only**: `CONTAINER_ENGINE=kiri make <target>`
+  (e.g. `CONTAINER_ENGINE=kiri make compose-dev/upd`). Requires Kiri installed; run
+  `kiri build-with kiri` once per host if builds should also go through Kiri.
+- Verified on Linux: pull (Docker Hub + GHCR), build, stack bring-up with health
+  checks, web/vite/proxy end-to-end. Kiri's user-defined bridge networks need
+  port 53 free — a host service pre-binding :53 (e.g. BIND9) will keep the stack down.
+- Compose files, Dockerfiles and `.env` carry no Kiri-specific tweaks; the only
+  engine-aware surface is the root `Makefile`.
 
 ## Develop
 
