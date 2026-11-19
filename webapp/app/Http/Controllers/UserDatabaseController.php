@@ -10,6 +10,7 @@ use App\Models\UserDatabase;
 use App\Services\SqldService;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Concerns\RespondsWithInternalError;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class UserDatabaseController extends Controller
@@ -237,6 +238,12 @@ class UserDatabaseController extends Controller
                 'databaseMetrics' => $databaseMetrics
             ]);
         } catch (\Exception $e) {
+            Log::error('createDatabase failed', [
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
             return $this->jsonNotFoundOrError($e);
         }
     }
