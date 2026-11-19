@@ -82,6 +82,25 @@ test('an authorized user receives a fresh full-access studio token', function ()
         ->and($stored->full_access_token)->toBe(hash('sha256', $token));
 });
 
+test('a Team Manager can mint a studio token for a database they have no grant for', function () {
+    // A Team Manager's role alone authorizes token minting for any
+    // database — explicit GrantedDatabase is only required for Members.
+    $manager = makeRoleUserForStudioTest('Team Manager');
+    $owner = makeRoleUserForStudioTest('Super Admin');
+    $database = makeStudioTargetDatabase($owner, 'studio-team-manager-mint-db');
+
+    $response = $this->actingAs($manager)
+        ->postJson('/database-studio/token', ['database' => 'studio-team-manager-mint-db'])
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonStructure(['full_access_token']);
+
+    $stored = UserDatabaseToken::where('user_id', $manager->id)
+        ->where('database_id', $database->id)
+        ->firstOrFail();
+    expect($stored->full_access_token)->not->toBeEmpty();
+});
+
 test('a user without access to the database is refused with 403', function () {
     $admin = makeRoleUserForStudioTest('Super Admin');
     $outsider = makeRoleUserForStudioTest('Member');

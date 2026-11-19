@@ -89,12 +89,14 @@ prompt() {
     echo >/dev/tty
   fi
 
+  IMAGE_TAG=$(prompt "Image tag to deploy? (e.g. 1.6.1, latest)" "latest")
+
   # Write compose.yml directly using echo
   if [ "$LIBSQL_LOCAL_INSTANCE" = "true" ]; then
     echo "services:" >compose.yml
     echo "  webui:" >>compose.yml
     echo "    container_name: mylibsqladmin-webui-prod" >>compose.yml
-    echo "    image: ghcr.io/darkterminal/mylibsqladmin-web:latest" >>compose.yml
+    echo "    image: ghcr.io/darkterminal/mylibsqladmin-web:$IMAGE_TAG" >>compose.yml
     echo "    ports:" >>compose.yml
     echo '      - "8000:8000"' >>compose.yml
     echo "    networks:" >>compose.yml
@@ -120,7 +122,7 @@ prompt() {
     echo "" >>compose.yml
     echo "  proxy:" >>compose.yml
     echo "    container_name: mylibsqladmin-proxy" >>compose.yml
-    echo "    image: ghcr.io/darkterminal/mylibsqladmin-proxy:latest" >>compose.yml
+    echo "    image: ghcr.io/darkterminal/mylibsqladmin-proxy:$IMAGE_TAG" >>compose.yml
     echo "    environment:" >>compose.yml
     echo "      - APP_ENV=production" >>compose.yml
     echo "    ports:" >>compose.yml
@@ -161,7 +163,7 @@ prompt() {
     echo "services:" >compose.yml
     echo "  webui:" >>compose.yml
     echo "    container_name: mylibsqladmin-webui" >>compose.yml
-    echo "    image: ghcr.io/darkterminal/mylibsqladmin-web:latest" >>compose.yml
+    echo "    image: ghcr.io/darkterminal/mylibsqladmin-web:$IMAGE_TAG" >>compose.yml
     echo "    ports:" >>compose.yml
     echo '      - "8000:8000"' >>compose.yml
     echo "    network_mode: host" >>compose.yml
