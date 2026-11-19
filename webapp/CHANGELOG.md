@@ -1,3 +1,37 @@
+## [1.6.1] - 2026-11-19
+
+v1.6.0 fresh installs could not create a database. This hotfix is required
+for all new installations and existing fresh installs; in-place upgrades are
+safe to apply once available (no migrations in this release).
+
+### Critical fix
+
+- fix(sqld): every HTTP call from the Octane/FrankenPHP worker to the sqld
+  admin API resolved to `localhost:8081` (nothing listens there inside the
+  container). No HTTP path could create a database, register credentials, or
+  fetch metrics — only `php artisan` CLI worked. Root cause:
+  `mylibsqladmin_env()` special-cased non-CLI production SAPIs to return
+  `'localhost'`, ignoring the configured `LIBSQL_API_HOST`. The helper now
+  honours the env var uniformly (`env('LIBSQL_*', 'db')`), matching what the
+  production CLI path always did.
+- fix(sqld): `useEndpoint('db')` simplified — admin calls always resolve
+  `LIBSQL_API_HOST`/`LIBSQL_API_PORT` (the sqld admin API variables).
+- fix(observability): generic-500 catch-alls now log the real exception
+  (class, message, file, line). v1.6.0 failed silently; this hotfix is a
+  direct consequence of hunting from an empty log.
+- fix(subdomain): `GET /validate-subdomain` without `X-Subdomain` now returns
+  400 with `X-Access-Level: none` (was 500 TypeError on a public route).
+
+### Verification
+
+- Fresh install (GHCR-equivalent local build, LLI docs topology
+  `LIBSQL_HOST=proxy`, `LIBSQL_API_HOST=db`): boot → migrations → seed →
+  login → create group → create database (sqld wrote the namespace to disk) →
+  create token (one-time reveal) → create member → archive member — all PASS,
+  0 console errors.
+- `vendor/bin/pest`: 160 passed (605 assertions).
+- CI green on PR #54.
+
 ## [1.6.0] - 2026-11-19
 
 Highlights since [1.5.6]. The one item that can lose data is listed

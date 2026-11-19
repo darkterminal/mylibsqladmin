@@ -1,3 +1,12 @@
+## [1.6.1] - 2026-11-19
+
+- HOTFIX for v1.6.0: fresh installs could not create a database. Every
+  HTTP call to the sqld admin API resolved to `localhost:8081` (nothing
+  listens there); only the CLI path worked. Fixed via `mylibsqladmin_env()`.
+- v1.6.0 is affected for all fresh installs. Upgrading to v1.6.1 restores
+  the documented install path.
+- details + full verification in `webapp/CHANGELOG.md`
+
 ## [1.6.0] - 2026-11-19
 
 - see `webapp/CHANGELOG.md` for the full release notes and the upgrade
