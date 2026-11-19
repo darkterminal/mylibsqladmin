@@ -125,6 +125,7 @@ class HandleInertiaRequests extends Middleware
             'configs' => [
                 'sqldHost' => config('mylibsqladmin.libsql.connection.host'),
                 'sqldPort' => config('mylibsqladmin.libsql.connection.port'),
+                'timezone' => \App\Services\SystemSettings::timezone(),
             ]
         ];
     }

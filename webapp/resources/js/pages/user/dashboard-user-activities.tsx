@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import AppLayout from "@/layouts/app-layout";
 import { ActivityLog, ActivityType, BreadcrumbItem } from "@/types";
 import { Head } from "@inertiajs/react";
-import { format } from "date-fns";
+import { formatInTimezone, useDisplayTimezone } from "@/lib/timezone";
 import { ChevronDown, Clock, Filter, MapPin, Monitor, Search } from "lucide-react";
 import { useState } from "react";
 
@@ -46,6 +46,8 @@ const getActivityTypeColor = (type: string) => {
         case ActivityType.USER_REACTIVATE:
         case ActivityType.USER_FORCE_DELETE:
             return "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200"
+        case ActivityType.SETTINGS_UPDATE:
+            return "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200"
         default:
             return "bg-gray-100 text-gray-800"
     }
@@ -78,6 +80,7 @@ export default function DashboardUserActivities({ activities }: { activities: Ac
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedType, setSelectedType] = useState<string | null>(null)
     const [viewMode, setViewMode] = useState<"table" | "card">("table")
+    const tz = useDisplayTimezone()
 
     // Get unique activity types for filter
     const activityTypes = Array.from(new Set(activities.map((log) => log.type)))
@@ -184,8 +187,8 @@ export default function DashboardUserActivities({ activities }: { activities: Ac
                                                 <TableCell>{log.description}</TableCell>
                                                 <TableCell className="font-mono text-xs">{log.metadata.ip}</TableCell>
                                                 <TableCell>
-                                                    {format(new Date(log.timestamp), "MMM d, yyyy")}
-                                                    <div className="text-xs text-muted-foreground">{format(new Date(log.timestamp), "h:mm a")}</div>
+                                                    {formatInTimezone(log.timestamp, tz, "date")}
+                                                    <div className="text-xs text-muted-foreground">{formatInTimezone(log.timestamp, tz, "time")}</div>
                                                 </TableCell>
                                             </TableRow>
                                         ))
@@ -213,7 +216,7 @@ export default function DashboardUserActivities({ activities }: { activities: Ac
                                             <div className="grid grid-cols-2 gap-2 text-sm">
                                                 <div className="flex items-center gap-1.5">
                                                     <Clock className="h-4 w-4 text-muted-foreground" />
-                                                    <span>{format(new Date(log.timestamp), "MMM d, yyyy h:mm a")}</span>
+                                                    <span>{formatInTimezone(log.timestamp, tz, "datetime")}</span>
                                                 </div>
                                                 <div className="flex items-center gap-1.5">
                                                     <MapPin className="h-4 w-4 text-muted-foreground" />

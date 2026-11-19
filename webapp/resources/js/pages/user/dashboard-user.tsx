@@ -5,7 +5,8 @@ import { usePermission } from "@/lib/auth";
 import { BreadcrumbItem } from "@/types";
 import { Head, router } from "@inertiajs/react";
 import { Archive, PlusCircle } from "lucide-react";
-import { userColumns, UserDataTable } from "./datatable/user-columns";
+import { useDisplayTimezone } from "@/lib/timezone";
+import { createUserColumns, UserDataTable } from "./datatable/user-columns";
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -24,6 +25,8 @@ export default function DashboardUser({
     users: LaravelPagination<UserDataTable>
 }) {
     const { hasRole } = usePermission();
+    const tz = useDisplayTimezone();
+    const userColumns = createUserColumns(tz);
 
     const visit = (page: number, search?: string) => {
         const params = new URLSearchParams();
