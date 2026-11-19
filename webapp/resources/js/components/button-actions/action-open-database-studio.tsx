@@ -39,6 +39,7 @@ export default function ButtonOpenDatabaseStudio({
             <Button
                 variant="outline"
                 size={size}
+                aria-label={text ?? 'Open database studio'}
                 onClick={() => handleSelectDatabase(databaseName)}
             >
                 <BoxIcon className="h-2 w-2" />

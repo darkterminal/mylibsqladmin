@@ -12,6 +12,7 @@ export default function ButtonDeleteToken({ token }: { token: UserDatabaseTokenP
             <Button
                 variant="destructive"
                 size="sm"
+                aria-label="Delete token"
                 onClick={() => {
                     toast("Permanently delete this token?", {
                         description: "Applications using it will lose access immediately. This cannot be undone.",

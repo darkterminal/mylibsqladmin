@@ -47,7 +47,7 @@ export default function DashboardUserArchived({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Archived Users" />
-            <div className="container mx-auto py-8">
+            <div className="container mx-auto p-6 space-y-6">
                 <div className="flex items-center justify-between">
                     <div className="mb-6">
                         <h1 className="text-2xl font-bold">Archived Users</h1>

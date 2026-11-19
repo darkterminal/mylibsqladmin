@@ -18,6 +18,7 @@ export default function ButtonCopyShellCommand({ token }: { token: UserDatabaseT
                     variant="default"
                     size="sm"
                     disabled
+                    aria-label="Token shown once at creation time; only a stored hash is kept"
                 >
                     <EyeOff className="h-4 w-4" />
                 </Button>
@@ -30,6 +31,7 @@ export default function ButtonCopyShellCommand({ token }: { token: UserDatabaseT
             <Button
                 variant="default"
                 size="sm"
+                aria-label="Copy shell command"
                 onClick={() => {
                     const protocol = window.location.protocol
                     const hostname = window.location.hostname

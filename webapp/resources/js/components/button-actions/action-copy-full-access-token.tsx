@@ -24,6 +24,7 @@ export default function ButtonCopyFullAccessToken({
                     variant="outline"
                     size="sm"
                     disabled
+                    aria-label="Token shown once at creation time; only a stored hash is kept"
                 >
                     <EyeOff className="h-4 w-4" />
                     {text && <span className="ml-2">{text}</span>}
@@ -37,6 +38,7 @@ export default function ButtonCopyFullAccessToken({
             <Button
                 variant="outline"
                 size="sm"
+                aria-label={text ?? "Copy full access token"}
                 onClick={(e) => {
                     e.preventDefault();
                     copyToClipboard(tokenValue, tokenName, 'full');
