@@ -40,4 +40,5 @@ enum ActivityType: string
     case ROLE_CREATE = 'role_create';
     case ROLE_DELETE = 'role_delete';
     case ROLE_UPDATE = 'role_update';
+    case SETTINGS_UPDATE = 'settings_update';
 }

@@ -16,4 +16,13 @@ return [
     ],
 
     'local_instance' => env('LIBSQL_LOCAL_INSTANCE', true),
+
+    /**
+     * Display-only timezone. All data is stored in UTC regardless of this
+     * value; it is used solely for rendering dates and times for the user.
+     * Can be overridden at runtime by a Super Admin via /settings/general.
+     */
+    'display' => [
+        'timezone' => env('APP_TIMEZONE', 'UTC'),
+    ],
 ];

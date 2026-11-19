@@ -453,6 +453,7 @@ export enum ActivityType {
     ROLE_CREATE = "role_create",
     ROLE_DELETE = "role_delete",
     ROLE_UPDATE = "role_update",
+    SETTINGS_UPDATE = "settings_update",
 }
 
 export interface ActivityLog {

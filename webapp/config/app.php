@@ -65,7 +65,13 @@ return [
     |
     */
 
-    'timezone' => env('APP_TIMEZONE', 'UTC'),
+    /**
+     * Canonical storage timezone. All application and database timestamps are
+     * written in UTC; changing this is NOT supported (only 'UTC' is valid).
+     * APP_TIMEZONE is demoted to a display-only setting — see
+     * config/mylibsqladmin.php (display.timezone) and /settings/general.
+     */
+    'timezone' => 'UTC',
 
     /*
     |--------------------------------------------------------------------------

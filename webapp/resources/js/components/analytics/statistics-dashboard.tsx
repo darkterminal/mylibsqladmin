@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn, databaseGroupType, formatBytes } from "@/lib/utils"
+import { formatInTimezone, useDisplayTimezone } from "@/lib/timezone"
 import {
     type DashboardMetricWindow,
     type DashboardMetrics,
@@ -113,6 +114,7 @@ export default function StatisticsDashboard({
 }) {
     const [scope, setScope] = useState<"all" | number>("all")
     const [refreshing, setRefreshing] = useState(false)
+    const tz = useDisplayTimezone()
 
     const refresh = () => {
         router.reload({
@@ -164,10 +166,8 @@ export default function StatisticsDashboard({
     const hasAnyMetrics = databaseMetrics.databases.some((db) => db.samples > 0)
 
     const updatedAt = (() => {
-        const parsed = new Date(databaseMetrics.generated_at)
-        return Number.isNaN(parsed.getTime())
-            ? null
-            : parsed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        const s = databaseMetrics.generated_at
+        return s ? formatInTimezone(s, tz, "time") : null
     })()
 
     const { standaloneDatabases, parentDatabases, childDatabases } = databaseGroupType(mostUsedDatabases)

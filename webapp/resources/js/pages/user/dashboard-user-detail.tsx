@@ -12,6 +12,7 @@ import { BreadcrumbItem } from "@/types"
 import { Head, Link, router } from "@inertiajs/react"
 import { ArrowLeftIcon, CalendarClock, Mail, Shield, Users } from "lucide-react"
 import { useState } from "react"
+import { formatFullInTimezone, useDisplayTimezone } from "@/lib/timezone"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { UserDataTable } from "./datatable/user-columns"
 
@@ -34,15 +35,9 @@ export default function DashboardUserDetail({ userData }: { userData: UserDataTa
     const getInitials = useInitials();
     const [activeTab, setActiveTab] = useState("overview")
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        })
-    }
+    const tz = useDisplayTimezone();
+
+    const formatDate = (dateString: string) => formatFullInTimezone(dateString, tz)
 
     const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false)
 

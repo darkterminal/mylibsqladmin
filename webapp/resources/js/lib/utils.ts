@@ -1,3 +1,4 @@
+import { parseServerDate } from "@/lib/timezone";
 import { MostUsedDatabaseMinimalProps, MostUsedDatabaseProps, type LibSQLDatabases } from "@/types";
 import { usePage } from "@inertiajs/react";
 import { clsx, type ClassValue } from 'clsx';
@@ -79,11 +80,15 @@ export function databaseGroupType(dbs: MostUsedDatabaseProps[] | MostUsedDatabas
 }
 
 export function calculateExpirationDate(createdAt: string, expirationDays: number) {
-    const createdDate = new Date(createdAt);
-    const expirationDate = new Date(createdDate);
-    expirationDate.setDate(createdDate.getDate() + expirationDays);
+    const createdDate = parseServerDate(createdAt);
+    if (!createdDate) {
+        return '—';
+    }
 
-    if (expirationDate.getTime() < new Date().getTime()) {
+    const expirationDate = new Date(createdDate);
+    expirationDate.setUTCDate(createdDate.getUTCDate() + expirationDays);
+
+    if (expirationDate.getTime() < Date.now()) {
         return 'expired';
     }
 
