@@ -26,7 +26,14 @@ class SubdomainValidationController extends Controller
 
     public function validateSubdomain(Request $request)
     {
-        $this->subdomain = $request->header('X-Subdomain');
+        $subdomain = $request->header('X-Subdomain');
+
+        // Missing or malformed subdomain is a client error, not a 500.
+        if (!is_string($subdomain) || $subdomain === '') {
+            return response('', 400)->header('X-Access-Level', 'none');
+        }
+
+        $this->subdomain = $subdomain;
         $token = $this->extractToken($request);
 
         if (empty($token) || $token === 'Bearer') {
