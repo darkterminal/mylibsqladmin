@@ -65,6 +65,22 @@ prompt() {
   LIBSQL_LOCAL_INSTANCE=$(prompt "Use local LibSQL instance? (true/false)" "true")
 
   if [ "$LIBSQL_LOCAL_INSTANCE" = "true" ]; then
+    # Prepare the bind-mount target owned by the invoking user before we
+    # write compose.yml. Docker creates missing bind-mount dirs as root;
+    # with a non-root sqld (user: uid:gid from this host) the container
+    # would otherwise fail to initialize its data dir on first boot.
+    # If the dir already exists and is unwritable, stop before any file is
+    # written so the user gets a clear, actionable error instead of a
+    # broken install.
+    DATA_DIR="$(pwd)/libsql-data"
+    if [ -d "$DATA_DIR" ] && [ ! -w "$DATA_DIR" ]; then
+      echo "❌ $DATA_DIR exists and is not writable by your user (uid $(id -u))." >/dev/tty
+      echo "   Fix with: sudo chown -R $(id -u):$(id -g) '$DATA_DIR'  (or remove it and re-run)" >/dev/tty
+      exit 1
+    fi
+    mkdir -p "$DATA_DIR"
+    chmod 0700 "$DATA_DIR"
+
     LIBSQL_HOST="proxy"
     LIBSQL_PORT="8080"
     LIBSQL_API_HOST="db"
@@ -146,7 +162,7 @@ prompt() {
     echo '      - "0.0.0.0:8081"' >>compose.yml
     echo '      - "--enable-namespaces"' >>compose.yml
     echo '      - "--no-welcome"' >>compose.yml
-    echo '    user: "1000:1000"' >>compose.yml
+    echo "    user: \"$(id -u):$(id -g)\"" >>compose.yml
     echo "    volumes:" >>compose.yml
     echo "      - ./libsql-data:/var/lib/sqld" >>compose.yml
     echo "    restart: unless-stopped" >>compose.yml
