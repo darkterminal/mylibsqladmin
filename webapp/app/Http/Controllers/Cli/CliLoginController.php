@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Cli;
 
 use App\Http\Controllers\Controller;
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -26,6 +27,11 @@ class CliLoginController extends Controller
                 'username' => ['The provided credentials are incorrect.'],
             ]);
         }
+
+        // Web login does this on every successful authentication. Without it a
+        // seeded super-admin has no team, so the first CLI db:create aborts with
+        // "No teams available" on a fresh install (D-17).
+        Team::ensurePersonalWorkspace($user);
 
         // Create token with 30-day expiration
         $token = $user->createToken(

@@ -239,6 +239,33 @@ test('super admin can restore an archived team through the CLI', function () {
         ->and(Team::onlyTrashed()->find($team->id))->toBeNull();
 });
 
+test('cli login creates a personal workspace for a freshly seeded super admin', function () {
+    Artisan::call('db:seed', ['--class' => 'BootstrapSeeder', '--force' => true]);
+    $credentials = (string) file_get_contents(storage_path('app/bootstrap-credentials.txt'));
+    preg_match('/^password=(.*)$/m', $credentials, $matches);
+    $password = $matches[1];
+
+    $login = [
+        'username' => 'superadmin',
+        'password' => $password,
+    ];
+
+    $this->postJson('/api/cli/login', $login)
+        ->assertOk()
+        ->assertJsonPath('status', 'success');
+
+    $user = User::where('username', 'superadmin')->firstOrFail();
+    $workspace = Team::whereHas('members', fn ($query) => $query->where('user_id', $user->id))->first();
+    expect($workspace)->not->toBeNull()
+        ->and($workspace->name)->toBe('superadmin space');
+
+    // Idempotent: a second CLI login must not attach another workspace.
+    $this->postJson('/api/cli/login', $login)->assertOk();
+    expect(Team::whereHas('members', fn ($query) => $query->where('user_id', $user->id))->count())->toBe(1);
+
+    @unlink(storage_path('app/bootstrap-credentials.txt'));
+});
+
 test('db:create returns field-level 422 details for an invalid group_id', function () {
     $admin = cliSuperAdmin();
     $team = Team::create(['name' => 'Create DB Team', 'description' => 't']);
