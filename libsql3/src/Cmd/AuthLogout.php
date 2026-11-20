@@ -36,43 +36,39 @@ class AuthLogout extends Command implements Configurable
             return 0;
         }
 
-        try {
-            // Get token for the user
-            $token = $this->getToken($username);
+        $remoteFailure = null;
+        $token = $this->getToken($username);
 
+        try {
             if ($token) {
-                // Try to revoke token on the server
                 $this->callLogoutApi($token);
             }
-
-            // Delete token locally regardless of API status
+        } catch (\Throwable $e) {
+            // Remember the failure, but do not let it abort local cleanup.
+            $remoteFailure = $e->getMessage();
+        } finally {
+            // Local cleanup is unconditional. An unreachable or hostile server
+            // must never leave a credential that still looks usable on disk.
             $this->deleteToken($username);
+        }
 
-            $output->writeln("<info>Successfully logged out user: {$username}</info>");
-            return 0;
-
-        } catch (\Exception $e) {
-            $output->writeln("<error>Logout failed: " . $e->getMessage() . "</error>");
+        if ($remoteFailure !== null) {
+            $output->writeln("<comment>Local session cleared for {$username}, but server revocation failed: {$remoteFailure}</comment>");
+            $output->writeln('<comment>The server token may still be valid; revoke it from the admin UI.</comment>');
             return 1;
         }
+
+        $output->writeln("<info>Successfully logged out user: {$username}</info>");
+        return 0;
     }
 
     private function callLogoutApi(string $token): void
     {
-        $apiUrl = '/api/cli/logout';
-        $payload = ['token' => $token];
+        $request = http_request('/api/cli/logout', 'POST', ['token' => $token]);
 
-        $request = http_request($apiUrl, 'POST', $payload);
-        $response = $request['raw'];
-        $httpCode = $request['status'];
-
-        if ($httpCode !== 200) {
-            $message = "API returned status $httpCode";
-            $responseData = json_decode($response, true);
-            if (isset($responseData['message'])) {
-                $message = $responseData['message'];
-            }
-            throw new \Exception($message);
+        $httpCode = (int) ($request['status'] ?? 0);
+        if ($httpCode < 200 || $httpCode > 299) {
+            throw new \Exception("API returned status $httpCode");
         }
     }
 
