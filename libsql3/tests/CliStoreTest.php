@@ -7,6 +7,10 @@ namespace Libsql3\Tests;
 use Libsql3\Internal\CliStore;
 use PDO;
 
+/**
+ * The local credential store is a plaintext cache; its filesystem permissions
+ * are part of the security boundary, not a cosmetic detail.
+ */
 final class CliStoreTest extends Libsql3TestCase
 {
     public function test_initialization_creates_schema_and_a_0700_directory(): void
@@ -34,8 +38,6 @@ final class CliStoreTest extends Libsql3TestCase
 
     public function test_existing_loose_directory_is_tightened(): void
     {
-        // setUp() already created the directory; simulate a pre-existing loose
-        // permission mask instead of re-creating it.
         $dir = $this->home . '/.mylibsqladmin';
         chmod($dir, 0755);
 
@@ -70,5 +72,31 @@ final class CliStoreTest extends Libsql3TestCase
 
         $this->assertSame('test-token', $store->get('tester'));
         $this->assertSame('tester', $store->currentUser());
+    }
+
+    public function test_store_directory_and_database_file_are_private(): void
+    {
+        $dir = dirname(config('db_path'));
+        $db = config('db_path');
+
+        $this->assertDirectoryExists($dir);
+        $this->assertFileExists($db);
+        $this->assertSame('700', substr(sprintf('%o', fileperms($dir)), -3));
+        $this->assertSame('600', substr(sprintf('%o', fileperms($db)), -3));
+    }
+
+    public function test_loose_file_permissions_are_tightened_on_the_next_open(): void
+    {
+        $dir = dirname(config('db_path'));
+        $db = config('db_path');
+        chmod($dir, 0755);
+        chmod($db, 0644);
+
+        // Any config read opens the store through use_database().
+        \config_set('permission-probe', 'value');
+        \config_get('permission-probe');
+
+        $this->assertSame('700', substr(sprintf('%o', fileperms($dir)), -3));
+        $this->assertSame('600', substr(sprintf('%o', fileperms($db)), -3));
     }
 }

@@ -7,7 +7,16 @@ if (!function_exists('use_database')) {
     function use_database(): PDO
     {
         $database = config('db_path');
-        return new PDO("sqlite:$database");
+        $pdo = new PDO("sqlite:$database");
+
+        // The local store holds a reusable plaintext token. Tighten it on
+        // every open so a permissive umask (or a legacy file) cannot leave it
+        // readable by other users. Silence is intentional: an unsupported
+        // chmod on a read-only mount must not break an otherwise valid login.
+        @chmod(dirname($database), 0700);
+        @chmod($database, 0600);
+
+        return $pdo;
     }
 }
 
