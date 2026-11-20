@@ -20,7 +20,7 @@ The sidebar has five entries — note the absence of User Management:
 - Teams
 
 <figure class="screenshot">
-    <img src="/images/team-manager-dashboard.png" alt="Team Manager dashboard scoped to the Acme Engineering team">
+    <img src="{{ site.baseurl }}/images/team-manager-dashboard.png" alt="Team Manager dashboard scoped to the Acme Engineering team">
     <figcaption>The Team Manager dashboard is scoped to the current team. The team switcher is where you move between teams you belong to.</figcaption>
 </figure>
 
@@ -31,7 +31,7 @@ The sidebar has five entries — note the absence of User Management:
 Open **Groups** → **New group**. A group is the unit that lets several databases share a single credential — useful when one application talks to more than one namespace.
 
 <figure class="screenshot">
-    <img src="/images/team-manager-groups.png" alt="Groups page as seen by a Team Manager, with create and manage actions">
+    <img src="{{ site.baseurl }}/images/team-manager-groups.png" alt="Groups page as seen by a Team Manager, with create and manage actions">
     <figcaption>Team Managers get the full group lifecycle: create, rename, attach databases, and delete.</figcaption>
 </figure>
 
@@ -55,7 +55,7 @@ Group tokens are the credential type a Team Manager owns. Open the group and use
 Open **Teams** → your team → **Manage members**. You can invite people by email, change their team permission level, resend an invitation, or remove a member.
 
 <figure class="screenshot">
-    <img src="/images/teams.png" alt="Team page with member avatars and group and database counts">
+    <img src="{{ site.baseurl }}/images/teams.png" alt="Team page with member avatars and group and database counts">
     <figcaption>Membership is managed from the team row. Invitations are bound to the invitee's email address.</figcaption>
 </figure>
 
@@ -92,6 +92,6 @@ Open **Teams** → your team → **Manage members**. You can invite people by em
 
 ## Related
 
-- [Databases &amp; groups](/user-manual/guides/databases/)
-- [Teams &amp; members](/user-manual/guides/teams/)
-- [Permission matrix](/user-manual/reference/permissions/)
+- [Databases &amp; groups]({{ site.baseurl }}/user-manual/guides/databases/)
+- [Teams &amp; members]({{ site.baseurl }}/user-manual/guides/teams/)
+- [Permission matrix]({{ site.baseurl }}/user-manual/reference/permissions/)

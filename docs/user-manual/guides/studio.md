@@ -8,7 +8,7 @@ eyebrow: Query console
 Database Studio is the embedded query console. It is the fastest way to inspect a schema, run a one-off query, or prove that a database is reachable before you wire an application to it.
 
 <figure class="screenshot">
-    <img src="/images/studio.png" alt="Database Studio with table list and SQL editor">
+    <img src="{{ site.baseurl }}/images/studio.png" alt="Database Studio with table list and SQL editor">
     <figcaption>Studio on a real database: the table list on the left, the SQL editor on the right.</figcaption>
 </figure>
 
@@ -58,5 +58,5 @@ Type SQL in the editor and run it. Results render as a grid below the editor. Th
 
 ## Related
 
-- [Tokens](/user-manual/guides/tokens/)
-- [Databases &amp; groups](/user-manual/guides/databases/)
+- [Tokens]({{ site.baseurl }}/user-manual/guides/tokens/)
+- [Databases &amp; groups]({{ site.baseurl }}/user-manual/guides/databases/)

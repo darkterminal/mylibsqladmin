@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="dark" data-baseurl="{{ site.baseurl }}">
 <head>
     {% include head.html %}
 </head>
@@ -17,9 +17,9 @@
 
         <main class="content">
             <nav class="breadcrumbs" aria-label="Breadcrumb">
-                <a href="/">Home</a>
+                <a href="{{ site.baseurl }}/">Home</a>
                 <span aria-hidden="true">/</span>
-                <a href="/user-manual/">User Manual</a>
+                <a href="{{ site.baseurl }}/user-manual/">User Manual</a>
                 {% if page.section %}
                 <span aria-hidden="true">/</span>
                 <span>{{ page.section }}</span>

@@ -20,7 +20,7 @@ A Database Maintainer is the operational owner of **specific databases**. They a
 What you see **inside** those sections is narrower than the menu suggests: only databases explicitly granted to you appear.
 
 <figure class="screenshot">
-    <img src="/images/database-maintainer-dashboard.png" alt="Database Maintainer dashboard scoped to granted databases">
+    <img src="{{ site.baseurl }}/images/database-maintainer-dashboard.png" alt="Database Maintainer dashboard scoped to granted databases">
     <figcaption>The dashboard counts only the databases you can reach. A maintainer with two grants sees two databases, not the team's full inventory.</figcaption>
 </figure>
 
@@ -31,7 +31,7 @@ What you see **inside** those sections is narrower than the menu suggests: only 
 Open **Databases**. If the list is empty, nobody has granted you a database yet — a Super Admin has to do that from the database's grant action. A Maintainer cannot grant access to themselves.
 
 <figure class="screenshot">
-    <img src="/images/database-maintainer-databases.png" alt="Databases table showing events and sessions granted to the maintainer">
+    <img src="{{ site.baseurl }}/images/database-maintainer-databases.png" alt="Databases table showing events and sessions granted to the maintainer">
     <figcaption>Granted databases with their group, usage counters, storage and token status.</figcaption>
 </figure>
 
@@ -44,7 +44,7 @@ The row gives you the signals you need: rows read and written, total queries, st
 Open **Tokens** → **Generate New Token**, pick the granted database, name the credential after its consumer (`etl-nightly`, `reporting-readonly`), and set an expiry. Use `0` only when the consumer genuinely cannot rotate.
 
 <figure class="screenshot">
-    <img src="/images/database-maintainer-tokens.png" alt="Tokens table showing a token created by the maintainer for the events database">
+    <img src="{{ site.baseurl }}/images/database-maintainer-tokens.png" alt="Tokens table showing a token created by the maintainer for the events database">
     <figcaption>A token created by the maintainer, owned by the maintainer, scoped to one database. Expiry and creation date are both visible.</figcaption>
 </figure>
 
@@ -86,6 +86,6 @@ Press **Studio** on the database row to open Database Studio. A short-lived full
 
 ## Related
 
-- [Tokens](/user-manual/guides/tokens/)
-- [Database Studio](/user-manual/guides/studio/)
-- [Permission matrix](/user-manual/reference/permissions/)
+- [Tokens]({{ site.baseurl }}/user-manual/guides/tokens/)
+- [Database Studio]({{ site.baseurl }}/user-manual/guides/studio/)
+- [Permission matrix]({{ site.baseurl }}/user-manual/reference/permissions/)

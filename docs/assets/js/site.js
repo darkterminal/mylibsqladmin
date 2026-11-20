@@ -17,8 +17,9 @@
         var isDark = root.getAttribute('data-theme') === 'dark';
         var icon = document.getElementById('site-favicon');
         var shortcut = document.querySelector('link[rel="shortcut icon"]');
-        if (icon) icon.href = isDark ? '/favicon-dark-32.png' : '/favicon-light-32.png';
-        if (shortcut) shortcut.href = isDark ? '/favicon-dark.ico' : '/favicon-light.ico';
+        var base = root.getAttribute('data-baseurl') || '';
+        if (icon) icon.href = isDark ? base + '/favicon-dark-32.png' : base + '/favicon-light-32.png';
+        if (shortcut) shortcut.href = isDark ? base + '/favicon-dark.ico' : base + '/favicon-light.ico';
     }
 
     document.querySelectorAll('[data-theme-toggle]').forEach(function (button) {

@@ -19,7 +19,7 @@ A Member consumes access. They query the databases shared with them, open Studio
 There is **no Tokens entry** in a Member's sidebar. Credentials are handed to you by a Super Admin or a Database Maintainer; you use them, you do not mint them.
 
 <figure class="screenshot">
-    <img src="/images/member-dashboard.png" alt="Member dashboard showing only the database granted to the member">
+    <img src="{{ site.baseurl }}/images/member-dashboard.png" alt="Member dashboard showing only the database granted to the member">
     <figcaption>A Member's dashboard. One granted database means one database in the overview.</figcaption>
 </figure>
 
@@ -30,7 +30,7 @@ There is **no Tokens entry** in a Member's sidebar. Credentials are handed to yo
 Open **Databases**. Only databases granted to you appear — the table is the same shape as an admin's, but without create, archive or grant actions.
 
 <figure class="screenshot">
-    <img src="/images/member-databases.png" alt="Member databases table with a single granted database and no create button">
+    <img src="{{ site.baseurl }}/images/member-databases.png" alt="Member databases table with a single granted database and no create button">
     <figcaption>No <strong>New Database</strong> button in the header, no archive action on the row. The absence is the permission model made visible.</figcaption>
 </figure>
 
@@ -39,7 +39,7 @@ Open **Databases**. Only databases granted to you appear — the table is the sa
 Press **Studio** on the row. Studio mints a short-lived full-access token for your own account on every visit; you never see or copy it. The first screen lists the tables in the database.
 
 <figure class="screenshot">
-    <img src="/images/studio.png" alt="Database Studio showing tables and the SQL editor">
+    <img src="{{ site.baseurl }}/images/studio.png" alt="Database Studio showing tables and the SQL editor">
     <figcaption>Database Studio. The table list on the left is live; the editor on the right runs SQL against the database through the proxy.</figcaption>
 </figure>
 
@@ -52,7 +52,7 @@ Type SQL in the editor and run it. Results render as a grid. The connection is s
 Open **Teams** to see the team, its members and the groups you can view. This is read-only context, not a management screen.
 
 <figure class="screenshot">
-    <img src="/images/member-groups.png" alt="Member view of the groups page, without create or manage actions">
+    <img src="{{ site.baseurl }}/images/member-groups.png" alt="Member view of the groups page, without create or manage actions">
     <figcaption>Groups are visible to Members, but the create and manage actions are gone.</figcaption>
 </figure>
 
@@ -78,10 +78,10 @@ Open **Teams** to see the team, its members and the groups you can view. This is
 
 <div class="callout callout--note">
     <span class="callout__title">If Studio returns nothing</span>
-    <p>A blank Studio usually means the database has no tables yet, not that access is broken. If the table list itself fails to load, the sqld endpoint is unreachable from your browser — see the <a href="/user-manual/guides/studio/">Studio troubleshooting section</a>.</p>
+    <p>A blank Studio usually means the database has no tables yet, not that access is broken. If the table list itself fails to load, the sqld endpoint is unreachable from your browser — see the <a href="{{ site.baseurl }}/user-manual/guides/studio/">Studio troubleshooting section</a>.</p>
 </div>
 
 ## Related
 
-- [Database Studio](/user-manual/guides/studio/)
-- [Roles at a glance](/user-manual/roles/)
+- [Database Studio]({{ site.baseurl }}/user-manual/guides/studio/)
+- [Roles at a glance]({{ site.baseurl }}/user-manual/roles/)

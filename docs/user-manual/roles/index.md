@@ -8,19 +8,19 @@ eyebrow: Access control
 MylibSQLAdmin ships four roles. They are not a hierarchy of seniority — they describe **where a person sits in the system**: above teams, inside a team, on a database, or on the receiving end of access.
 
 <div class="card-grid">
-    <a class="card" href="/user-manual/roles/super-admin/">
+    <a class="card" href="{{ site.baseurl }}/user-manual/roles/super-admin/">
         <span class="card__title">Super Admin</span>
         <span class="card__desc">Platform owner. Every team, every database, every user, every token.</span>
     </a>
-    <a class="card" href="/user-manual/roles/team-manager/">
+    <a class="card" href="{{ site.baseurl }}/user-manual/roles/team-manager/">
         <span class="card__title">Team Manager</span>
         <span class="card__desc">Runs one team: groups, group credentials, databases and membership.</span>
     </a>
-    <a class="card" href="/user-manual/roles/database-maintainer/">
+    <a class="card" href="{{ site.baseurl }}/user-manual/roles/database-maintainer/">
         <span class="card__title">Database Maintainer</span>
         <span class="card__desc">Owns the databases granted to them and the tokens that unlock them.</span>
     </a>
-    <a class="card" href="/user-manual/roles/member/">
+    <a class="card" href="{{ site.baseurl }}/user-manual/roles/member/">
         <span class="card__title">Member</span>
         <span class="card__desc">Uses granted databases through Studio or a token. Read-only by default.</span>
     </a>
@@ -28,7 +28,7 @@ MylibSQLAdmin ships four roles. They are not a hierarchy of seniority — they d
 
 ## The matrix
 
-This is the short version. The [full permission matrix](/user-manual/reference/permissions/) lists every permission string the seeder assigns.
+This is the short version. The [full permission matrix]({{ site.baseurl }}/user-manual/reference/permissions/) lists every permission string the seeder assigns.
 
 <div class="table-scroll">
 <table>
@@ -62,7 +62,7 @@ This is the short version. The [full permission matrix](/user-manual/reference/p
 </div>
 
 <figure class="screenshot">
-    <img src="/images/users.png" alt="User management table listing each user with role, teams and last activity">
+    <img src="{{ site.baseurl }}/images/users.png" alt="User management table listing each user with role, teams and last activity">
     <figcaption>User Management is a Super Admin area. Each row shows the global role, the teams the user belongs to, and when they were last active.</figcaption>
 </figure>
 

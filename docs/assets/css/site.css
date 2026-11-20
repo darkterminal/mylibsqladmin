@@ -931,7 +931,7 @@ img {
         padding: 16px 16px 56px;
     }
 
-    .site-nav a[href="/"],
+    .site-nav a.site-nav__landing,
     .site-nav a[href*="github.com"] {
         display: none;
     }

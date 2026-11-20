@@ -21,7 +21,7 @@ The sidebar contains every section, including **User Management**:
 - **User Management** <span class="role-badge">Super Admin only</span>
 
 <figure class="screenshot">
-    <img src="/images/dashboard.png" alt="Super Admin dashboard with all databases and usage metrics">
+    <img src="{{ site.baseurl }}/images/dashboard.png" alt="Super Admin dashboard with all databases and usage metrics">
     <figcaption>The Super Admin dashboard aggregates every database in the installation, not just one team.</figcaption>
 </figure>
 
@@ -32,7 +32,7 @@ The sidebar contains every section, including **User Management**:
 Open **Teams** → **New Team**, give it a name and a description. A team is the container for groups, databases, tokens and invitations.
 
 <figure class="screenshot">
-    <img src="/images/teams.png" alt="Teams page with the Acme Engineering team and its member avatars">
+    <img src="{{ site.baseurl }}/images/teams.png" alt="Teams page with the Acme Engineering team and its member avatars">
     <figcaption>A team row shows members, groups, databases and recent activity. The overflow menu holds update and archive actions.</figcaption>
 </figure>
 
@@ -46,7 +46,7 @@ Open **User Management** → **Add User**. For each person you set:
 - **team membership**, with a permission level per team.
 
 <figure class="screenshot">
-    <img src="/images/users.png" alt="User management table with roles and team memberships">
+    <img src="{{ site.baseurl }}/images/users.png" alt="User management table with roles and team memberships">
     <figcaption>Every user, their global role, and the teams they belong to. Archiving a user is a soft delete — their history stays intact.</figcaption>
 </figure>
 
@@ -60,7 +60,7 @@ Open **User Management** → **Add User**. For each person you set:
 Create a **group** first, then a **database** inside it. Groups let several databases share one credential; a database on its own is perfectly valid too.
 
 <figure class="screenshot">
-    <img src="/images/groups.png" alt="Groups page with analytics selected and its databases">
+    <img src="{{ site.baseurl }}/images/groups.png" alt="Groups page with analytics selected and its databases">
     <figcaption>Groups are per team. Selecting one shows the databases attached to it and the token state of each.</figcaption>
 </figure>
 
@@ -73,7 +73,7 @@ A Maintainer or Member will not see a database until it is granted. Open **Datab
 Open **Tokens** → **Generate New Token**, pick the database and the user who will own the credential, set an expiry (0 means no expiry), and copy the pair immediately.
 
 <figure class="screenshot">
-    <img src="/images/tokens-reveal.png" alt="One-time token reveal dialog with full-access and read-only tokens blurred">
+    <img src="{{ site.baseurl }}/images/tokens-reveal.png" alt="One-time token reveal dialog with full-access and read-only tokens blurred">
     <figcaption>The one-time reveal. Both values are shown here and never again — only SHA-256 hashes are stored. Values are blurred in this screenshot.</figcaption>
 </figure>
 
@@ -103,6 +103,6 @@ Open **Tokens** → **Generate New Token**, pick the database and the user who w
 
 ## Related
 
-- [Permission matrix](/user-manual/reference/permissions/) — every permission string.
-- [Teams &amp; members](/user-manual/guides/teams/) — invitations and membership.
-- [Tokens](/user-manual/guides/tokens/) — lifecycle and revocation.
+- [Permission matrix]({{ site.baseurl }}/user-manual/reference/permissions/) — every permission string.
+- [Teams &amp; members]({{ site.baseurl }}/user-manual/guides/teams/) — invitations and membership.
+- [Tokens]({{ site.baseurl }}/user-manual/guides/tokens/) — lifecycle and revocation.

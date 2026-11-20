@@ -49,7 +49,7 @@ Read the file, store the password in your password manager, then delete the file
 Open the app (the installer prints the URL and port) and sign in with the seeded Super Admin.
 
 <figure class="screenshot">
-    <img src="/images/login.png" alt="MylibSQLAdmin login screen with username and password fields">
+    <img src="{{ site.baseurl }}/images/login.png" alt="MylibSQLAdmin login screen with username and password fields">
     <figcaption>The login screen. Authentication is by username, not email.</figcaption>
 </figure>
 
@@ -64,7 +64,7 @@ A **group** is a way to share one credential across several databases. A **datab
 3. Submit. The namespace is created on sqld immediately — it is not a UI-only record.
 
 <figure class="screenshot">
-    <img src="/images/groups.png" alt="Groups page with the analytics group selected and its databases listed">
+    <img src="{{ site.baseurl }}/images/groups.png" alt="Groups page with the analytics group selected and its databases listed">
     <figcaption>A group with its databases. Each database can be opened in Studio, connected to over the SDK, or tokenised independently.</figcaption>
 </figure>
 
@@ -77,7 +77,7 @@ Open **Tokens**, choose **Generate New Token**, select the database, optionally 
 To query the database from the browser, open **Databases** and press **Studio** on the row. Studio mints a short-lived full-access token for your own account on every visit; you never copy it by hand.
 
 <figure class="screenshot">
-    <img src="/images/studio.png" alt="Database Studio showing tables and a SQL editor">
+    <img src="{{ site.baseurl }}/images/studio.png" alt="Database Studio showing tables and a SQL editor">
     <figcaption>Database Studio, embedded from libsqlstudio.com, querying a real libSQL database through the proxy.</figcaption>
 </figure>
 
@@ -86,12 +86,12 @@ To query the database from the browser, open **Databases** and press **Studio** 
 Create users and assign roles from **User Management** (Super Admin only), then add them to a team from **Teams**. Members and Maintainers also need an explicit database grant before the database appears in their list.
 
 <figure class="screenshot">
-    <img src="/images/teams.png" alt="Teams page showing the Acme Engineering team, its members, groups and databases">
+    <img src="{{ site.baseurl }}/images/teams.png" alt="Teams page showing the Acme Engineering team, its members, groups and databases">
     <figcaption>A team with four members, two groups and three databases. Membership is per team.</figcaption>
 </figure>
 
 ## Where to go next
 
-- Read [Roles at a glance](/user-manual/roles/) before handing out accounts.
-- Read [Databases & groups](/user-manual/guides/databases/) for archiving, restoring and granting access.
-- Read [Tokens](/user-manual/guides/tokens/) for the full credential lifecycle.
+- Read [Roles at a glance]({{ site.baseurl }}/user-manual/roles/) before handing out accounts.
+- Read [Databases & groups]({{ site.baseurl }}/user-manual/guides/databases/) for archiving, restoring and granting access.
+- Read [Tokens]({{ site.baseurl }}/user-manual/guides/tokens/) for the full credential lifecycle.
