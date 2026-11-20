@@ -1,0 +1,101 @@
+name: libsql3 PHAR
+
+# Build-only gate. This workflow never publishes a release, pushes an image,
+# or creates a tag. Tag-driven publishing stays in publish.yml.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reproducible-build:
+    name: reproducible PHAR build
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_sqlite, mbstring, intl, dom, xml, xmlwriter, zip, gd, bcmath
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies (Composer)
+        working-directory: libsql3
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Install Box 3.8.4
+        run: |
+          curl -fsSL https://github.com/box-project/box/releases/download/3.8.4/box.phar -o /tmp/box.phar
+          echo 'f2058b50b126f1e9e811538ef2688cdbf578ae24f881de6d32a5f30c4eb6e3fb  /tmp/box.phar' | sha256sum -c -
+          sudo install -m 0755 /tmp/box.phar /usr/local/bin/box
+
+      - name: Record committed SHA-256
+        id: committed
+        run: echo "sha=$(sha256sum libsql3/build/libsql3 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Rebuild PHAR
+        working-directory: libsql3
+        env:
+          # Box 3.8.4's own embedded requirement metadata claims PHP ^7.2.
+          # The binary itself builds and runs fine on PHP 8.4; skip only the
+          # stale self-check, not the actual compilation.
+          BOX_REQUIREMENT_CHECKER: '0'
+        run: box compile
+
+      - name: Verify rebuilt PHAR matches committed artifact
+        env:
+          EXPECTED_SHA: ${{ steps.committed.outputs.sha }}
+        run: |
+          actual=$(sha256sum libsql3/build/libsql3 | cut -d' ' -f1)
+          echo "expected=$EXPECTED_SHA"
+          echo "actual=$actual"
+          test "$actual" = "$EXPECTED_SHA"
+
+      - name: Verify source files inside PHAR are byte-identical
+        run: |
+          php -r '
+          Phar::loadPhar("libsql3/build/libsql3", "libsql3.phar");
+          $src = [];
+          $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator("libsql3/src", FilesystemIterator::SKIP_DOTS));
+          foreach ($it as $f) {
+              if ($f->getExtension() === "php") {
+                  $src[] = str_replace("libsql3/src/", "", $f->getPathname());
+              }
+          }
+          $identical = 0;
+          $divergent = [];
+          $missing = [];
+          foreach ($src as $rel) {
+              $inPhar = "phar://libsql3.phar/src/" . $rel;
+              if (!file_exists($inPhar)) {
+                  $missing[] = $rel;
+                  continue;
+              }
+              if (hash_file("sha256", "libsql3/src/" . $rel) === hash_file("sha256", $inPhar)) {
+                  $identical++;
+              } else {
+                  $divergent[] = $rel;
+              }
+          }
+          echo "byte_identical=$identical byte_divergent=" . count($divergent) . " missing_from_phar=" . count($missing) . PHP_EOL;
+          if ($divergent) { echo "DIVERGENT: " . implode(", ", $divergent) . PHP_EOL; }
+          if ($missing) { echo "MISSING: " . implode(", ", $missing) . PHP_EOL; }
+          exit (count($divergent) || count($missing)) ? 1 : 0;
+          '
+
+      - name: Upload rebuilt PHAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: libsql3-phar-${{ github.sha }}
+          path: libsql3/build/libsql3
+          if-no-files-found: error
