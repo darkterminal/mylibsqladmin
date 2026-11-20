@@ -2,10 +2,12 @@
 namespace Libsql3\Cmd;
 
 use Libsql3\Contracts\Configurable;
+use Libsql3\Internal\AuthContext;
 use Libsql3\Internal\CliStore;
 use Psy\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 
@@ -15,6 +17,9 @@ class AuthLogin extends Command implements Configurable
 
     protected static $defaultName = 'auth:login';
     public array $config = [];
+
+    /** User whose server token was revoked by this invocation, if any. */
+    private ?string $revokedUser = null;
 
     public function setAppConfig(array $config)
     {
@@ -26,54 +31,173 @@ class AuthLogin extends Command implements Configurable
         $this
             ->setName('auth:login')
             ->setDescription('Authenticate and store API token')
-            ->addArgument('username', InputArgument::REQUIRED, 'Your username');
+            ->addArgument('username', InputArgument::REQUIRED, 'Your username')
+            ->addOption(
+                'force',
+                null,
+                InputOption::VALUE_NONE,
+                'Revoke the current server token before logging in again'
+            )
+            ->addOption(
+                'token',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Pre-obtained plaintext API token (non-interactive login)'
+            )
+            ->addOption(
+                'expires-at',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Expiry for --token as ISO-8601 (default: 30 days from now)'
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        // Get username
-        $username = $input->getArgument('username');
+        $username = (string) $input->getArgument('username');
+        $force = (bool) $input->getOption('force');
 
-        // Get password securely
-        $password = null;
-        if (null === $password) {
-            /** @var \Symfony\Component\Console\Helper\QuestionHelper $helper */
-            $helper = $this->getHelper('question');
-            $question = new Question('Enter password: ');
-            $question->setHidden(true);
-            $question->setHiddenFallback(false);
-            $password = $helper->ask($input, $output, $question);
-        }
-
-        // Authenticate with API
+        // Mandatory order: revoke first, authenticate second. A failed revoke
+        // aborts without touching local state; a failed login after a successful
+        // revoke clears the dead local credential rather than leaving it usable.
         try {
-            $tokenData = $this->authenticate($username, $password);
-            $output->writeln("<info>Authentication successful!</info>");
-            if ($tokenData === 1) {
-                $expiresAt = new \DateTime($this->getExpiresAt($username));
-                $output->writeln("<comment>You are already logged in until {$expiresAt->format('Y-m-d H:i:s')}.</comment>");
-                return 0;
+            if ($force) {
+                $this->revokeCurrentToken();
             }
-        } catch (\Exception $e) {
-            $output->writeln("<error>Authentication failed: " . $e->getMessage() . "</error>");
+        } catch (\Throwable $e) {
+            $output->writeln("<error>Could not revoke the current server token: {$e->getMessage()}</error>");
+            $output->writeln('<comment>Local credentials were not changed.</comment>');
+
             return 1;
         }
 
-        // Store token in database
+        try {
+            $tokenData = $this->resolveCredential($input, $output, $username, $force);
+        } catch (\Throwable $e) {
+            if ($this->revokedUser !== null) {
+                $this->deleteToken($this->revokedUser);
+                $this->clearActiveUser();
+                $output->writeln('<comment>The previous server token was revoked, but the new login failed.</comment>');
+                $output->writeln('<comment>Local session cleared; run auth:login again.</comment>');
+            }
+            $output->writeln('<error>Authentication failed: ' . $e->getMessage() . '</error>');
+
+            return 1;
+        }
+
+        $output->writeln('<info>Authentication successful!</info>');
+
+        if ($tokenData === 1) {
+            $expiresAt = new \DateTime((string) $this->getExpiresAt($username));
+            $output->writeln("<comment>You are already logged in until {$expiresAt->format('Y-m-d H:i:s')}.</comment>");
+
+            return 0;
+        }
+
         try {
             $this->storeToken($username, $tokenData['token'], $tokenData['expires_at']);
         } catch (\Exception $e) {
-            $output->writeln("<error>Token storage failed: " . $e->getMessage() . "</error>");
+            $output->writeln('<error>Token storage failed: ' . $e->getMessage() . '</error>');
+
             return 2;
         }
 
         return 0;
     }
 
-    private function authenticate(string $username, string $password): array|int
+    /**
+     * Non-interactive callers supply a pre-obtained token via --token or the
+     * namespaced env var; the password question is never asked without a TTY.
+     *
+     * @return array{token:string, expires_at:string}|int 1 means "already logged in"
+     */
+    private function resolveCredential(
+        InputInterface $input,
+        OutputInterface $output,
+        string $username,
+        bool $force
+    ): array|int {
+        $optionToken = $input->getOption('token');
+        $envToken = getenv(AuthContext::TOKEN_ENV);
+
+        $inlineToken = is_string($optionToken) && $optionToken !== ''
+            ? $optionToken
+            : (is_string($envToken) && $envToken !== '' ? $envToken : null);
+
+        if ($inlineToken !== null) {
+            return [
+                'token' => $inlineToken,
+                'expires_at' => $this->resolveInlineExpiry($input),
+            ];
+        }
+
+        if (!$input->isInteractive()) {
+            throw new \RuntimeException(
+                'Non-interactive login requires --token or ' . AuthContext::TOKEN_ENV
+                . '; the password prompt is disabled without a TTY.'
+            );
+        }
+
+        return $this->authenticate($username, $this->askPassword($input, $output), $force);
+    }
+
+    private function resolveInlineExpiry(InputInterface $input): string
     {
-        // Check if already logged in
-        if ($this->authCheck($username)) {
+        $option = $input->getOption('expires-at');
+        if (is_string($option) && $option !== '') {
+            if (strtotime($option) === false) {
+                throw new \InvalidArgumentException('--expires-at must be a valid date/time');
+            }
+
+            return $option;
+        }
+
+        // The server issues 30-day tokens; a CLI-supplied token has no expiry
+        // metadata of its own, so mirror that default and let operators pass
+        // the real value with --expires-at when they know it.
+        return date('Y-m-d H:i:s', time() + (30 * 86400));
+    }
+
+    private function askPassword(InputInterface $input, OutputInterface $output): string
+    {
+        /** @var \Symfony\Component\Console\Helper\QuestionHelper $helper */
+        $helper = $this->getHelper('question');
+        $question = new Question('Enter password: ');
+        $question->setHidden(true);
+        $question->setHiddenFallback(false);
+        $password = $helper->ask($input, $output, $question);
+
+        if (!is_string($password) || $password === '') {
+            throw new \RuntimeException('A password is required.');
+        }
+
+        return $password;
+    }
+
+    /**
+     * Revoke the token behind the current local session. No local row is
+     * touched here: the caller decides what to do on success or failure.
+     */
+    private function revokeCurrentToken(): void
+    {
+        $current = $this->getCurrentLoggedInUser();
+        if ($current === null) {
+            return;
+        }
+        $token = $this->getToken($current);
+        if ($token === null) {
+            return;
+        }
+
+        revoke_cli_token($token);
+        $this->revokedUser = $current;
+    }
+
+    private function authenticate(string $username, string $password, bool $force = false): array|int
+    {
+        // Check if already logged in. --force deliberately bypasses this so a
+        // valid cached token does not block rotation.
+        if (!$force && $this->authCheck($username)) {
             return 1;
         }
 

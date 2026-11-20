@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Libsql3\Tests;
 
+use Libsql3\Cmd\AuthLogin;
 use Libsql3\Cmd\AuthLogout;
 use Libsql3\Internal\AuthContext;
 use Libsql3\Internal\CliStore;
@@ -195,6 +196,132 @@ final class AuthTest extends Libsql3TestCase
         } finally {
             putenv(AuthContext::TOKEN_ENV);
         }
+    }
+
+    public function test_force_login_revokes_the_old_token_before_storing_the_new_one(): void
+    {
+        $this->seedLogin('tester', 'old-token');
+        config_set(AuthContext::ACTIVE_USER_KEY, 'tester');
+
+        $calls = [];
+        HttpTransport::fake(function (string $url, string $method, ?array $payload) use (&$calls): array {
+            $calls[] = compact('url', 'method', 'payload');
+
+            return ['status' => 200, 'body' => [], 'raw' => '{"status":"success"}'];
+        });
+
+        $tester = new CommandTester(new AuthLogin());
+        $exit = $tester->execute([
+            'username' => 'tester',
+            '--force' => true,
+            '--token' => 'new-token',
+            '--expires-at' => '2031-01-01 00:00:00',
+        ]);
+
+        $this->assertSame(0, $exit, $tester->getDisplay());
+        $this->assertCount(1, $calls, 'Rotation must revoke before any new credential is stored.');
+        $this->assertSame('POST', $calls[0]['method']);
+        $this->assertSame('https://example.invalid/api/cli/logout', $calls[0]['url']);
+        $this->assertSame(['token' => 'old-token'], $calls[0]['payload']);
+        $this->assertSame('new-token', $this->storedTokenFor('tester'));
+        $this->assertSame('tester', config_get(AuthContext::ACTIVE_USER_KEY));
+    }
+
+    public function test_force_login_aborts_without_touching_local_state_when_revoke_fails(): void
+    {
+        $this->seedLogin('tester', 'old-token');
+        config_set(AuthContext::ACTIVE_USER_KEY, 'tester');
+
+        $calls = 0;
+        HttpTransport::fake(function () use (&$calls): array {
+            $calls++;
+
+            return ['status' => 401, 'body' => [], 'raw' => '{"message":"Invalid token"}'];
+        });
+
+        $tester = new CommandTester(new AuthLogin());
+        $exit = $tester->execute([
+            'username' => 'tester',
+            '--force' => true,
+            '--token' => 'new-token',
+            '--expires-at' => '2031-01-01 00:00:00',
+        ]);
+
+        $this->assertSame(1, $exit);
+        $this->assertSame(1, $calls, 'No login should be attempted after a failed revoke.');
+        $this->assertSame('old-token', $this->storedTokenFor('tester'));
+        $display = $tester->getDisplay();
+        $this->assertStringContainsString('Could not revoke the current server token', $display);
+        $this->assertStringContainsString('Local credentials were not changed', $display);
+    }
+
+    public function test_force_login_clears_the_dead_local_token_when_the_new_credential_fails(): void
+    {
+        $this->seedLogin('tester', 'old-token');
+        config_set(AuthContext::ACTIVE_USER_KEY, 'tester');
+
+        HttpTransport::fake(fn (): array => ['status' => 200, 'body' => [], 'raw' => '{}']);
+
+        $tester = new CommandTester(new AuthLogin());
+        $exit = $tester->execute([
+            'username' => 'tester',
+            '--force' => true,
+            '--token' => 'new-token',
+            '--expires-at' => 'not-a-date',
+        ]);
+
+        $this->assertSame(1, $exit);
+        $this->assertNull($this->storedTokenFor('tester'));
+        $this->assertNull(config_get(AuthContext::ACTIVE_USER_KEY));
+        $display = $tester->getDisplay();
+        $this->assertStringContainsString('previous server token was revoked', $display);
+        $this->assertStringContainsString('Local session cleared', $display);
+        $this->assertStringContainsString('--expires-at must be a valid date/time', $display);
+    }
+
+    public function test_non_interactive_login_without_a_token_fails_actionably(): void
+    {
+        HttpTransport::fake(function (): array {
+            $this->fail('No request should be made without a credential.');
+        });
+
+        $tester = new CommandTester(new AuthLogin());
+        $exit = $tester->execute(['username' => 'tester'], ['interactive' => false]);
+
+        $this->assertSame(1, $exit);
+        $display = $tester->getDisplay();
+        $this->assertStringContainsString('Non-interactive login requires --token or LIBSQL3_AUTH_TOKEN', $display);
+        $this->assertStringNotContainsString('TypeError', $display);
+    }
+
+    public function test_non_interactive_login_accepts_the_namespaced_env_token(): void
+    {
+        putenv(AuthContext::TOKEN_ENV . '=env-token');
+
+        try {
+            $tester = new CommandTester(new AuthLogin());
+            $exit = $tester->execute(
+                ['username' => 'tester', '--expires-at' => '2031-01-01 00:00:00'],
+                ['interactive' => false]
+            );
+
+            $this->assertSame(0, $exit, $tester->getDisplay());
+            $this->assertSame('env-token', $this->storedTokenFor('tester'));
+        } finally {
+            putenv(AuthContext::TOKEN_ENV);
+        }
+    }
+
+    private function storedTokenFor(string $username): ?string
+    {
+        $pdo = new PDO('sqlite:' . config('db_path'));
+        $stmt = $pdo->prepare(
+            'SELECT token FROM ' . config('tables.tokens') . ' WHERE username = :username'
+        );
+        $stmt->execute(['username' => $username]);
+        $value = $stmt->fetchColumn();
+
+        return $value === false ? null : (string) $value;
     }
 
     private function tokenCount(): int
