@@ -196,7 +196,9 @@ test('cli logout revokes the presented token', function () {
 
     $this->postJson('/api/cli/logout', ['token' => $token])
         ->assertOk()
-        ->assertJsonPath('status', 'success');
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.revoked', true)
+        ->assertJsonMissingPath('data.revoked_token');
 
     expect(PersonalAccessToken::count())->toBe(0);
 
