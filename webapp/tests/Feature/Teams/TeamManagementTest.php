@@ -9,13 +9,16 @@
  * (e.g. Team Manager may not create teams; Super Admin may).
  */
 
+use App\Http\Controllers\TeamController;
 use App\Models\Invitation;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
@@ -59,6 +62,43 @@ test('a member without create permission cannot create a team', function () {
         ->assertForbidden();
 
     expect(Team::where('name', 'Nope')->exists())->toBeFalse();
+});
+
+test('store member accepts the canonical database-maintainer role', function () {
+    $admin = superAdminUser();
+    $team = Team::create(['name' => 'Maint Team', 'description' => 'x']);
+    $member = User::factory()->create();
+
+    $this->actingAs($admin);
+
+    $request = Request::create('/teams/members', 'POST', [
+        'user_id' => $member->id,
+        'permission_level' => 'database-maintainer',
+    ]);
+
+    app(TeamController::class)->storeMember($request, $team);
+
+    $pivot = $team->members()->where('user_id', $member->id)->first()?->pivot;
+    expect($pivot)->not->toBeNull();
+    expect($pivot->permission_level)->toBe('database-maintainer');
+});
+
+test('store member rejects the misspelled database-maintener role', function () {
+    $admin = superAdminUser();
+    $team = Team::create(['name' => 'Typo Team', 'description' => 'x']);
+    $member = User::factory()->create();
+
+    $this->actingAs($admin);
+
+    $request = Request::create('/teams/members', 'POST', [
+        'user_id' => $member->id,
+        'permission_level' => 'database-maintener',
+    ]);
+
+    expect(fn () => app(TeamController::class)->storeMember($request, $team))
+        ->toThrow(ValidationException::class);
+
+    expect($team->members()->where('user_id', $member->id)->exists())->toBeFalse();
 });
 
 test('super admin can soft-delete and restore a team', function () {

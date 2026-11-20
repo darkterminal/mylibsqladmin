@@ -338,7 +338,7 @@ class TeamController extends Controller
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
-            'permission_level' => 'required|in:super-admin,team-manager,database-maintener,member'
+            'permission_level' => 'required|in:super-admin,team-manager,database-maintainer,member'
         ]);
 
         $this->membership->storeMember($team, (int) $request->user_id, $request->permission_level);
