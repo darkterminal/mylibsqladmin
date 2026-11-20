@@ -40,7 +40,7 @@ class CliCreateNewDatabaseController extends Controller
             // SqldService returns a bool; read back the record it created so the
             // CLI never has to guess an identifier. Omit the key when absent.
             $created = UserDatabase::where('database_name', $validated['name'])
-                ->where('user_id', auth()->id())
+                ->where('user_id', $request->user()->id)
                 ->latest()
                 ->first();
 
