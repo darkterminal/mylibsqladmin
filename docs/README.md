@@ -211,8 +211,8 @@ jekyll build -s docs -d /tmp/mylibsqladmin-docs
 jekyll serve -s docs --livereload   # http://127.0.0.1:4000
 ```
 
-The site is self-contained: no theme gem, no plugins, no CDN for the manual
-styles. GitHub Pages can serve it straight from `/docs` on `main`
+The site is self-contained: no theme gem, no plugins, no CDN for styles or
+fonts. GitHub Pages can serve it straight from `/docs` on `main`
 (Settings → Pages → Deploy from a branch → `main` / `/docs`).
 
 Layout of the site source:
@@ -221,7 +221,13 @@ Layout of the site source:
 - `_layouts/manual.html` — manual shell (header, sidebar, content, TOC, pager)
 - `_includes/` — head, header, sidebar, footer
 - `assets/css/site.css` — styles for the manual
-- `images/` — screenshots referenced by the manual
+- `assets/css/landing.css` — styles for the landing page
+- `assets/js/site.js` — manual theme toggle, sidebar, TOC, search
+- `assets/js/landing.js` — theme toggle, mobile nav, copy button, GitHub stats
+- `assets/fonts/` — self-hosted Instrument Sans (SIL OFL, see `OFL.txt`)
+- `images/app-logo-icon.svg` — the app's `AppLogoIcon`, used by both headers
+- `favicon-light.*` / `favicon-dark.*` — the app's real favicons, theme-aware
+- `images/` — screenshots referenced by both the landing page and the manual
 
 `README.md` and `libsql3-man.md` are excluded from the Jekyll build on purpose;
 they stay repository-facing guides and are not part of the published site.

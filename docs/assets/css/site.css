@@ -128,12 +128,23 @@ img {
     place-items: center;
     width: 30px;
     height: 30px;
+    border: 1px solid var(--border);
     border-radius: 8px;
-    background: linear-gradient(135deg, #3f3f46, #2563eb);
-    color: #fff;
+    background: var(--bg-elevated);
+    color: var(--text);
     font-size: 15px;
     font-weight: 800;
     line-height: 1;
+}
+
+/* The exact AppLogoIcon the application renders in its header. The asset is
+   black; invert it in dark mode to match the app's text-white variant. */
+.brand__mark img {
+    width: 18px;
+    height: 20px;
+}
+[data-theme="dark"] .brand__mark img {
+    filter: invert(1);
 }
 
 .brand__sub {
