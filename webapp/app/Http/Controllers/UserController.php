@@ -128,7 +128,7 @@ class UserController extends Controller
             'teamSelections.*' => ['integer', 'exists:teams,id'], // Each team must exist
             // Validate team permissions
             'teamPermissions' => ['present', 'array'],
-            'teamPermissions.*' => ['required', 'string', Rule::in(['super-admin', 'team-manager', 'database-maintainer', 'member'])],
+            'teamPermissions.*' => ['required', 'string', Rule::in(Role::KEYS)],
         ]);
 
         try {
