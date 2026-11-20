@@ -66,3 +66,39 @@ jobs:
       - name: Composer audit
         run: composer audit --locked || true
         working-directory: webapp
+
+  libsql3:
+    name: libsql3 tests + audit
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_sqlite, mbstring, intl
+          coverage: none
+          tools: composer:v2
+
+      - name: Validate composer.json
+        run: composer validate --strict
+        working-directory: libsql3
+
+      - name: Install dependencies (Composer)
+        run: composer install --no-interaction --prefer-dist --no-progress
+        working-directory: libsql3
+
+      - name: Lint PHP
+        run: find src tests -name '*.php' -print0 | xargs -0 -n1 php -l
+        working-directory: libsql3
+
+      - name: Tests
+        run: composer test
+        working-directory: libsql3
+
+      - name: Composer audit
+        run: composer audit --locked
+        working-directory: libsql3
