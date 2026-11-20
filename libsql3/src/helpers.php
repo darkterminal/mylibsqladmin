@@ -232,6 +232,11 @@ if (!function_exists('http_request')) {
     /**
      * Send an HTTP request (GET, POST, PUT, PATCH, DELETE) with JSON payload and custom headers.
      *
+     * Retry policy: transport failures are retried for every method (nothing was
+     * acknowledged by the server), and 5xx is retried only for safe methods.
+     * A mutation is never replayed because of an HTTP status — its 4xx/5xx body
+     * is either accepted through $okCodes or reported in the exception.
+     *
      * @param string      $pathUrl  Endpoint path, e.g. '/api/cli/login'
      * @param string      $method   HTTP method (GET, POST, PUT, PATCH, DELETE). Defaults to GET.
      * @param array|null  $payload  Data to send (query string for GET, JSON body for others).
@@ -239,7 +244,7 @@ if (!function_exists('http_request')) {
      * @param int|int[]   $okCodes  Acceptable HTTP status code(s). Default: 200‑299.
      *
      * @return array{status:int, body:mixed, raw:string}
-     * @throws Exception  On cURL error or unexpected HTTP status.
+     * @throws \RuntimeException  On transport failure or an unacceptable HTTP status.
      */
     function http_request(
         string $pathUrl,
@@ -260,25 +265,58 @@ if (!function_exists('http_request')) {
         $validated = Endpoint::parse($endpoint, 'LIBSQL_API_ENDPOINT');
         warn_if_insecure_endpoint($validated->value, 'LIBSQL_API_ENDPOINT');
 
-        $baseUrl = $validated->value;
-        $url = $baseUrl . '/' . ltrim($pathUrl, '/');
+        $url = $validated->value . '/' . ltrim($pathUrl, '/');
 
-        $retries = 0;
-        $maxRetries = 2;
+        $okCodes = (array) $okCodes;
+        if ($okCodes === [200]) {
+            // Default: treat any 2xx as success.
+            $okCodes = range(200, 299);
+        }
+
+        $upperMethod = strtoupper($method);
+        $safeMethod = $upperMethod === 'GET' || $upperMethod === 'HEAD';
+        $maxAttempts = 3;
         $response = null;
 
-        $retries = 0;
-        $maxRetries = 2;
-        $response = try_request($url, $method, $payload, $headers, $okCodes);
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            $response = try_request($url, $upperMethod, $payload, $headers);
 
-        while ($response === null && $retries < $maxRetries) {
-            $retries++;
-            usleep(250000 * $retries); // 250ms, 500ms backoff
-            $response = try_request($url, $method, $payload, $headers, $okCodes);
+            if ($response === null) {
+                // No HTTP response arrived; safe to retry even for a mutation.
+                if ($attempt < $maxAttempts) {
+                    usleep(250000 * $attempt); // 250ms, 500ms backoff
+                    continue;
+                }
+
+                $error = HttpTransport::lastError() ?: 'unknown transport error';
+                throw new \RuntimeException(
+                    "HTTP request failed after {$maxAttempts} attempt(s): {$error}"
+                );
+            }
+
+            $status = (int) ($response['status'] ?? 0);
+            if ($safeMethod && $status >= 500 && $status < 600 && $attempt < $maxAttempts) {
+                usleep(250000 * $attempt);
+                continue;
+            }
+
+            break;
         }
 
         if ($response === null) {
-            throw new \Exception('Could not get a valid response after ' . $maxRetries . ' retries.');
+            // Defensive: the loop above either returns a response or throws.
+            throw new \RuntimeException('HTTP request failed: no response');
+        }
+
+        $status = (int) ($response['status'] ?? 0);
+        if (!in_array($status, $okCodes, true)) {
+            $raw = (string) ($response['raw'] ?? '');
+            $decoded = json_decode($raw, true);
+            $message = is_array($decoded) ? ($decoded['message'] ?? null) : null;
+            if (!is_string($message) || $message === '') {
+                $message = $raw !== '' ? substr($raw, 0, 200) : 'Unexpected HTTP status';
+            }
+            throw new \RuntimeException("API returned status {$status}: {$message}");
         }
 
         return $response;
@@ -287,43 +325,25 @@ if (!function_exists('http_request')) {
 
 if (!function_exists('try_request')) {
     /**
-     * Try to send a request to the given URL with the given method and payload.
-     * This function will retry the request up to $maxRetries times if the
-     * response was invalid (e.g. due to a network issue or a server error).
+     * One HTTP attempt. Returns the parsed response for every HTTP status.
+     * Null means a transport-level failure (no response arrived); status-code
+     * acceptance is checked by http_request() so the body stays available.
      *
-     * @param string $url          The URL to query.
-     * @param string $method       The HTTP method to use. Default: GET.
-     * @param array  $payload      The data to send with the request. Default: null.
-     * @param array  $headers      Additional HTTP headers to send. Default: [].
-     * @param int|array $okCodes   Acceptable HTTP status code(s). Default: 200.
+     * @param string $url      The URL to query.
+     * @param string $method   The HTTP method to use. Default: GET.
+     * @param array  $payload  The data to send with the request. Default: null.
+     * @param array  $headers  Additional HTTP headers to send. Default: [].
      *
-     * @return array{status:int, body:mixed, raw:string}|null  The response, or null if the request failed.
+     * @return array{status:int, body:mixed, raw:string}|null
      */
     function try_request(
         string $url,
         string $method = 'GET',
         ?array $payload = null,
-        array $headers = [],
-        int|array $okCodes = 200
+        array $headers = []
     ): ?array {
         // All cURL work lives in HttpTransport so tests can fake the boundary.
-        // Status-code acceptance stays here; retry semantics are unchanged.
-        $response = (new HttpTransport())->send($url, $method, $payload, $headers);
-
-        if ($response === null) {
-            return null;
-        }
-
-        $okCodes = (array) $okCodes;
-        if ($okCodes === [200]) {
-            // Default: treat any 2xx as success
-            $okCodes = range(200, 299);
-        }
-        if (!in_array($response['status'], $okCodes, true)) {
-            return null;
-        }
-
-        return $response;
+        return (new HttpTransport())->send($url, $method, $payload, $headers);
     }
 }
 

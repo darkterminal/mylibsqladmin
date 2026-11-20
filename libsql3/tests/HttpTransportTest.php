@@ -58,20 +58,108 @@ final class HttpTransportTest extends Libsql3TestCase
         $this->assertSame(['ok' => true], $result['body']);
     }
 
-    public function test_non_2xx_is_reported_as_null(): void
+    public function test_non_2xx_response_is_returned_with_its_body(): void
     {
-        HttpTransport::fake(fn (): array => ['status' => 404, 'body' => [], 'raw' => '{}']);
+        HttpTransport::fake(fn (): array => [
+            'status' => 422,
+            'body' => ['message' => 'invalid group'],
+            'raw' => '{"message":"invalid group"}',
+        ]);
 
-        $this->assertNull(try_request('https://example.invalid/api/cli/team/restore/7', 'POST'));
-    }
-
-    public function test_explicit_ok_codes_are_honoured(): void
-    {
-        HttpTransport::fake(fn (): array => ['status' => 404, 'body' => ['expected' => true], 'raw' => '{"expected":true}']);
-
-        $result = try_request('https://example.invalid/api/cli/team/restore/7', 'POST', null, [], 404);
+        $result = try_request('https://example.invalid/api/cli/team/restore/7', 'POST');
 
         $this->assertNotNull($result);
+        $this->assertSame(422, $result['status']);
+        $this->assertSame('invalid group', $result['body']['message']);
+    }
+
+    public function test_explicit_ok_codes_are_honoured_by_http_request(): void
+    {
+        $calls = 0;
+        HttpTransport::fake(function () use (&$calls): array {
+            $calls++;
+
+            return ['status' => 404, 'body' => ['expected' => true], 'raw' => '{"expected":true}'];
+        });
+
+        $result = http_request('/api/cli/team/restore/7', 'POST', null, [], 404);
+
+        $this->assertSame(1, $calls);
         $this->assertSame(404, $result['status']);
+    }
+
+    public function test_unacceptable_status_throws_once_with_the_server_message(): void
+    {
+        $calls = 0;
+        HttpTransport::fake(function () use (&$calls): array {
+            $calls++;
+
+            return [
+                'status' => 422,
+                'body' => [],
+                'raw' => json_encode(['message' => 'The group_id field is invalid.']),
+            ];
+        });
+
+        try {
+            http_request('/api/cli/db/create', 'POST', ['name' => 'demo']);
+            $this->fail('An unacceptable status must throw.');
+        } catch (\RuntimeException $e) {
+            $this->assertSame(1, $calls, 'A mutation must not be replayed because of an HTTP status.');
+            $this->assertSame('API returned status 422: The group_id field is invalid.', $e->getMessage());
+        }
+    }
+
+    public function test_transport_failure_is_retried_without_replaying_a_status(): void
+    {
+        $calls = 0;
+        HttpTransport::fake(function () use (&$calls): ?array {
+            $calls++;
+
+            return null;
+        });
+
+        try {
+            http_request('/api/cli/db/create', 'POST', ['name' => 'demo']);
+            $this->fail('Exhausted transport retries must throw.');
+        } catch (\RuntimeException $e) {
+            $this->assertSame(3, $calls);
+            $this->assertSame(
+                'HTTP request failed after 3 attempt(s): unknown transport error',
+                $e->getMessage()
+            );
+        }
+    }
+
+    public function test_server_error_on_get_is_retried_but_not_on_post(): void
+    {
+        $getCalls = 0;
+        HttpTransport::fake(function () use (&$getCalls): array {
+            $getCalls++;
+
+            return ['status' => 503, 'body' => [], 'raw' => '{"message":"busy"}'];
+        });
+
+        try {
+            http_request('/api/cli/db/lists', 'GET');
+            $this->fail('An exhausted 5xx GET must throw.');
+        } catch (\RuntimeException $e) {
+            $this->assertSame(3, $getCalls);
+            $this->assertSame('API returned status 503: busy', $e->getMessage());
+        }
+
+        $postCalls = 0;
+        HttpTransport::fake(function () use (&$postCalls): array {
+            $postCalls++;
+
+            return ['status' => 503, 'body' => [], 'raw' => '{"message":"busy"}'];
+        });
+
+        try {
+            http_request('/api/cli/db/create', 'POST', ['name' => 'demo']);
+            $this->fail('An unacceptable status must throw.');
+        } catch (\RuntimeException $e) {
+            $this->assertSame(1, $postCalls, 'A mutation must never be replayed on 5xx.');
+        }
     }
 }

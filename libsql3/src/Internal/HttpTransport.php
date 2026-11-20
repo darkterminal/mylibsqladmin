@@ -13,6 +13,7 @@ namespace Libsql3\Internal;
 class HttpTransport
 {
     private static ?\Closure $fake = null;
+    private static ?string $lastError = null;
 
     public static function fake(callable $fn): void
     {
@@ -22,16 +23,28 @@ class HttpTransport
     public static function reset(): void
     {
         self::$fake = null;
+        self::$lastError = null;
+    }
+
+    /**
+     * cURL error from the most recent send(), or null when the last attempt
+     * succeeded at the transport level (or was served by a fake).
+     */
+    public static function lastError(): ?string
+    {
+        return self::$lastError;
     }
 
     /**
      * Null means a transport-level failure (cURL error); try_request() maps it
-     * to null, preserving that function's existing return contract.
+     * to null, and http_request() includes lastError() in the final exception.
      *
      * @return array{status:int, body:mixed, raw:string}|null
      */
     public function send(string $url, string $method, ?array $payload, array $headers): ?array
     {
+        self::$lastError = null;
+
         $method = strtoupper($method);
 
         $requestUrl = $url;
@@ -73,6 +86,8 @@ class HttpTransport
         curl_close($ch);
 
         if ($curlError) {
+            self::$lastError = $curlError;
+
             return null;
         }
 

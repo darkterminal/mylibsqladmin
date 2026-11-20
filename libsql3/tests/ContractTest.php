@@ -281,6 +281,60 @@ final class ContractTest extends Libsql3TestCase
         $this->assertStringContainsString('Using group: Group A (ID: 2)', $tester->getDisplay());
     }
 
+    public function test_db_create_surfaces_a_422_message_without_replaying_the_post(): void
+    {
+        $this->seedLogin();
+        $seen = [];
+        HttpTransport::fake(function (string $url, string $method) use (&$seen): array {
+            $seen[] = "$method $url";
+
+            if (str_ends_with($url, '/api/cli/team/lists')) {
+                return [
+                    'status' => 200,
+                    'body' => [],
+                    'raw' => json_encode(['data' => ['teams' => [
+                        ['id' => 3, 'name' => 'Team A', 'created_at' => '2026-01-01 00:00:00'],
+                    ]]]),
+                ];
+            }
+
+            if (str_ends_with($url, '/api/cli/group/lists')) {
+                return [
+                    'status' => 200,
+                    'body' => [],
+                    'raw' => json_encode(['data' => ['groups' => [
+                        ['id' => 2, 'name' => 'Group A'],
+                    ]]]),
+                ];
+            }
+
+            return [
+                'status' => 422,
+                'body' => [],
+                'raw' => json_encode([
+                    'message' => 'The group_id field is invalid.',
+                    'errors' => ['group_id' => ['The selected group id is invalid.']],
+                ]),
+            ];
+        });
+
+        $command = new DbCreate();
+        $command->setAppConfig([]);
+        $command->setApplication(new Shell(new Configuration()));
+        $tester = new CommandTester($command);
+        $exit = $tester->execute(['name' => 'demo', '--team' => '3', '--group' => '2']);
+
+        $this->assertSame(3, $exit);
+        $createCalls = array_values(array_filter(
+            $seen,
+            fn (string $request) => $request === 'POST https://example.invalid/api/cli/db/create'
+        ));
+        $this->assertCount(1, $createCalls, 'A 422 must not be retried as a mutation.');
+        $display = preg_replace('/\s+/', ' ', $tester->getDisplay());
+        $this->assertStringContainsString('API returned status 422: The group_id field is invalid.', $display);
+        $this->assertStringNotContainsString('Could not get a valid response after 2 retries', $display);
+    }
+
     public function test_group_create_accepts_numeric_team_id(): void
     {
         $this->seedLogin();
