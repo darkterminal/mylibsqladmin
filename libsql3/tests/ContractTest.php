@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Libsql3\Tests;
 
 use Libsql3\Cmd\AuthLogin;
+use Libsql3\Cmd\DbCreate;
 use Libsql3\Cmd\DbList;
 use Libsql3\Cmd\DbTokenCreate;
 use Libsql3\Cmd\DbShell;
+use Libsql3\Cmd\GroupCreate;
 use Libsql3\Cmd\TeamRestore;
 use Libsql3\Internal\HttpTransport;
 use Psy\Configuration;
@@ -212,5 +214,129 @@ final class ContractTest extends Libsql3TestCase
         $this->assertContains('GET https://example.invalid/api/cli/team/archives', $seen);
         $this->assertContains('POST https://example.invalid/api/cli/team/restore/7', $seen);
         $this->assertStringContainsString('Could not get a valid response after 2 retries', $tester->getDisplay());
+    }
+
+    public function test_db_create_accepts_numeric_team_and_group_ids(): void
+    {
+        $this->seedLogin();
+        $seen = $this->fakeCliApi(
+            [
+                ['id' => 3, 'name' => 'Team A', 'created_at' => '2026-01-01 00:00:00'],
+                ['id' => 9, 'name' => 'Team B', 'created_at' => '2026-01-02 00:00:00'],
+            ],
+            [
+                ['id' => 2, 'name' => 'Group A'],
+                ['id' => 8, 'name' => 'Group B'],
+            ]
+        );
+
+        $command = new DbCreate();
+        $command->setAppConfig([]);
+        $command->setApplication(new Shell(new Configuration()));
+        $tester = new CommandTester($command);
+        $exit = $tester->execute(['name' => 'demo', '--team' => '3', '--group' => '2']);
+
+        $this->assertSame(0, $exit, $tester->getDisplay());
+        $create = $this->requestTo($seen, '/api/cli/db/create');
+        $this->assertSame('3', (string) $create['payload']['team_id']);
+        $this->assertSame('2', (string) $create['payload']['group_id']);
+        $this->assertStringContainsString('Using team: Team A (ID: 3)', $tester->getDisplay());
+        $this->assertStringContainsString('Using group: Group A (ID: 2)', $tester->getDisplay());
+    }
+
+    public function test_group_create_accepts_numeric_team_id(): void
+    {
+        $this->seedLogin();
+        $seen = $this->fakeCliApi(
+            [
+                ['id' => 3, 'name' => 'Team A', 'created_at' => '2026-01-01 00:00:00'],
+                ['id' => 9, 'name' => 'Team B', 'created_at' => '2026-01-02 00:00:00'],
+            ],
+            []
+        );
+
+        $command = new GroupCreate();
+        $command->setAppConfig([]);
+        $command->setApplication(new Shell(new Configuration()));
+        $tester = new CommandTester($command);
+        $exit = $tester->execute(['name' => 'demo', '--team' => '3']);
+
+        $this->assertSame(0, $exit, $tester->getDisplay());
+        $create = $this->requestTo($seen, '/api/cli/group/create');
+        $this->assertSame('3', (string) $create['payload']['team_id']);
+    }
+
+    /**
+     * Installs a fake API with multiple teams/groups so "only one available"
+     * cannot accidentally satisfy a resolver test.
+     */
+    private function fakeCliApi(array $teams, array $groups): \ArrayObject
+    {
+        $seen = new \ArrayObject();
+
+        HttpTransport::fake(function (string $url, string $method, ?array $payload) use ($seen, $teams, $groups): array {
+            $seen[] = ['url' => $url, 'method' => $method, 'payload' => $payload];
+
+            if (str_ends_with($url, '/api/cli/team/lists')) {
+                return [
+                    'status' => 200,
+                    'body' => [],
+                    'raw' => json_encode(['data' => ['teams' => $teams]]),
+                ];
+            }
+
+            if (str_ends_with($url, '/api/cli/group/lists')) {
+                return [
+                    'status' => 200,
+                    'body' => [],
+                    'raw' => json_encode(['data' => ['groups' => $groups]]),
+                ];
+            }
+
+            if (str_ends_with($url, '/api/cli/db/create')) {
+                return [
+                    'status' => 201,
+                    'body' => [],
+                    'raw' => json_encode(['data' => ['database' => [
+                        'id' => 11,
+                        'name' => 'demo',
+                        'team_name' => 'Team A',
+                        'group_name' => 'Group A',
+                        'is_schema' => false,
+                        'created_at' => '2026-01-01 00:00:00',
+                    ]]]),
+                ];
+            }
+
+            if (str_ends_with($url, '/api/cli/group/create')) {
+                return [
+                    'status' => 200,
+                    'body' => [],
+                    'raw' => json_encode([
+                        'status' => true,
+                        'data' => ['group' => [
+                            'name' => 'demo',
+                            'team_name' => 'Team A',
+                            'created_at' => '2026-01-01 00:00:00',
+                        ]],
+                    ]),
+                ];
+            }
+
+            throw new \RuntimeException("Unexpected request: $method $url");
+        });
+
+        return $seen;
+    }
+
+    private function requestTo(\ArrayObject $seen, string $path): array
+    {
+        foreach ($seen as $request) {
+            if (str_ends_with($request['url'], $path)) {
+                return $request;
+            }
+        }
+
+        $this->fail("No request recorded for $path");
     }
 }

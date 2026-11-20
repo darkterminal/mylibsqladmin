@@ -104,11 +104,13 @@ class GroupCreate extends Command
         InputInterface $input,
         OutputInterface $output
     ): string {
-        // Use provided team option if available
+        // Console options are strings; API IDs are integers. Normalize both
+        // sides so --team=3 matches an integer id without rejecting names.
         if ($teamOption) {
             // Validate team exists
             foreach ($teams as $team) {
-                if ($team['id'] === $teamOption || $team['name'] === $teamOption) {
+                if ((string) $team['id'] === (string) $teamOption
+                    || (string) $team['name'] === (string) $teamOption) {
                     $io->text("Using team: <comment>{$team['name']}</comment> (ID: <comment>{$team['id']}</comment>)");
                     return $team['id'];
                 }
@@ -160,7 +162,8 @@ class GroupCreate extends Command
             }
 
             foreach ($teams as $team) {
-                if ($team['id'] === $value || $team['name'] === $value) {
+                if ((string) $team['id'] === (string) $value
+                    || (string) $team['name'] === (string) $value) {
                     return $team['id'];
                 }
             }

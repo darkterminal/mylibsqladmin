@@ -139,17 +139,14 @@ class DbCreate extends Command
         InputInterface $input,
         OutputInterface $output
     ): string {
-        // Convert to string if it's integer
-        if (is_int($teamOption)) {
-            $teamOption = (string) $teamOption;
-        }
-
-        // Use provided team option if available
+        // Console options are strings; API IDs are integers. Normalize both
+        // sides so --team=3 matches an integer id without rejecting names.
         if ($teamOption) {
             // Try to find team by ID or name
             $found = false;
             foreach ($teams as $team) {
-                if ($team['id'] === $teamOption || $team['name'] === $teamOption) {
+                if ((string) $team['id'] === (string) $teamOption
+                    || (string) $team['name'] === (string) $teamOption) {
                     $io->text("Using team: <comment>{$team['name']}</comment> (ID: <comment>{$team['id']}</comment>)");
                     return $team['id'];
                 }
@@ -162,7 +159,8 @@ class DbCreate extends Command
         if ($defaultTeam) {
             // Find default team by ID or name
             foreach ($teams as $team) {
-                if ($team['id'] === $defaultTeam || $team['name'] === $defaultTeam) {
+                if ((string) $team['id'] === (string) $defaultTeam
+                    || (string) $team['name'] === (string) $defaultTeam) {
                     $io->text("Using configured default team: {$team['name']} (ID: {$team['id']})");
                     return $team['id'];
                 }
@@ -244,17 +242,14 @@ class DbCreate extends Command
         InputInterface $input,
         OutputInterface $output
     ): string {
-        // Convert to string if it's integer
-        if (is_int($groupOption)) {
-            $groupOption = (string) $groupOption;
-        }
-
-        // Use provided group option if available
+        // Console options are strings; API IDs are integers. Normalize both
+        // sides so --group=2 matches an integer id without rejecting names.
         if ($groupOption) {
             // Try to find group by ID or name
             $found = false;
             foreach ($groups as $group) {
-                if ($group['id'] === $groupOption || $group['name'] === $groupOption) {
+                if ((string) $group['id'] === (string) $groupOption
+                    || (string) $group['name'] === (string) $groupOption) {
                     $io->text("Using group: <comment>{$group['name']}</comment> (ID: <comment>{$group['id']}</comment>)");
                     return $group['id'];
                 }
@@ -267,7 +262,8 @@ class DbCreate extends Command
         if ($defaultGroup) {
             // Find default group by ID or name
             foreach ($groups as $group) {
-                if ($group['id'] === $defaultGroup || $group['name'] === $defaultGroup) {
+                if ((string) $group['id'] === (string) $defaultGroup
+                    || (string) $group['name'] === (string) $defaultGroup) {
                     $io->text("Using configured default group: {$group['name']} (ID: {$group['id']})");
                     return $group['id'];
                 }
