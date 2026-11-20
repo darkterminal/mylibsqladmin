@@ -39,8 +39,13 @@ class App extends Application
     {
         parent::__construct('Libsql3', '1.0.0');
 
-        // Check if MylibSQLAdmin API Endpoint is set
-        if (empty(config_get('LIBSQL_API_ENDPOINT')) && config('api_endpoint') === false) {
+        // The endpoint check below reads the configuration table, so the local
+        // store must exist before the first config read on a clean HOME.
+        initialize_local_store();
+
+        // Check if MylibSQLAdmin API Endpoint is set. Consult the environment
+        // first so an exported endpoint short-circuits the SQLite lookup.
+        if (config('api_endpoint') === false && empty(config_get('LIBSQL_API_ENDPOINT'))) {
             throw new \Exception('LIBSQL_API_ENDPOINT environment variable is not set. Please set it and try again. For example: export LIBSQL_API_ENDPOINT="https://your-libsql-admin.io"');
         }
 

@@ -129,47 +129,9 @@ trait CliStore
 
     private function initializeDatabase(): void
     {
-        // Create storage directory if needed
-        $dbDir = dirname(config('db_path'));
-        if (!is_dir($dbDir)) {
-            mkdir($dbDir, 0700, true);
-        }
-
-        try {
-            $this->pdo = use_database();
-            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-            // Database Migrations
-            $this->pdo->exec("
-                CREATE TABLE IF NOT EXISTS " . config('tables.tokens') . " (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT NOT NULL,
-                    token TEXT NOT NULL,
-                    expires_at DATETIME NOT NULL,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            ");
-
-            // Create index for faster lookups
-            $this->pdo->exec("
-                CREATE INDEX IF NOT EXISTS idx_username 
-                ON " . config('tables.tokens') . " (username)
-            ");
-
-            // Create table for storing configuration
-            $this->pdo->exec("
-                CREATE TABLE IF NOT EXISTS " . config('tables.config') . " (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    key TEXT NOT NULL,
-                    value TEXT NOT NULL,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            ");
-
-            $this->dbInitialized = true;
-        } catch (PDOException $e) {
-            // Handle initialization errors
-            throw new \RuntimeException("Database initialization failed: " . $e->getMessage());
-        }
+        // Schema creation lives in initialize_local_store() so bootstrap code
+        // can prepare it before any command instance is constructed.
+        $this->pdo = initialize_local_store();
+        $this->dbInitialized = true;
     }
 }

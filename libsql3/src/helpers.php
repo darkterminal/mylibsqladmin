@@ -8,6 +8,59 @@ if (!function_exists('use_database')) {
     }
 }
 
+if (!function_exists('initialize_local_store')) {
+    /**
+     * Create the local store schema and return a ready PDO connection.
+     *
+     * Global on purpose: App calls it before any command instance exists, and a
+     * static method on the CliStore trait would collide with
+     * Symfony\Component\Console\Command::initialize() on every command class.
+     * Idempotent: CREATE TABLE IF NOT EXISTS makes repeated calls harmless.
+     */
+    function initialize_local_store(): PDO
+    {
+        // Tighten the directory even when it already exists with loose permissions.
+        $dbDir = dirname(config('db_path'));
+        if (!is_dir($dbDir)) {
+            mkdir($dbDir, 0700, true);
+        }
+        @chmod($dbDir, 0700);
+
+        try {
+            $pdo = use_database();
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS " . config('tables.tokens') . " (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT NOT NULL,
+                    token TEXT NOT NULL,
+                    expires_at DATETIME NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            ");
+
+            $pdo->exec("
+                CREATE INDEX IF NOT EXISTS idx_username 
+                ON " . config('tables.tokens') . " (username)
+            ");
+
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS " . config('tables.config') . " (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    key TEXT NOT NULL,
+                    value TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            ");
+
+            return $pdo;
+        } catch (PDOException $e) {
+            throw new \RuntimeException("Database initialization failed: " . $e->getMessage());
+        }
+    }
+}
+
 if (!function_exists('config_set')) {
     function config_set(string $key, $value): void
     {
