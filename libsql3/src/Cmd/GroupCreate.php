@@ -35,7 +35,24 @@ class GroupCreate extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $helper = $this->getHelper('question');
+        // A non-interactive run never prompts, so it must not require a helper
+        // set just to construct the command.
+        $helper = $input->isInteractive() ? $this->getHelper('question') : null;
+
+        // Without a TTY neither the name nor the team can be prompted.
+        if (!$input->isInteractive()) {
+            $name = $input->getArgument('name');
+            if ($name === null || trim((string) $name) === '') {
+                $io->error('Non-interactive mode requires a group name argument; prompts are disabled.');
+                return 4;
+            }
+            $teamOption = $input->getOption('team');
+            if ($teamOption === null || $teamOption === '') {
+                $io->error('Non-interactive mode requires --team; prompts are disabled.');
+                return 4;
+            }
+        }
+
         $userIdentifier = $this->getCurrentLoggedInUser() ?: null;
 
         if (!$userIdentifier) {
@@ -66,6 +83,10 @@ class GroupCreate extends Command
             if (empty($groupName)) {
                 $io->section('Create New Group');
                 $groupName = $helper->ask($input, $output, new Question('<question>Enter group name:</question> '));
+                if (!is_scalar($groupName) || trim((string) $groupName) === '') {
+                    throw new \RuntimeException('A group name is required; pass it as an argument.');
+                }
+                $groupName = (string) $groupName;
             }
 
             // Create group
@@ -172,6 +193,10 @@ class GroupCreate extends Command
         });
 
         $teamId = $helper->ask($input, $output, $question);
+        if (!is_scalar($teamId)) {
+            throw new \RuntimeException('No team selected; pass --team.');
+        }
+        $teamId = (string) $teamId;
         $io->text("Selected team: <comment>$teamId</comment>");
         return $teamId;
     }

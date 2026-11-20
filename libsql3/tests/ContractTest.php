@@ -585,6 +585,127 @@ final class ContractTest extends Libsql3TestCase
         $this->assertSame(['https://example.invalid/api/cli/db/delete/demo'], $seen);
     }
 
+    public function test_db_create_non_interactive_requires_explicit_team_and_group(): void
+    {
+        $this->seedLogin();
+
+        $tester = new CommandTester(new DbCreate());
+        $exit = $tester->execute(['name' => 'demo'], ['interactive' => false]);
+
+        $this->assertSame(4, $exit);
+        $display = $tester->getDisplay();
+        $this->assertStringContainsString('Non-interactive mode requires --team', $display);
+        $this->assertStringNotContainsString('TypeError', $display);
+    }
+
+    public function test_db_create_non_interactive_succeeds_with_explicit_choices(): void
+    {
+        $this->seedLogin();
+        $this->fakeCliApi(
+            [
+                ['id' => 1, 'name' => 'Team A', 'created_at' => '2026-01-01 00:00:00'],
+                ['id' => 2, 'name' => 'Team B', 'created_at' => '2026-01-02 00:00:00'],
+            ],
+            [['id' => 1, 'name' => 'Group A'], ['id' => 2, 'name' => 'Group B']]
+        );
+
+        $tester = new CommandTester(new DbCreate());
+        $exit = $tester->execute(
+            ['name' => 'demo', '--team' => 'Team A', '--group' => 'Group A'],
+            ['interactive' => false]
+        );
+
+        $this->assertSame(0, $exit, $tester->getDisplay());
+        $this->assertStringContainsString('created successfully', $tester->getDisplay());
+    }
+
+    public function test_group_create_non_interactive_requires_name_and_team(): void
+    {
+        $this->seedLogin();
+
+        $tester = new CommandTester(new GroupCreate());
+        $exit = $tester->execute([], ['interactive' => false]);
+
+        $this->assertSame(4, $exit);
+        $this->assertStringContainsString('group name argument', $tester->getDisplay());
+
+        $tester = new CommandTester(new GroupCreate());
+        $exit = $tester->execute(['name' => 'demo'], ['interactive' => false]);
+
+        $this->assertSame(4, $exit);
+        $this->assertStringContainsString('requires --team', $tester->getDisplay());
+        $this->assertStringNotContainsString('TypeError', $tester->getDisplay());
+    }
+
+    public function test_group_create_non_interactive_succeeds_with_explicit_values(): void
+    {
+        $this->seedLogin();
+        $this->fakeCliApi(
+            [['id' => 1, 'name' => 'Team A'], ['id' => 2, 'name' => 'Team B']],
+            []
+        );
+
+        $tester = new CommandTester(new GroupCreate());
+        $exit = $tester->execute(
+            ['name' => 'demo', '--team' => 'Team A'],
+            ['interactive' => false]
+        );
+
+        $this->assertSame(0, $exit, $tester->getDisplay());
+        $this->assertStringContainsString('created successfully', $tester->getDisplay());
+    }
+
+    public function test_team_restore_non_interactive_requires_id_and_force(): void
+    {
+        $this->seedLogin();
+
+        $tester = new CommandTester(new TeamRestore());
+        $exit = $tester->execute([], ['interactive' => false]);
+
+        $this->assertSame(4, $exit);
+        $this->assertStringContainsString('team_id argument', $tester->getDisplay());
+
+        $tester = new CommandTester(new TeamRestore());
+        $exit = $tester->execute(['team_id' => 7], ['interactive' => false]);
+
+        $this->assertSame(4, $exit);
+        $this->assertStringContainsString('requires --force', $tester->getDisplay());
+        $this->assertStringNotContainsString('TypeError', $tester->getDisplay());
+    }
+
+    public function test_team_restore_non_interactive_with_force_restores(): void
+    {
+        $this->seedLogin();
+        $seen = [];
+        HttpTransport::fake(function (string $url, string $method) use (&$seen): array {
+            $seen[] = [$method, $url];
+
+            if (str_ends_with($url, '/api/cli/team/archives')) {
+                return ['status' => 200, 'body' => [], 'raw' => json_encode(['data' => ['teams' => [
+                    ['id' => 7, 'name' => 'Archived Team', 'deleted_at' => '2026-01-01 00:00:00'],
+                ]]])];
+            }
+            if (str_contains($url, '/api/cli/team/restore/')) {
+                return ['status' => 200, 'body' => [], 'raw' => json_encode([
+                    'status' => true,
+                    'data' => ['team' => ['id' => 7, 'name' => 'Archived Team', 'description' => 'restored']],
+                ])];
+            }
+
+            throw new \RuntimeException("Unexpected request: $method $url");
+        });
+
+        $tester = new CommandTester(new TeamRestore());
+        $exit = $tester->execute(['team_id' => 7, '--force' => true], ['interactive' => false]);
+
+        $this->assertSame(0, $exit, $tester->getDisplay());
+        $this->assertStringContainsString('Team restored successfully', $tester->getDisplay());
+        $this->assertSame([
+            ['GET', 'https://example.invalid/api/cli/team/archives'],
+            ['POST', 'https://example.invalid/api/cli/team/restore/7'],
+        ], $seen);
+    }
+
     /**
      * Installs a fake API with multiple teams/groups so "only one available"
      * cannot accidentally satisfy a resolver test.

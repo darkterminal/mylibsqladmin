@@ -37,7 +37,22 @@ class DbCreate extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $helper = $this->getHelper('question');
+        // A non-interactive run never prompts, so it must not require a helper
+        // set just to construct the command.
+        $helper = $input->isInteractive() ? $this->getHelper('question') : null;
+
+        // Without a TTY the team/group pickers cannot run. Require explicit
+        // choices rather than letting a null answer become a TypeError.
+        if (!$input->isInteractive()) {
+            foreach (['team', 'group'] as $required) {
+                $value = $input->getOption($required);
+                if ($value === null || $value === '') {
+                    $io->error("Non-interactive mode requires --{$required}; prompts are disabled.");
+                    return 4;
+                }
+            }
+        }
+
         $userIdentifier = $this->getCurrentLoggedInUser() ?: null;
 
         if (!$userIdentifier) {
@@ -233,6 +248,10 @@ class DbCreate extends Command
         });
 
         $teamId = $helper->ask($input, $output, $question);
+        if (!is_scalar($teamId)) {
+            throw new \RuntimeException('No team selected; pass --team or set DEFAULT_TEAM.');
+        }
+        $teamId = (string) $teamId;
         $io->text("Selected team: <comment>$teamId</comment>");
         return $teamId;
     }
@@ -336,6 +355,10 @@ class DbCreate extends Command
         });
 
         $groupId = $helper->ask($input, $output, $question);
+        if (!is_scalar($groupId)) {
+            throw new \RuntimeException('No group selected; pass --group or set DEFAULT_GROUP.');
+        }
+        $groupId = (string) $groupId;
         $io->text("Selected group: <comment>$groupId</comment>");
         return $groupId;
     }
