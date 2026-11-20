@@ -222,8 +222,11 @@ Layout of the site source:
 - `_includes/` — head, header, sidebar, footer
 - `assets/css/site.css` — styles for the manual
 - `assets/css/landing.css` — styles for the landing page
+- `assets/js/site.js` — manual theme toggle, sidebar, TOC, search
 - `assets/js/landing.js` — theme toggle, mobile nav, copy button, GitHub stats
 - `assets/fonts/` — self-hosted Instrument Sans (SIL OFL, see `OFL.txt`)
+- `images/app-logo-icon.svg` — the app's `AppLogoIcon`, used by both headers
+- `favicon-light.*` / `favicon-dark.*` — the app's real favicons, theme-aware
 - `images/` — screenshots referenced by both the landing page and the manual
 
 `README.md` and `libsql3-man.md` are excluded from the Jekyll build on purpose;

@@ -23,8 +23,9 @@
             content="https://raw.githubusercontent.com/darkterminal/mylibsqladmin/main/docs/images/dashboard.png"
         />
 
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <!-- The same light/dark favicons the application serves. -->
+        <link rel="icon" id="site-favicon" href="/favicon-dark-32.png" type="image/png" />
+        <link rel="shortcut icon" href="/favicon-dark.ico" />
         <link
             rel="preload"
             href="/assets/fonts/instrument-sans-600.woff2"
@@ -68,7 +69,9 @@
         <header class="site-header">
             <div class="container header-inner">
                 <a class="brand" href="/" aria-label="MylibSQLAdmin home">
-                    <span class="brand__mark" aria-hidden="true">M</span>
+                    <span class="brand__mark" aria-hidden="true">
+                        <img src="/images/app-logo-icon.svg" alt="" width="18" height="20" />
+                    </span>
                     <span>MylibSQLAdmin</span>
                     <span class="brand__tag">libSQL console</span>
                 </a>
@@ -187,28 +190,6 @@
                                 fetchpriority="high"
                             />
                         </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Stack strip -->
-            <section class="stack-strip" aria-label="Technology stack">
-                <div class="container stack-strip__inner">
-                    <div class="stack-item">
-                        <img src="/images/icon-laravel-react.svg" alt="" width="26" height="26" />
-                        <span>Laravel 13<span>backend</span></span>
-                    </div>
-                    <div class="stack-item">
-                        <img src="/images/icon-typescript.svg" alt="" width="26" height="26" />
-                        <span>TypeScript 5.9<span>frontend</span></span>
-                    </div>
-                    <div class="stack-item">
-                        <img src="/images/icon-php.svg" alt="" width="26" height="26" />
-                        <span>PHP 8.4<span>runtime</span></span>
-                    </div>
-                    <div class="stack-item">
-                        <img src="/images/icon-docker.svg" alt="" width="26" height="26" />
-                        <span>Docker<span>deployment</span></span>
                     </div>
                 </div>
             </section>
@@ -495,7 +476,9 @@
                 <div class="footer__grid">
                     <div class="footer__about">
                         <a class="brand" href="/">
-                            <span class="brand__mark" aria-hidden="true">M</span>
+                            <span class="brand__mark" aria-hidden="true">
+                                <img src="/images/app-logo-icon.svg" alt="" width="18" height="20" />
+                            </span>
                             <span>MylibSQLAdmin</span>
                         </a>
                         <p>

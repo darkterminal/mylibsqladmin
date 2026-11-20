@@ -307,6 +307,16 @@ a:hover {
     font-weight: 700;
     line-height: 1;
 }
+
+/* The exact AppLogoIcon the application renders in its header. The asset is
+   black; invert it in dark mode to match the app's text-white variant. */
+.brand__mark img {
+    width: 18px;
+    height: 20px;
+}
+[data-theme="dark"] .brand__mark img {
+    filter: invert(1);
+}
 .brand__tag {
     margin-left: 4px;
     padding-left: 12px;
@@ -493,46 +503,6 @@ a:hover {
 .shot-frame img {
     width: 100%;
     height: auto;
-}
-
-/* --------------------------------------------------------------------------
-   Stack strip — a row, not a card grid
-   -------------------------------------------------------------------------- */
-
-.stack-strip {
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-}
-.stack-strip__inner {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px 28px;
-    min-height: 86px;
-    padding-top: 16px;
-    padding-bottom: 16px;
-}
-.stack-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 11px;
-    color: var(--muted);
-    font-size: 0.875rem;
-    font-weight: 500;
-}
-.stack-item img {
-    width: 26px;
-    height: 26px;
-    border-radius: var(--radius-sm);
-}
-.stack-item span span {
-    display: block;
-    color: var(--faint);
-    font-family: var(--font-mono);
-    font-size: 0.6875rem;
-    letter-spacing: 0.02em;
 }
 
 /* --------------------------------------------------------------------------

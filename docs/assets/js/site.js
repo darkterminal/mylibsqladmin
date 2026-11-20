@@ -13,16 +13,26 @@
         button.setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
     }
 
+    function syncFavicon() {
+        var isDark = root.getAttribute('data-theme') === 'dark';
+        var icon = document.getElementById('site-favicon');
+        var shortcut = document.querySelector('link[rel="shortcut icon"]');
+        if (icon) icon.href = isDark ? '/favicon-dark-32.png' : '/favicon-light-32.png';
+        if (shortcut) shortcut.href = isDark ? '/favicon-dark.ico' : '/favicon-light.ico';
+    }
+
     document.querySelectorAll('[data-theme-toggle]').forEach(function (button) {
         button.addEventListener('click', function () {
             var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
             root.setAttribute('data-theme', next);
             try { localStorage.setItem('docs-theme', next); } catch (e) { /* private mode */ }
             syncThemeButton();
+            syncFavicon();
         });
     });
 
     syncThemeButton();
+    syncFavicon();
 
     /* -------------------------------------------------------------- sidebar */
     var sidebar = document.querySelector('[data-sidebar]');

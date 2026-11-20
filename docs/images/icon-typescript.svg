@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="TypeScript">
-    <rect width="64" height="64" rx="14" fill="#1d4ed8"/>
-    <rect x="8" y="12" width="48" height="40" rx="4" fill="#2563eb"/>
-    <path d="M15 37h14v5H21v8h-6zM34 50v-5h6v-2h-6v-4h6v-2h-6v-5h12v7h-6v2h6v9z" fill="#ffffff"/>
-</svg>

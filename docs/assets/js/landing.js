@@ -18,6 +18,10 @@
                 theme === "dark" ? "Switch to light theme" : "Switch to dark theme"
             );
         }
+        var icon = document.getElementById("site-favicon");
+        var shortcut = document.querySelector('link[rel="shortcut icon"]');
+        if (icon) icon.href = theme === "dark" ? "/favicon-dark-32.png" : "/favicon-light-32.png";
+        if (shortcut) shortcut.href = theme === "dark" ? "/favicon-dark.ico" : "/favicon-light.ico";
     }
 
     if (toggle) {
@@ -31,6 +35,10 @@
             }
         });
     }
+
+    // The inline head script already set the attribute before paint; this
+    // first pass only aligns the icon and the button label with that choice.
+    applyTheme(root.getAttribute("data-theme") || "dark");
 
     /* ------------------------------------------------------ mobile nav */
     var navToggle = document.getElementById("nav-toggle");
