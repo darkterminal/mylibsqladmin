@@ -146,6 +146,21 @@ test('super admin can list users through the CLI without leaking roles of others
     expect($usernames)->toContain($admin->username);
 });
 
+test('cli endpoints reject a deactivated super admin with a live token', function () {
+    $admin = cliSuperAdmin();
+    $token = $admin->createToken('cli-auth-token', [], now()->addDays(30))->plainTextToken;
+    $admin->deactivate();
+
+    expect($admin->fresh()->is_active)->toBeFalse();
+
+    $this->withHeaders([
+        'Authorization' => "Bearer {$token}",
+        'X-Request-Source' => 'CLI',
+    ])->getJson('/api/cli/team/lists')
+        ->assertForbidden()
+        ->assertJsonPath('error', 'This account has been deactivated');
+});
+
 test('cli logout revokes the presented token', function () {
     $admin = cliSuperAdmin();
 

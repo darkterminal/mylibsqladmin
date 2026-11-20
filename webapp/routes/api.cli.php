@@ -20,13 +20,20 @@ use App\Http\Controllers\Cli\CliTeamEditController;
 use App\Http\Controllers\Cli\CliTeamFinderController;
 use App\Http\Controllers\Cli\CliTeamListController;
 use App\Http\Controllers\Cli\CliUserListController;
+use App\Http\Middleware\EnsureActiveUser;
 use Illuminate\Http\Request;
 
 Route::group(['prefix' => '/api/cli'], function () {
     Route::post('/login', CliLoginController::class);
     Route::post('/logout', CliLogoutController::class);
 
-    Route::middleware(['auth:sanctum', 'ensureCliRequest'])->group(function () {
+    // This file is required from routes/web.php, so web-group middleware also
+    // applies. EnsureActiveUser is session-specific (auth()->logout() + session
+    // flush) and must not run on token-authenticated CLI routes; the deactivation
+    // gate lives in EnsureCliRequest instead.
+    Route::middleware(['auth:sanctum', 'ensureCliRequest'])
+        ->withoutMiddleware(EnsureActiveUser::class)
+        ->group(function () {
         Route::group(['prefix' => '/db'], function () {
             Route::post('/create', CliCreateNewDatabaseController::class);
             Route::delete('/delete/{database_name}', CliDeleteDatabaseController::class);

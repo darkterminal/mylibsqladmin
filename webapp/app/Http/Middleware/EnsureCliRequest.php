@@ -25,6 +25,13 @@ class EnsureCliRequest
             return response()->json(['error' => 'Unauthenticated'], 401);
         }
 
+        // Sanctum tokens survive deactivation for up to 30 days. The web group
+        // has EnsureActiveUser, but CLI routes are stateless and need their own
+        // immediate gate — deactivated admins lose CLI powers at once.
+        if (!$user->is_active) {
+            return response()->json(['error' => 'This account has been deactivated'], 403);
+        }
+
         if (!$user->hasRole('Super Admin')) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
