@@ -32,6 +32,14 @@ function cliSuperAdmin(): User
     return $user;
 }
 
+function cliContractHeaders(string $token): array
+{
+    return [
+        'Authorization' => "Bearer {$token}",
+        'X-Request-Source' => 'CLI',
+    ];
+}
+
 
 test('cli login issues a Sanctum token for a super admin', function () {
     $admin = cliSuperAdmin();
@@ -181,4 +189,36 @@ test('cli logout revokes the presented token', function () {
         'Authorization' => "Bearer {$token}",
         'X-Request-Source' => 'CLI',
     ])->getJson('/api/cli/team/lists')->assertUnauthorized();
+});
+
+test('super admin can list archived teams through the CLI', function () {
+    $admin = cliSuperAdmin();
+    $team = Team::create(['name' => 'Archived CLI Team', 'description' => 'old']);
+    $team->delete();
+
+    $token = $admin->createToken('cli-auth-token', [], now()->addDays(30))->plainTextToken;
+
+    $this->withHeaders(cliContractHeaders($token))->getJson('/api/cli/team/archives')
+        ->assertOk()
+        ->assertJsonPath('status', true)
+        ->assertJsonPath('data.teams.0.id', $team->id)
+        ->assertJsonPath('data.teams.0.name', 'Archived CLI Team');
+});
+
+test('super admin can restore an archived team through the CLI', function () {
+    $admin = cliSuperAdmin();
+    $team = Team::create(['name' => 'Restore CLI Team', 'description' => 'old']);
+    $team->delete();
+
+    $token = $admin->createToken('cli-auth-token', [], now()->addDays(30))->plainTextToken;
+
+    $this->withHeaders(cliContractHeaders($token))
+        ->postJson("/api/cli/team/restore/{$team->id}")
+        ->assertOk()
+        ->assertJsonPath('status', true)
+        ->assertJsonPath('data.team.id', $team->id)
+        ->assertJsonPath('data.team.name', 'Restore CLI Team');
+
+    expect(Team::find($team->id))->not->toBeNull()
+        ->and(Team::onlyTrashed()->find($team->id))->toBeNull();
 });

@@ -81,9 +81,16 @@ class TeamRestore extends Command
             // Restore the team
             $result = $this->restoreTeam($team['id'], $userIdentifier, $token);
 
-            if ($result['status'] !== true) {
-                $error = $result['data']['message'] ?? $result['raw'];
+            if (!isset($result['status']) || $result['status'] !== true) {
+                $error = $result['data']['message'] ?? $result['message'] ?? null;
+                if (!is_string($error) || $error === '') {
+                    $error = 'Unexpected response from server';
+                }
                 throw new \Exception("API error: $error");
+            }
+
+            if (!isset($result['data']['team']) || !is_array($result['data']['team'])) {
+                throw new \Exception('Invalid API response format');
             }
 
             $restoredTeam = $result['data']['team'];
@@ -186,11 +193,11 @@ class TeamRestore extends Command
             "Authorization: Bearer $token"
         ]);
 
-        $response = $request['raw'];
-        $httpCode = $request['status'];
+        $response = $request['raw'] ?? '';
+        $httpCode = $request['status'] ?? 0;
 
         if ($httpCode !== 200) {
-            throw new \Exception("API returned status $httpCode: " . substr($response, 0, 200));
+            throw new \Exception("API returned status $httpCode: " . substr((string) $response, 0, 200));
         }
 
         $body = json_decode($response, true);

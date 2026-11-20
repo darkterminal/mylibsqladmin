@@ -17,8 +17,10 @@ use App\Http\Controllers\Cli\CliTeamCreateController;
 use App\Http\Controllers\Cli\CliTeamDeleteController;
 use App\Http\Controllers\Cli\CliTeamDetailController;
 use App\Http\Controllers\Cli\CliTeamEditController;
+use App\Http\Controllers\Cli\CliTeamArchiveListController;
 use App\Http\Controllers\Cli\CliTeamFinderController;
 use App\Http\Controllers\Cli\CliTeamListController;
+use App\Http\Controllers\Cli\CliTeamRestoreController;
 use App\Http\Controllers\Cli\CliUserListController;
 use App\Http\Middleware\EnsureActiveUser;
 use Illuminate\Http\Request;
@@ -53,6 +55,10 @@ Route::group(['prefix' => '/api/cli'], function () {
 
         Route::group(['prefix' => '/team'], function () {
             Route::get('/lists', CliTeamListController::class);
+            // GET /api/cli/team/archives
+            Route::get('/archives', CliTeamArchiveListController::class);
+            // POST /api/cli/team/restore/{team_id}
+            Route::post('/restore/{team_id}', CliTeamRestoreController::class);
             Route::get('/find/{team_name}', CliTeamFinderController::class);
             Route::get('/get/{team_id}', CliTeamDetailController::class);
             Route::post('/create', CliTeamCreateController::class);

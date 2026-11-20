@@ -171,11 +171,8 @@ final class ContractTest extends Libsql3TestCase
     }
 
     /**
-     * @todo F-05: team:restore calls two routes absent from api.cli.php. This
-     * test pins the URLs and the current outcome: the 404 is swallowed by
-     * http_request()'s 200-only retry loop, so the user sees a generic retry
-     * error rather than a useful API message. Plan 005 must add the routes and
-     * flip the expected outcome.
+     * F-05 fixed: both routes now exist on the platform and the CLI consumes
+     * the boolean status envelope from CliTeamRestoreController.
      */
     public function test_team_restore_calls_archives_and_restore_routes(): void
     {
@@ -196,10 +193,14 @@ final class ContractTest extends Libsql3TestCase
                 ];
             }
 
-            return ['status' => 404, 'body' => [], 'raw' => json_encode([
-                'status' => false,
-                'data' => ['message' => 'route missing'],
-            ])];
+            return [
+                'status' => 200,
+                'body' => [],
+                'raw' => json_encode([
+                    'status' => true,
+                    'data' => ['team' => ['id' => 7, 'name' => 'Archived Team', 'description' => 'restored']],
+                ]),
+            ];
         });
 
         $command = new TeamRestore();
@@ -211,10 +212,45 @@ final class ContractTest extends Libsql3TestCase
         $tester->setInputs(['y']);
         $exit = $tester->execute(['team_id' => '7']);
 
-        $this->assertSame(3, $exit);
+        $this->assertSame(0, $exit, $tester->getDisplay());
         $this->assertContains('GET https://example.invalid/api/cli/team/archives', $seen);
         $this->assertContains('POST https://example.invalid/api/cli/team/restore/7', $seen);
-        $this->assertStringContainsString('Could not get a valid response after 2 retries', $tester->getDisplay());
+        $this->assertStringContainsString('Team restored successfully!', $tester->getDisplay());
+    }
+
+    public function test_team_restore_surfaces_a_false_status_envelope(): void
+    {
+        $this->seedLogin();
+        HttpTransport::fake(function (string $url): array {
+            if (str_ends_with($url, '/api/cli/team/archives')) {
+                return [
+                    'status' => 200,
+                    'body' => [],
+                    'raw' => json_encode(['data' => ['teams' => [[
+                        'id' => 7,
+                        'name' => 'Archived Team',
+                        'deleted_at' => '2026-01-01 00:00:00',
+                    ]]]]),
+                ];
+            }
+
+            return [
+                'status' => 200,
+                'body' => [],
+                'raw' => json_encode(['status' => false, 'data' => ['message' => 'restore denied']]),
+            ];
+        });
+
+        $command = new TeamRestore();
+        $command->setAppConfig([]);
+        $command->setApplication(new Shell(new Configuration()));
+        $tester = new CommandTester($command);
+        $tester->setInputs(['y']);
+        $exit = $tester->execute(['team_id' => '7']);
+
+        $this->assertSame(3, $exit);
+        $this->assertStringContainsString('API error: restore denied', $tester->getDisplay());
+        $this->assertStringNotContainsString('Undefined array key', $tester->getDisplay());
     }
 
     public function test_db_create_accepts_numeric_team_and_group_ids(): void
