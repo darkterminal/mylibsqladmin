@@ -164,7 +164,9 @@ if (!function_exists('config_get')) {
         $db = use_database();
         $stmt = $db->prepare("SELECT value FROM " . config('tables.config') . " WHERE key = :key");
         $stmt->execute(['key' => $key]);
-        return $stmt->fetchColumn();
+
+        $value = $stmt->fetchColumn();
+        return $value === false ? null : (string) $value;
     }
 }
 
@@ -246,8 +248,8 @@ if (!function_exists('http_request')) {
         array $headers = [],
         int|array $okCodes = 200,
     ): array {
-        // config_get() returns "" for a missing row, so `??` alone never
-        // reaches the env fallback. Treat both null and "" as unset here.
+        // A missing row is null now; legacy stores may still hold "".
+        // Treat both as unset so the env/config fallback stays reachable.
         $stored = config_get('LIBSQL_API_ENDPOINT');
         $endpoint = ($stored !== null && trim($stored) !== '') ? $stored : config('api_endpoint');
 
