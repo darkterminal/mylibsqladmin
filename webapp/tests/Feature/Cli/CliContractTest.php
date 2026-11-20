@@ -239,6 +239,23 @@ test('super admin can restore an archived team through the CLI', function () {
         ->and(Team::onlyTrashed()->find($team->id))->toBeNull();
 });
 
+test('db:create returns field-level 422 details for an invalid group_id', function () {
+    $admin = cliSuperAdmin();
+    $team = Team::create(['name' => 'Create DB Team', 'description' => 't']);
+    $token = $admin->createToken('cli-auth-token', [], now()->addDays(30))->plainTextToken;
+
+    $this->withHeaders(cliContractHeaders($token))
+        ->postJson('/api/cli/db/create', [
+            'name' => 'new-db',
+            'is_schema' => false,
+            'group_id' => 999999,
+            'team_id' => $team->id,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('group_id')
+        ->assertJsonMissingPath('data.database.id');
+});
+
 test('db:list includes a database shared with the caller through a grant', function () {
     $caller = cliSuperAdmin();
     $owner = User::factory()->create();

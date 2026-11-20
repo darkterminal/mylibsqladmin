@@ -110,19 +110,22 @@ class DbCreate extends Command
             $dbData = $response['data']['database'];
             $io->success("Database '{$dbData['name']}' created successfully!");
 
-            $io->table(
-                ['ID', 'Name', 'Team', 'Group', 'Schema', 'Created At'],
-                [
-                    [
-                        $dbData['id'],
-                        $dbData['name'],
-                        $dbData['team_name'] ?? $dbData['team_id'],
-                        $dbData['group_name'] ?? $dbData['group_id'],
-                        $dbData['is_schema'] === true ? 'schema' : ($dbData['is_schema'] === false ? 'standalone' : $dbData['is_schema']),
-                        $dbData['created_at']
-                    ]
-                ]
-            );
+            // The platform no longer promises an id in this envelope. Show the
+            // column only when a real one is present — never synthesize one.
+            $headers = ['Name', 'Team', 'Group', 'Schema', 'Created At'];
+            $row = [
+                $dbData['name'],
+                $dbData['team_name'] ?? $dbData['team_id'],
+                $dbData['group_name'] ?? $dbData['group_id'],
+                $dbData['is_schema'] === true ? 'schema' : ($dbData['is_schema'] === false ? 'standalone' : $dbData['is_schema']),
+                $dbData['created_at'] ?? '',
+            ];
+            if (array_key_exists('id', $dbData) && $dbData['id'] !== null && $dbData['id'] !== '') {
+                array_unshift($headers, 'ID');
+                array_unshift($row, $dbData['id']);
+            }
+
+            $io->table($headers, [$row]);
 
             return 0;
         } catch (\Exception $e) {

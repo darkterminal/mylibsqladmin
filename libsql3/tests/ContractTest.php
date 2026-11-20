@@ -335,6 +335,56 @@ final class ContractTest extends Libsql3TestCase
         $this->assertStringNotContainsString('Could not get a valid response after 2 retries', $display);
     }
 
+    public function test_db_create_omits_the_id_column_when_the_platform_returns_no_id(): void
+    {
+        $this->seedLogin();
+        HttpTransport::fake(function (string $url): array {
+            if (str_ends_with($url, '/api/cli/team/lists')) {
+                return [
+                    'status' => 200,
+                    'body' => [],
+                    'raw' => json_encode(['data' => ['teams' => [
+                        ['id' => 3, 'name' => 'Team A', 'created_at' => '2026-01-01 00:00:00'],
+                    ]]]),
+                ];
+            }
+
+            if (str_ends_with($url, '/api/cli/group/lists')) {
+                return [
+                    'status' => 200,
+                    'body' => [],
+                    'raw' => json_encode(['data' => ['groups' => [
+                        ['id' => 2, 'name' => 'Group A'],
+                    ]]]),
+                ];
+            }
+
+            return [
+                'status' => 201,
+                'body' => [],
+                'raw' => json_encode(['data' => ['database' => [
+                    'name' => 'demo',
+                    'team_name' => 'Team A',
+                    'group_name' => 'Group A',
+                    'is_schema' => false,
+                    'created_at' => '2026-01-01 00:00:00',
+                ]]]),
+            ];
+        });
+
+        $command = new DbCreate();
+        $command->setAppConfig([]);
+        $command->setApplication(new Shell(new Configuration()));
+        $tester = new CommandTester($command);
+        $exit = $tester->execute(['name' => 'demo', '--team' => '3', '--group' => '2']);
+
+        $this->assertSame(0, $exit, $tester->getDisplay());
+        $display = preg_replace('/\s+/', ' ', $tester->getDisplay());
+        $this->assertDoesNotMatchRegularExpression('/ID\s*[│|]\s*Name/', $display);
+        $this->assertStringContainsString('Name', $display);
+        $this->assertStringContainsString("Database 'demo' created successfully!", $display);
+    }
+
     public function test_group_create_accepts_numeric_team_id(): void
     {
         $this->seedLogin();
