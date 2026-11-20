@@ -12,7 +12,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 final class StubDbShell extends DbShell
 {
-    /** @var array{tursoPath:string, url:string} */
+    /** @var array{tursoPath:string, url:string, command:string} */
     public array $captured = [];
     public bool $tursoMissing = false;
 
@@ -23,7 +23,11 @@ final class StubDbShell extends DbShell
 
     protected function runTursoShell(string $tursoPath, string $url, OutputInterface $output): void
     {
-        $this->captured = ['tursoPath' => $tursoPath, 'url' => $url];
+        $this->captured = [
+            'tursoPath' => $tursoPath,
+            'url' => $url,
+            'command' => $this->buildTursoCommand($tursoPath, $url),
+        ];
     }
 }
 
@@ -79,6 +83,29 @@ final class DbShellTest extends Libsql3TestCase
         $this->assertStringContainsString('process argument', $display);
         $this->assertStringContainsString('db:token:create demo', $display);
         $this->assertStringNotContainsString('minted-secret', $display);
+    }
+
+    public function test_db_shell_child_command_currently_carries_the_token_in_argv(): void
+    {
+        // KNOWN EXPOSURE (Plan 003, D-22): this characterization test documents
+        // the argv transport that Plan 009 Step 3 must invert. The exact command
+        // string is the assertion seam — the display redaction is not enough.
+        $this->seedLogin();
+        config_set('LIBSQL_DATABASE_ENDPOINT', 'https://db.example.invalid:8080');
+        $calls = 0;
+        $this->fakeMint($calls);
+
+        $command = new StubDbShell();
+        $tester = new CommandTester($command);
+        $exit = $tester->execute(['database_name' => 'demo']);
+
+        $this->assertSame(0, $exit);
+        $this->assertSame(1, $calls);
+        $this->assertSame(
+            "/bin/sh db shell 'https://demo.db.example.invalid:8080?authToken=minted-secret'",
+            $command->captured['command']
+        );
+        $this->assertStringContainsString('authToken=minted-secret', $command->captured['command']);
     }
 
     public function test_db_shell_uses_scheme_default_port_when_endpoint_has_none(): void

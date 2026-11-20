@@ -222,6 +222,14 @@ class DbShell extends Command
     }
 
     /**
+     * Protected so tests can assert the exact child command without launching it.
+     */
+    protected function buildTursoCommand(string $tursoPath, string $url): string
+    {
+        return "{$tursoPath} db shell " . escapeshellarg($url);
+    }
+
+    /**
      * Protected so tests can capture the child command without launching it.
      */
     protected function runTursoShell(string $tursoPath, string $url, OutputInterface $output): void
@@ -232,7 +240,7 @@ class DbShell extends Command
             2 => STDERR
         ];
 
-        $process = proc_open("{$tursoPath} db shell " . escapeshellarg($url), $descriptorSpec, $pipes);
+        $process = proc_open($this->buildTursoCommand($tursoPath, $url), $descriptorSpec, $pipes);
 
         if (!is_resource($process)) {
             throw new \RuntimeException('Failed to open Turso shell');
