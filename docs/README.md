@@ -198,3 +198,31 @@ created for local testing only — **never set it in production**. Credentials
 are generated per install and written to `storage/app/bootstrap-credentials.txt`
 by the entrypoint on first boot (re-read it once, then delete it).
 
+## Documentation site (Jekyll)
+
+This directory is also a Jekyll site: `index.html` is the product landing page,
+and `user-manual/` is the role-based user manual (Super Admin, Team Manager,
+Database Maintainer, Member) with screenshots.
+
+```bash
+# from the repository root
+gem install jekyll          # once
+jekyll build -s docs -d /tmp/mylibsqladmin-docs
+jekyll serve -s docs --livereload   # http://127.0.0.1:4000
+```
+
+The site is self-contained: no theme gem, no plugins, no CDN for the manual
+styles. GitHub Pages can serve it straight from `/docs` on `main`
+(Settings → Pages → Deploy from a branch → `main` / `/docs`).
+
+Layout of the site source:
+
+- `_data/nav.yml` — sidebar sections and previous/next order
+- `_layouts/manual.html` — manual shell (header, sidebar, content, TOC, pager)
+- `_includes/` — head, header, sidebar, footer
+- `assets/css/site.css` — styles for the manual
+- `images/` — screenshots referenced by the manual
+
+`README.md` and `libsql3-man.md` are excluded from the Jekyll build on purpose;
+they stay repository-facing guides and are not part of the published site.
+

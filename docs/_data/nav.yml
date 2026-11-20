@@ -1,0 +1,36 @@
+- title: Overview
+  url: /user-manual/
+  section: Introduction
+- title: Getting started
+  url: /user-manual/getting-started/
+  section: Introduction
+- title: Roles at a glance
+  url: /user-manual/roles/
+  section: Role guides
+- title: Super Admin
+  url: /user-manual/roles/super-admin/
+  section: Role guides
+- title: Team Manager
+  url: /user-manual/roles/team-manager/
+  section: Role guides
+- title: Database Maintainer
+  url: /user-manual/roles/database-maintainer/
+  section: Role guides
+- title: Member
+  url: /user-manual/roles/member/
+  section: Role guides
+- title: Databases & groups
+  url: /user-manual/guides/databases/
+  section: Guides
+- title: Tokens
+  url: /user-manual/guides/tokens/
+  section: Guides
+- title: Database Studio
+  url: /user-manual/guides/studio/
+  section: Guides
+- title: Teams & members
+  url: /user-manual/guides/teams/
+  section: Guides
+- title: Permission matrix
+  url: /user-manual/reference/permissions/
+  section: Reference

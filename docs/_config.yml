@@ -1,0 +1,35 @@
+title: MylibSQLAdmin
+tagline: Modern libSQL database management
+description: >-
+  MylibSQLAdmin is an open-source web GUI for managing libSQL databases.
+  This site is the product landing page and the complete user manual.
+url: ""
+baseurl: ""
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    block:
+      line_numbers: false
+
+permalink: pretty
+
+# The repository-facing markdown files stay on GitHub; the site serves the
+# landing page and the manual only.
+exclude:
+  - README.md
+  - libsql3-man.md
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+  - .jekyll-cache
+  - _site
+
+defaults:
+  - scope:
+      path: "user-manual"
+    values:
+      layout: manual
