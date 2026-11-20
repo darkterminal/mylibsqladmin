@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import AppLayout from "@/layouts/app-layout";
+import { usePermission } from "@/lib/auth";
 import {
     AllowedUser,
     PaginatedResults,
@@ -41,6 +42,13 @@ export default function DatabaseToken({
         if (typeof window === 'undefined') return '';
         return new URLSearchParams(window.location.search).get('search') ?? '';
     });
+
+    // The route and the policy already enforce create-database-tokens. Hide the
+    // entry point for roles that only have view-database-tokens instead of
+    // offering an action the server will always reject with 403.
+    const { can } = usePermission();
+    const canCreateToken = can('create-database-tokens');
+    const viewOnlyHint = 'Your role can view tokens but cannot generate new ones. Ask a Database Maintainer or Super Admin to create a database token.';
 
     // Debounced server-side search — keeps pagination honest across pages.
     useEffect(() => {
@@ -93,17 +101,23 @@ export default function DatabaseToken({
                                     </button>
                                 )}
                             </div>
-                            <ModalCreateToken mostUsedDatabases={mostUsedDatabases} users={allUsers}>
-                                <Button variant="default">
-                                    <AppTooltip text="Generate New Token">
-                                        <span className="inline-flex items-center gap-1.5">
-                                            <Plus className="h-4 w-4" />
-                                            <span className="hidden sm:inline">Generate New Token</span>
-                                            <span className="sm:hidden">Generate</span>
-                                        </span>
-                                    </AppTooltip>
-                                </Button>
-                            </ModalCreateToken>
+                            {canCreateToken ? (
+                                <ModalCreateToken mostUsedDatabases={mostUsedDatabases} users={allUsers}>
+                                    <Button variant="default">
+                                        <AppTooltip text="Generate New Token">
+                                            <span className="inline-flex items-center gap-1.5">
+                                                <Plus className="h-4 w-4" />
+                                                <span className="hidden sm:inline">Generate New Token</span>
+                                                <span className="sm:hidden">Generate</span>
+                                            </span>
+                                        </AppTooltip>
+                                    </Button>
+                                </ModalCreateToken>
+                            ) : (
+                                <span className="text-xs text-muted-foreground" role="note">
+                                    View-only access
+                                </span>
+                            )}
                         </div>
                     </CardHeader>
                     <CardContent className="min-w-0">
@@ -117,12 +131,18 @@ export default function DatabaseToken({
                                     Tokens let applications connect to your databases. A full-access and a
                                     read-only pair is generated — you see them once, at creation.
                                 </p>
-                                <ModalCreateToken mostUsedDatabases={mostUsedDatabases} users={allUsers}>
-                                    <Button>
-                                        <Plus className="h-4 w-4" aria-hidden="true" />
-                                        Generate your first token
-                                    </Button>
-                                </ModalCreateToken>
+                                {canCreateToken ? (
+                                    <ModalCreateToken mostUsedDatabases={mostUsedDatabases} users={allUsers}>
+                                        <Button>
+                                            <Plus className="h-4 w-4" aria-hidden="true" />
+                                            Generate your first token
+                                        </Button>
+                                    </ModalCreateToken>
+                                ) : (
+                                    <p className="max-w-md text-sm text-muted-foreground" role="note">
+                                        {viewOnlyHint}
+                                    </p>
+                                )}
                             </div>
                         ) : (
                             <>
