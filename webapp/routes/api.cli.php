@@ -42,6 +42,7 @@ Route::group(['prefix' => '/api/cli'], function () {
             Route::get('/archives', CliDatabaseArchiveController::class);
             Route::post('/restore/{database_name}', CliResotreDatabaseController::class);
             Route::delete('/force-delete/{database_name}', CliForceDeleteDatabaseController::class);
+            // GET /api/cli/db/token/{database_name}
             Route::get('/token/{database_name}', CliGetTokenByDatabaseNameController::class);
             Route::post('/token/mint/{database_name}', CliMintDatabaseTokenController::class);
             Route::get('/lists', CliDatabaseListController::class);
@@ -59,6 +60,7 @@ Route::group(['prefix' => '/api/cli'], function () {
             Route::get('/archives', CliTeamArchiveListController::class);
             // POST /api/cli/team/restore/{team_id}
             Route::post('/restore/{team_id}', CliTeamRestoreController::class);
+            // GET /api/cli/team/find/{team_name}
             Route::get('/find/{team_name}', CliTeamFinderController::class);
             Route::get('/get/{team_id}', CliTeamDetailController::class);
             Route::post('/create', CliTeamCreateController::class);

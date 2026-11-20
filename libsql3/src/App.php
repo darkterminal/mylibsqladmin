@@ -15,12 +15,14 @@ use Libsql3\Cmd\DbList;
 use Libsql3\Cmd\DbRestore;
 use Libsql3\Cmd\DbShell;
 use Libsql3\Cmd\DbTokenCreate;
+use Libsql3\Cmd\DbTokenStatus;
 use Libsql3\Cmd\GroupCreate;
 use Libsql3\Cmd\GroupDelete;
 use Libsql3\Cmd\GroupList;
 use Libsql3\Cmd\TeamCreate;
 use Libsql3\Cmd\TeamDelete;
 use Libsql3\Cmd\TeamEdit;
+use Libsql3\Cmd\TeamFind;
 use Libsql3\Cmd\TeamList;
 use Libsql3\Cmd\TeamRestore;
 use Libsql3\Cmd\UserList;
@@ -105,6 +107,8 @@ class App extends Application
         $dbTokenCreate->setAppConfig($this->app_config);
 
         return [
+            new DbTokenStatus(),
+            new TeamFind(),
             $dbTokenCreate,
             $authLogin,
             $authLogout,

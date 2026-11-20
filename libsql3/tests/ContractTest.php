@@ -9,8 +9,10 @@ use Libsql3\Cmd\DbCreate;
 use Libsql3\Cmd\DbDelete;
 use Libsql3\Cmd\DbList;
 use Libsql3\Cmd\DbTokenCreate;
+use Libsql3\Cmd\DbTokenStatus;
 use Libsql3\Cmd\DbShell;
 use Libsql3\Cmd\GroupCreate;
+use Libsql3\Cmd\TeamFind;
 use Libsql3\Cmd\TeamRestore;
 use Libsql3\Internal\HttpTransport;
 use Psy\Configuration;
@@ -383,6 +385,96 @@ final class ContractTest extends Libsql3TestCase
         $this->assertDoesNotMatchRegularExpression('/ID\s*[│|]\s*Name/', $display);
         $this->assertStringContainsString('Name', $display);
         $this->assertStringContainsString("Database 'demo' created successfully!", $display);
+    }
+
+    public function test_db_token_status_prints_only_the_masked_fingerprint(): void
+    {
+        $this->seedLogin();
+        $seen = [];
+        HttpTransport::fake(function (string $url, string $method, ?array $payload, array $headers) use (&$seen): array {
+            $seen[] = compact('url', 'method', 'headers');
+
+            return [
+                'status' => 200,
+                'body' => [],
+                'raw' => json_encode([
+                    'status' => 'success',
+                    'data' => ['token' => '••••••••abcd1234'],
+                ]),
+            ];
+        });
+
+        $tester = new CommandTester(new DbTokenStatus());
+        $exit = $tester->execute(['database_name' => 'my db']);
+
+        $this->assertSame(0, $exit);
+        $this->assertSame('GET', $seen[0]['method']);
+        $this->assertSame('https://example.invalid/api/cli/db/token/my+db', $seen[0]['url']);
+        $this->assertContains('Authorization: Bearer test-token', $seen[0]['headers']);
+        $display = $tester->getDisplay();
+        $this->assertStringContainsString('••••••••abcd1234', $display);
+        $this->assertStringNotContainsString('raw-token', $display);
+    }
+
+    public function test_db_token_status_does_not_fabricate_a_missing_token(): void
+    {
+        $this->seedLogin();
+        HttpTransport::fake(fn (): array => [
+            'status' => 200,
+            'body' => [],
+            'raw' => json_encode(['status' => 'success', 'data' => ['token' => null]]),
+        ]);
+
+        $tester = new CommandTester(new DbTokenStatus());
+        $exit = $tester->execute(['database_name' => 'demo']);
+
+        $this->assertSame(0, $exit);
+        $this->assertStringContainsString("No token exists for database 'demo'.", $tester->getDisplay());
+    }
+
+    public function test_team_find_reaches_the_find_endpoint_and_returns_team_fields(): void
+    {
+        $this->seedLogin();
+        $seen = [];
+        HttpTransport::fake(function (string $url, string $method) use (&$seen): array {
+            $seen[] = "$method $url";
+
+            return [
+                'status' => 200,
+                'body' => [],
+                'raw' => json_encode([
+                    'status' => 'success',
+                    'data' => ['team' => ['id' => 7, 'name' => 'Team A', 'description' => 'first team']],
+                ]),
+            ];
+        });
+
+        $tester = new CommandTester(new TeamFind());
+        $exit = $tester->execute(['team_name' => 'Team A']);
+
+        $this->assertSame(0, $exit);
+        $this->assertSame(['GET https://example.invalid/api/cli/team/find/Team+A'], $seen);
+        $display = preg_replace('/\s+/', ' ', $tester->getDisplay());
+        $this->assertStringContainsString('Team found successfully!', $display);
+        $this->assertStringContainsString('Team A', $display);
+        $this->assertStringContainsString('first team', $display);
+    }
+
+    public function test_team_find_surfaces_the_platform_message_when_no_team_exists(): void
+    {
+        $this->seedLogin();
+        HttpTransport::fake(fn (): array => [
+            'status' => 404,
+            'body' => [],
+            'raw' => json_encode(['status' => 'error', 'message' => 'No team found', 'data' => []]),
+        ]);
+
+        $tester = new CommandTester(new TeamFind());
+        $exit = $tester->execute(['team_name' => 'missing']);
+
+        $this->assertSame(3, $exit);
+        $display = preg_replace('/\s+/', ' ', $tester->getDisplay());
+        $this->assertStringContainsString('API returned status 404: No team found', $display);
     }
 
     public function test_group_create_accepts_numeric_team_id(): void
