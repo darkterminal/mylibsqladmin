@@ -3,6 +3,7 @@
     "description": "libsql3 CLI tool to interact with your MylibSQLAdmin",
     "type": "library",
     "license": "MIT",
+    "bin": ["libsql3"],
     "autoload": {
         "files": [
             "src/helpers.php"
