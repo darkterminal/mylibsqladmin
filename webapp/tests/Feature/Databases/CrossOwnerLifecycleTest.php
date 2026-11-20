@@ -121,3 +121,34 @@ test('a non-owner with delete permission still cannot archive another user datab
 
     expect(UserDatabase::where('database_name', $database->database_name)->exists())->toBeTrue();
 });
+
+test('super admin can archive, restore and force delete another user database through the CLI', function () {
+    $owner = User::factory()->create();
+    $admin = makeCrossOwnerSuperAdmin();
+    makeDatabaseForCrossOwnerTest($owner, 'cli-cross-owner-db');
+
+    Http::preventStrayRequests();
+    Http::fake(['*/v1/namespaces/*' => Http::response(['ok' => true], 200)]);
+
+    $token = $admin->createToken('cli-auth-token', [], now()->addDays(30))->plainTextToken;
+    $headers = [
+        'Authorization' => "Bearer {$token}",
+        'X-Request-Source' => 'CLI',
+    ];
+
+    $this->withHeaders($headers)->deleteJson('/api/cli/db/delete/cli-cross-owner-db')
+        ->assertOk()
+        ->assertJsonPath('success', true);
+    expect(UserDatabase::onlyTrashed()->where('database_name', 'cli-cross-owner-db')->exists())->toBeTrue();
+
+    $this->withHeaders($headers)->postJson('/api/cli/db/restore/cli-cross-owner-db')
+        ->assertOk()
+        ->assertJsonPath('success', true);
+    expect(UserDatabase::where('database_name', 'cli-cross-owner-db')->exists())->toBeTrue();
+
+    $this->withHeaders($headers)->deleteJson('/api/cli/db/delete/cli-cross-owner-db')->assertOk();
+    $this->withHeaders($headers)->deleteJson('/api/cli/db/force-delete/cli-cross-owner-db')
+        ->assertOk()
+        ->assertJsonPath('success', true);
+    expect(UserDatabase::withTrashed()->where('database_name', 'cli-cross-owner-db')->exists())->toBeFalse();
+});
