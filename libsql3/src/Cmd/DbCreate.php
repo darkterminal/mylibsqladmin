@@ -155,7 +155,7 @@ class DbCreate extends Command
         }
 
         // Check config for default team
-        $defaultTeam = $this->config['DEFAULT_TEAM'] ?? null;
+        $defaultTeam = config_get('DEFAULT_TEAM') ?? ($this->config['DEFAULT_TEAM'] ?? null);
         if ($defaultTeam) {
             // Find default team by ID or name
             foreach ($teams as $team) {
@@ -258,7 +258,7 @@ class DbCreate extends Command
         }
 
         // Check config for default group
-        $defaultGroup = $this->config['DEFAULT_GROUP'] ?? null;
+        $defaultGroup = config_get('DEFAULT_GROUP') ?? ($this->config['DEFAULT_GROUP'] ?? null);
         if ($defaultGroup) {
             // Find default group by ID or name
             foreach ($groups as $group) {

@@ -266,6 +266,37 @@ final class ContractTest extends Libsql3TestCase
         $this->assertSame('3', (string) $create['payload']['team_id']);
     }
 
+    public function test_db_create_uses_defaults_from_the_local_store(): void
+    {
+        $this->seedLogin();
+        config_set('DEFAULT_TEAM', '3');
+        config_set('DEFAULT_GROUP', '2');
+
+        $seen = $this->fakeCliApi(
+            [
+                ['id' => 3, 'name' => 'Team A', 'created_at' => '2026-01-01 00:00:00'],
+                ['id' => 9, 'name' => 'Team B', 'created_at' => '2026-01-02 00:00:00'],
+            ],
+            [
+                ['id' => 2, 'name' => 'Group A'],
+                ['id' => 8, 'name' => 'Group B'],
+            ]
+        );
+
+        $command = new DbCreate();
+        $command->setAppConfig([]);
+        $command->setApplication(new Shell(new Configuration()));
+        $tester = new CommandTester($command);
+        $exit = $tester->execute(['name' => 'demo']);
+
+        $this->assertSame(0, $exit, $tester->getDisplay());
+        $create = $this->requestTo($seen, '/api/cli/db/create');
+        $this->assertSame('3', (string) $create['payload']['team_id']);
+        $this->assertSame('2', (string) $create['payload']['group_id']);
+        $this->assertStringContainsString('Using configured default team: Team A (ID: 3)', $tester->getDisplay());
+        $this->assertStringContainsString('Using configured default group: Group A (ID: 2)', $tester->getDisplay());
+    }
+
     /**
      * Installs a fake API with multiple teams/groups so "only one available"
      * cannot accidentally satisfy a resolver test.
