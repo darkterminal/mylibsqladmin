@@ -14,16 +14,17 @@ trait CliStore
     {
         try {
             $stmt = $this->getPdo()->prepare("
-                SELECT token, expires_at 
-                FROM " . config('tables.tokens') . " 
-                WHERE username = :username 
-                ORDER BY expires_at DESC 
-                LIMIT 1
+                SELECT token, expires_at
+                FROM " . config('tables.tokens') . "
+                WHERE username = :username
+                ORDER BY expires_at DESC
             ");
             $stmt->execute(['username' => $username]);
 
-            if ($tokenData = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                return strtotime($tokenData['expires_at']) >= time();
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                if ($this->tokenIsValid($row['expires_at'])) {
+                    return true;
+                }
             }
             return false;
         } catch (PDOException $e) {
@@ -32,18 +33,36 @@ trait CliStore
         }
     }
 
+    /**
+     * The single expiry predicate for the whole CLI. ISO-8601 strings with an
+     * explicit offset are parsed correctly regardless of date.timezone; a
+     * malformed or missing value fails closed.
+     */
+    private function tokenIsValid(mixed $expiresAt): bool
+    {
+        if (!is_string($expiresAt) || trim($expiresAt) === '') {
+            return false;
+        }
+        $timestamp = strtotime($expiresAt);
+
+        return $timestamp !== false && $timestamp >= time();
+    }
+
     protected function getCurrentLoggedInUser(): ?string
     {
         try {
-            $stmt = $this->getPdo()->prepare("
-            SELECT username 
-            FROM " . config('tables.tokens') . " 
-            WHERE expires_at > datetime('now', 'localtime')
-            ORDER BY expires_at DESC 
-            LIMIT 1
-        ");
-            $stmt->execute();
-            return $stmt->fetchColumn() ?: null;
+            $stmt = $this->getPdo()->query("
+                SELECT username, expires_at
+                FROM " . config('tables.tokens') . "
+                ORDER BY expires_at DESC
+            ");
+
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                if ($this->tokenIsValid($row['expires_at'])) {
+                    return $row['username'];
+                }
+            }
+            return null;
         } catch (PDOException $e) {
             // Handle potential database errors
             return null;
@@ -87,15 +106,19 @@ trait CliStore
     {
         try {
             $stmt = $this->getPdo()->prepare("
-                SELECT token 
-                FROM " . config('tables.tokens') . " 
-                WHERE username = :username 
-                  AND expires_at > datetime('now', 'localtime')
-                ORDER BY expires_at DESC 
-                LIMIT 1
+                SELECT token, expires_at
+                FROM " . config('tables.tokens') . "
+                WHERE username = :username
+                ORDER BY expires_at DESC
             ");
             $stmt->execute(['username' => $username]);
-            return $stmt->fetchColumn() ?: null;
+
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                if ($this->tokenIsValid($row['expires_at'])) {
+                    return $row['token'];
+                }
+            }
+            return null;
         } catch (PDOException $e) {
             return null;
         }
@@ -105,15 +128,19 @@ trait CliStore
     {
         try {
             $stmt = $this->getPdo()->prepare("
-                SELECT expires_at 
-                FROM " . config('tables.tokens') . " 
-                WHERE username = :username 
-                  AND expires_at > datetime('now', 'localtime')
-                ORDER BY expires_at DESC 
-                LIMIT 1
+                SELECT expires_at
+                FROM " . config('tables.tokens') . "
+                WHERE username = :username
+                ORDER BY expires_at DESC
             ");
             $stmt->execute(['username' => $username]);
-            return $stmt->fetchColumn() ?: null;
+
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                if ($this->tokenIsValid($row['expires_at'])) {
+                    return $row['expires_at'];
+                }
+            }
+            return null;
         } catch (PDOException $e) {
             return null;
         }

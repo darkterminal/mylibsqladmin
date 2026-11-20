@@ -74,6 +74,57 @@ final class CliStoreTest extends Libsql3TestCase
         $this->assertSame('tester', $store->currentUser());
     }
 
+    public function test_expiry_is_consistent_across_all_four_accessors_in_a_non_utc_timezone(): void
+    {
+        $original = date_default_timezone_get();
+        date_default_timezone_set('Asia/Jakarta');
+
+        try {
+            // Remove the setUp() login so only these two rows are in play.
+            $pdo = new PDO('sqlite:' . config('db_path'));
+            $pdo->exec('DELETE FROM ' . config('tables.tokens'));
+            $pdo->exec(
+                'INSERT INTO ' . config('tables.tokens') . " (username, token, expires_at) VALUES
+                ('expired-user', 'expired-token', '2020-01-01T00:00:00Z'),
+                ('valid-user', 'valid-token', '2030-01-01T00:00:00Z')"
+            );
+
+            $store = new class {
+                use CliStore;
+
+                public function isLoggedIn(string $user): bool
+                {
+                    return $this->authCheck($user);
+                }
+
+                public function currentUser(): ?string
+                {
+                    return $this->getCurrentLoggedInUser();
+                }
+
+                public function tokenFor(string $user): ?string
+                {
+                    return $this->getToken($user);
+                }
+
+                public function expiresFor(string $user): ?string
+                {
+                    return $this->getExpiresAt($user);
+                }
+            };
+
+            $this->assertFalse($store->isLoggedIn('expired-user'));
+            $this->assertTrue($store->isLoggedIn('valid-user'));
+            $this->assertSame('valid-user', $store->currentUser());
+            $this->assertNull($store->tokenFor('expired-user'));
+            $this->assertSame('valid-token', $store->tokenFor('valid-user'));
+            $this->assertNull($store->expiresFor('expired-user'));
+            $this->assertSame('2030-01-01T00:00:00Z', $store->expiresFor('valid-user'));
+        } finally {
+            date_default_timezone_set($original);
+        }
+    }
+
     public function test_store_directory_and_database_file_are_private(): void
     {
         $dir = dirname(config('db_path'));
