@@ -50,6 +50,7 @@ class AuthLogout extends Command implements Configurable
             // Local cleanup is unconditional. An unreachable or hostile server
             // must never leave a credential that still looks usable on disk.
             $this->deleteToken($username);
+            $this->clearActiveUser();
         }
 
         if ($remoteFailure !== null) {
@@ -64,29 +65,7 @@ class AuthLogout extends Command implements Configurable
 
     private function callLogoutApi(string $token): void
     {
-        $request = http_request('/api/cli/logout', 'POST', ['token' => $token]);
-
-        $httpCode = (int) ($request['status'] ?? 0);
-        if ($httpCode < 200 || $httpCode > 299) {
-            throw new \Exception("API returned status $httpCode");
-        }
-    }
-
-    private function getToken(string $username): ?string
-    {
-        $stmt = $this->getPdo()->prepare("
-            SELECT token 
-            FROM " . config('tables.tokens') . " 
-            WHERE username = :username
-        ");
-        $stmt->execute(['username' => $username]);
-        return $stmt->fetchColumn() ?: null;
-    }
-
-    private function deleteToken(string $username): void
-    {
-        $pdo = $this->getPdo();
-        $stmt = $pdo->prepare("DELETE FROM " . config('tables.tokens') . " WHERE username = :username");
-        $stmt->execute(['username' => $username]);
+        // Reuse the same revocation boundary as auth:login --force.
+        revoke_cli_token($token);
     }
 }

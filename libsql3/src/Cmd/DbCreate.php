@@ -385,19 +385,4 @@ class DbCreate extends Command
         return $response['data']['groups'];
     }
 
-    private function getTokenForUser(string $userIdentifier): ?string
-    {
-        $token = $this->getToken($userIdentifier);
-        if ($token) {
-            return $token;
-        }
-
-        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
-        foreach ($envVars as $var) {
-            if ($token = getenv($var)) {
-                return $token;
-            }
-        }
-        return null;
-    }
 }

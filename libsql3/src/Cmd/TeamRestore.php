@@ -219,21 +219,4 @@ class TeamRestore extends Command
         return json_decode($request['raw'], true);
     }
 
-    private function getTokenForUser(string $userIdentifier): ?string
-    {
-        $token = $this->getToken($userIdentifier);
-        if ($token) {
-            return $token;
-        }
-
-        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
-        foreach ($envVars as $var) {
-            $token = getenv($var);
-            if ($token) {
-                return $token;
-            }
-        }
-
-        return null;
-    }
 }

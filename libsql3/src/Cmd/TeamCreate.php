@@ -89,24 +89,4 @@ class TeamCreate extends Command
         }
     }
 
-    private function getTokenForUser(string $userIdentifier): ?string
-    {
-        // Try to get token from local store
-        $token = $this->getToken($userIdentifier);
-
-        if ($token) {
-            return $token;
-        }
-
-        // Fallback to environment variables
-        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
-        foreach ($envVars as $var) {
-            $token = getenv($var);
-            if ($token) {
-                return $token;
-            }
-        }
-
-        return null;
-    }
 }

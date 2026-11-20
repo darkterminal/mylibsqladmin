@@ -83,21 +83,4 @@ class DbTokenCreate extends Command implements Configurable
         }
     }
 
-    private function getTokenForUser(string $userIdentifier): ?string
-    {
-        $token = $this->getToken($userIdentifier);
-
-        if ($token) {
-            return $token;
-        }
-
-        foreach (['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'] as $var) {
-            $token = getenv($var);
-            if ($token) {
-                return $token;
-            }
-        }
-
-        return null;
-    }
 }

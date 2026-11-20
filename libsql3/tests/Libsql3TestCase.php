@@ -42,15 +42,18 @@ abstract class Libsql3TestCase extends TestCase
         $this->removeTree($this->home);
     }
 
-    protected function seedLogin(string $username = 'tester', string $token = 'test-token'): void
-    {
+    protected function seedLogin(
+        string $username = 'tester',
+        string $token = 'test-token',
+        string $expiresAt = '2030-01-01 00:00:00'
+    ): void {
         $pdo = new PDO('sqlite:' . config('db_path'));
         $pdo->exec(sprintf(
             'INSERT INTO %s (username, token, expires_at) VALUES (%s, %s, %s)',
             config('tables.tokens'),
             $pdo->quote($username),
             $pdo->quote($token),
-            $pdo->quote('2030-01-01 00:00:00')
+            $pdo->quote($expiresAt)
         ));
     }
 

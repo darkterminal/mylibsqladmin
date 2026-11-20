@@ -77,20 +77,6 @@ class TeamDelete extends Command
         }
     }
 
-    private function getTokenForUser(string $userIdentifier): ?string
-    {
-        // Token handling same as TeamCreate
-        $token = $this->getToken($userIdentifier);
-        if ($token)
-            return $token;
-
-        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
-        foreach ($envVars as $var) {
-            if ($token = getenv($var))
-                return $token;
-        }
-        return null;
-    }
 
     private function fetchTeam(string $teamId, string $userIdentifier, string $token): array
     {

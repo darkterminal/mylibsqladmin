@@ -332,6 +332,19 @@ if (!function_exists('http_request')) {
     }
 }
 
+if (!function_exists('revoke_cli_token')) {
+    /**
+     * Revoke a plaintext CLI token through the existing logout route.
+     *
+     * http_request() accepts any 2xx and throws with the server's message on a
+     * non-2xx status, so callers only need to decide what to do with failure.
+     */
+    function revoke_cli_token(string $token): void
+    {
+        http_request('/api/cli/logout', 'POST', ['token' => $token]);
+    }
+}
+
 if (!function_exists('try_request')) {
     /**
      * One HTTP attempt. Returns the parsed response for every HTTP status.

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Libsql3\Tests;
 
 use Libsql3\Cmd\AuthLogout;
+use Libsql3\Internal\AuthContext;
+use Libsql3\Internal\CliStore;
 use Libsql3\Internal\HttpTransport;
 use PDO;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -106,6 +108,93 @@ final class AuthTest extends Libsql3TestCase
 
         $this->assertSame(0, $exit);
         $this->assertStringContainsString('not logged in', $tester->getDisplay());
+    }
+
+    public function test_active_user_marker_wins_over_a_later_expiring_cached_user(): void
+    {
+        $this->seedLogin('alice', 'alice-token', '2030-01-01 00:00:00');
+        $this->seedLogin('bob', 'bob-token', '2035-01-01 00:00:00');
+        config_set(AuthContext::ACTIVE_USER_KEY, 'alice');
+
+        $context = new AuthContext(new PDO('sqlite:' . config('db_path')));
+
+        $this->assertSame('alice', $context->currentUser());
+        $this->assertSame('alice-token', $context->tokenFor('alice'));
+    }
+
+    public function test_an_expired_marker_falls_back_to_the_newest_valid_user(): void
+    {
+        $this->seedLogin('stale', 'stale-token', '2020-01-01 00:00:00');
+        $this->seedLogin('fresh', 'fresh-token', '2030-01-01 00:00:00');
+        config_set(AuthContext::ACTIVE_USER_KEY, 'stale');
+
+        $context = new AuthContext(new PDO('sqlite:' . config('db_path')));
+
+        $this->assertSame('fresh', $context->currentUser());
+    }
+
+    public function test_storing_a_token_marks_that_user_active(): void
+    {
+        $store = new class {
+            use CliStore;
+
+            public function put(string $user, string $token): void
+            {
+                $this->storeToken($user, $token, '2030-01-01 00:00:00');
+            }
+        };
+
+        $store->put('carol', 'carol-token');
+
+        $this->assertSame('carol', config_get(AuthContext::ACTIVE_USER_KEY));
+    }
+
+    public function test_environment_fallback_is_namespaced_and_warns(): void
+    {
+        putenv('AUTH_TOKEN=decoy-auth');
+        putenv('TURSO_AUTH=decoy-turso');
+        putenv('TOKEN=decoy-token');
+        putenv(AuthContext::TOKEN_ENV . '=env-token');
+
+        $warnings = [];
+        $context = new AuthContext(
+            new PDO('sqlite:' . config('db_path')),
+            function (string $message) use (&$warnings): void {
+                $warnings[] = $message;
+            }
+        );
+
+        try {
+            $this->assertSame('env-token', $context->tokenFor('anyone'));
+            $this->assertCount(1, $warnings);
+            $this->assertStringContainsString('LIBSQL3_AUTH_TOKEN', $warnings[0]);
+        } finally {
+            putenv('AUTH_TOKEN');
+            putenv('TURSO_AUTH');
+            putenv('TOKEN');
+            putenv(AuthContext::TOKEN_ENV);
+        }
+    }
+
+    public function test_a_valid_stored_token_wins_over_the_environment_fallback(): void
+    {
+        $this->seedLogin('dana', 'dana-token');
+        putenv(AuthContext::TOKEN_ENV . '=env-token');
+
+        $warnings = [];
+        $context = new AuthContext(
+            new PDO('sqlite:' . config('db_path')),
+            function (string $message) use (&$warnings): void {
+                $warnings[] = $message;
+            }
+        );
+
+        try {
+            $this->assertSame('dana-token', $context->tokenFor('dana'));
+            $this->assertSame([], $warnings, 'The fallback must stay silent when a stored token exists.');
+        } finally {
+            putenv(AuthContext::TOKEN_ENV);
+        }
     }
 
     private function tokenCount(): int

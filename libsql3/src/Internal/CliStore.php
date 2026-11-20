@@ -5,6 +5,13 @@ namespace Libsql3\Internal;
 use PDO;
 use PDOException;
 
+/**
+ * Thin adapter between command classes and AuthContext.
+ *
+ * Commands keep calling the same helper names; the identity/token rules now
+ * live in exactly one place so no command can reimplement (or drift in) token
+ * precedence again.
+ */
 trait CliStore
 {
     private ?PDO $pdo = null;
@@ -12,61 +19,12 @@ trait CliStore
 
     protected function authCheck(string $username): bool
     {
-        try {
-            $stmt = $this->getPdo()->prepare("
-                SELECT token, expires_at
-                FROM " . config('tables.tokens') . "
-                WHERE username = :username
-                ORDER BY expires_at DESC
-            ");
-            $stmt->execute(['username' => $username]);
-
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-                if ($this->tokenIsValid($row['expires_at'])) {
-                    return true;
-                }
-            }
-            return false;
-        } catch (PDOException $e) {
-            // Handle database errors appropriately
-            return false;
-        }
-    }
-
-    /**
-     * The single expiry predicate for the whole CLI. ISO-8601 strings with an
-     * explicit offset are parsed correctly regardless of date.timezone; a
-     * malformed or missing value fails closed.
-     */
-    private function tokenIsValid(mixed $expiresAt): bool
-    {
-        if (!is_string($expiresAt) || trim($expiresAt) === '') {
-            return false;
-        }
-        $timestamp = strtotime($expiresAt);
-
-        return $timestamp !== false && $timestamp >= time();
+        return $this->authContext()->hasValidToken($username);
     }
 
     protected function getCurrentLoggedInUser(): ?string
     {
-        try {
-            $stmt = $this->getPdo()->query("
-                SELECT username, expires_at
-                FROM " . config('tables.tokens') . "
-                ORDER BY expires_at DESC
-            ");
-
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-                if ($this->tokenIsValid($row['expires_at'])) {
-                    return $row['username'];
-                }
-            }
-            return null;
-        } catch (PDOException $e) {
-            // Handle potential database errors
-            return null;
-        }
+        return $this->authContext()->currentUser();
     }
 
     protected function storeToken(string $username, string $token, string $expiresAt): void
@@ -77,15 +35,15 @@ trait CliStore
         try {
             // Delete expired tokens for this user
             $stmt = $pdo->prepare("
-                DELETE FROM " . config('tables.tokens') . " 
+                DELETE FROM " . config('tables.tokens') . "
                 WHERE username = :username
             ");
             $stmt->execute(['username' => $username]);
 
             // Insert new token
             $stmt = $pdo->prepare("
-                INSERT INTO " . config('tables.tokens') . " 
-                (username, token, expires_at) 
+                INSERT INTO " . config('tables.tokens') . "
+                (username, token, expires_at)
                 VALUES (:username, :token, :expires_at)
             ");
 
@@ -100,50 +58,48 @@ trait CliStore
             $pdo->rollBack();
             throw $e;
         }
+
+        // A successful token write defines the active identity. Commands must
+        // never fall back to a global "latest expiry" guess after this point.
+        $this->authContext()->setActiveUser($username);
     }
 
+    /**
+     * Stored, expiry-validated token only. Logout and rotation use this so an
+     * environment credential can never be revoked or overwritten by mistake.
+     */
     protected function getToken(string $username): ?string
     {
-        try {
-            $stmt = $this->getPdo()->prepare("
-                SELECT token, expires_at
-                FROM " . config('tables.tokens') . "
-                WHERE username = :username
-                ORDER BY expires_at DESC
-            ");
-            $stmt->execute(['username' => $username]);
+        return $this->authContext()->storedToken($username);
+    }
 
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-                if ($this->tokenIsValid($row['expires_at'])) {
-                    return $row['token'];
-                }
-            }
-            return null;
-        } catch (PDOException $e) {
-            return null;
-        }
+    /**
+     * Token resolution for API-calling commands: local store first, then the
+     * single namespaced environment fallback (which emits a visible warning).
+     */
+    protected function getTokenForUser(string $userIdentifier): ?string
+    {
+        return $this->authContext()->tokenFor($userIdentifier);
     }
 
     public function getExpiresAt(string $username): ?string
     {
-        try {
-            $stmt = $this->getPdo()->prepare("
-                SELECT expires_at
-                FROM " . config('tables.tokens') . "
-                WHERE username = :username
-                ORDER BY expires_at DESC
-            ");
-            $stmt->execute(['username' => $username]);
+        return $this->authContext()->expiresAt($username);
+    }
 
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-                if ($this->tokenIsValid($row['expires_at'])) {
-                    return $row['expires_at'];
-                }
-            }
-            return null;
-        } catch (PDOException $e) {
-            return null;
-        }
+    protected function deleteToken(string $username): void
+    {
+        $this->authContext()->deleteToken($username);
+    }
+
+    protected function clearActiveUser(): void
+    {
+        $this->authContext()->clearActiveUser();
+    }
+
+    private function authContext(): AuthContext
+    {
+        return new AuthContext($this->getPdo());
     }
 
     private function getPdo(): PDO
