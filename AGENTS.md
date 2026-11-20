@@ -12,7 +12,8 @@ webapp/     the application (Laravel 13, Inertia.js, React 19, PHP ^8.4)
 libsql3/    PHP CLI client for the same sqld instances
 nginx/      optional proxy (hrana over :8080, gRPC auth-checked over :5001)
 scripts/    installer.sh (production bootstrap helper)
-docs/       installation and operations guides
+docs/       installation guides + Jekyll site (product landing page and
+            role-based user manual under user-manual/)
 examples/   minimal client snippets (PHP/JS/TS — read LIBSQL_AUTH_TOKEN from env)
 ```
 

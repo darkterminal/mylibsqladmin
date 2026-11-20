@@ -8,7 +8,8 @@
             name="description"
             content="MylibSQLAdmin is an open-source web GUI for managing libSQL databases built with Laravel React Starter Kit."
         />
-        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
         <script src="https://cdn.tailwindcss.com"></script>
         <script>
             tailwind.config = {
@@ -43,7 +44,7 @@
                         class="w-10 h-10 bg-gradient-to-br from-zinc-600 to-blue-600 rounded-lg flex items-center justify-center"
                     >
                         <img
-                            src="https://i.imgur.com/scsdb3d.png"
+                            src="/favicon.svg"
                             class="w-10 h-10"
                             title="MylibSQLAdmin Logo"
                         />
@@ -108,10 +109,19 @@
                         <span id="header-stars">Loading...</span>
                     </span>
                     <a
+                        href="/user-manual/"
+                        class="inline-flex items-center px-2 sm:px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                        User Manual
+                    </a>
+                    <a
                         href="https://github.com/darkterminal/mylibsqladmin"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        class="hidden sm:inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
                         <svg
                             class="w-4 h-4 mr-2"
@@ -267,7 +277,7 @@
                             class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border dark:border-gray-700"
                         >
                             <img
-                                src="https://i.imgur.com/vP5ZL7Q.png"
+                                src="/images/dashboard.png"
                                 alt="MylibSQLAdmin Dashboard Interface"
                                 class="w-full h-auto object-cover"
                             />
@@ -516,7 +526,7 @@
                         class="text-center bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6"
                     >
                         <img
-                            src="https://i.imgur.com/3JwVT7s.png"
+                            src="/images/icon-laravel-react.svg"
                             alt="Laravel React"
                             class="w-16 h-16 mx-auto mb-4 object-contain"
                         />
@@ -535,7 +545,7 @@
                         class="text-center bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6"
                     >
                         <img
-                            src="https://i.imgur.com/qbGUg1z.png"
+                            src="/images/icon-typescript.svg"
                             alt="TypeScript"
                             class="w-16 h-16 mx-auto mb-4 object-contain"
                         />
@@ -554,7 +564,7 @@
                         class="text-center bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6"
                     >
                         <img
-                            src="https://i.imgur.com/t6FAexR.png"
+                            src="/images/icon-php.svg"
                             alt="PHP"
                             class="w-16 h-16 mx-auto mb-4 object-contain"
                         />
@@ -573,7 +583,7 @@
                         class="text-center bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6"
                     >
                         <img
-                            src="https://i.imgur.com/PXkgWDb.png"
+                            src="/images/icon-docker.svg"
                             alt="Docker"
                             class="w-16 h-16 mx-auto mb-4 object-contain"
                         />

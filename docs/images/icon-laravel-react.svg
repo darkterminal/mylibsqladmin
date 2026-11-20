@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Laravel and React">
+    <rect width="64" height="64" rx="14" fill="#1f2937"/>
+    <path d="M10 20h20l-3 8H21v20h-7V28h-4z" fill="#ef4444"/>
+    <path d="M34 44 41 46l7-26-7-2z" fill="#38bdf8"/>
+    <circle cx="40.5" cy="34" r="3.5" fill="#38bdf8"/>
+    <circle cx="45" cy="39" r="10" fill="none" stroke="#38bdf8" stroke-width="2.5" opacity="0.9"/>
+</svg>
