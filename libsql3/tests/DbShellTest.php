@@ -6,28 +6,50 @@ namespace Libsql3\Tests;
 
 use Libsql3\Cmd\DbShell;
 use Libsql3\Internal\HttpTransport;
+use Libsql3\Internal\ShellTokenProxy;
 use PDO;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
 
 final class StubDbShell extends DbShell
 {
-    /** @var array{tursoPath:string, url:string, command:string} */
+    /** @var array{tursoPath:string, url:string, proxyUrl:?string, command:string, tokenFile:?string, directory:?string} */
     public array $captured = [];
     public bool $tursoMissing = false;
+    public bool $shellFailure = false;
+    private ?ShellTokenProxy $proxy = null;
 
     protected function getTursoPath(): ?string
     {
         return $this->tursoMissing ? null : '/bin/sh';
     }
 
-    protected function runTursoShell(string $tursoPath, string $url, OutputInterface $output): void
+    protected function startTokenProxy(string $token, string $upstreamUrl): ?ShellTokenProxy
     {
+        // Exercise the real credential-file lifecycle without forking a process.
+        [$directory, $tokenFile] = ShellTokenProxy::writeTokenFile($token);
+        $this->proxy = new ShellTokenProxy(45999, $tokenFile, $directory, 0);
+        return $this->proxy;
+    }
+
+    protected function runTursoShell(
+        string $tursoPath,
+        string $url,
+        OutputInterface $output,
+        ?string $proxyUrl = null
+    ): void {
         $this->captured = [
             'tursoPath' => $tursoPath,
             'url' => $url,
-            'command' => $this->buildTursoCommand($tursoPath, $url),
+            'proxyUrl' => $proxyUrl,
+            'command' => $this->buildTursoCommand($tursoPath, $url, $proxyUrl),
+            'tokenFile' => $this->proxy?->tokenFile,
+            'directory' => $this->proxy?->directory,
         ];
+
+        if ($this->shellFailure) {
+            throw new \RuntimeException('Turso shell exited with code 1');
+        }
     }
 }
 
@@ -72,24 +94,27 @@ final class DbShellTest extends Libsql3TestCase
         $this->assertSame(0, $exit);
         $this->assertSame(1, $calls);
         $this->assertSame('/bin/sh', $command->captured['tursoPath']);
+        $this->assertSame('https://demo.db.example.invalid:8080', $command->captured['url']);
+        $this->assertSame('http://127.0.0.1:45999', $command->captured['proxyUrl']);
         $this->assertSame(
-            'https://demo.db.example.invalid:8080?authToken=minted-secret',
-            $command->captured['url']
+            "/bin/sh db shell 'https://demo.db.example.invalid:8080' --proxy 'http://127.0.0.1:45999'",
+            $command->captured['command']
         );
 
-        // KNOWN EXPOSURE: the token is still in argv by design for this step.
-        // It must never leak into the operator-visible display, though.
         $display = $tester->getDisplay();
-        $this->assertStringContainsString('process argument', $display);
-        $this->assertStringContainsString('db:token:create demo', $display);
         $this->assertStringNotContainsString('minted-secret', $display);
+        $this->assertStringNotContainsString('minted-secret', $command->captured['command']);
+        $this->assertStringNotContainsString('process argument', $display);
+        $this->assertStringNotContainsString('db:token:create demo', $display);
+        $this->assertFileDoesNotExist($command->captured['tokenFile']);
+        $this->assertDirectoryDoesNotExist($command->captured['directory']);
     }
 
-    public function test_db_shell_child_command_currently_carries_the_token_in_argv(): void
+    public function test_db_shell_child_command_never_carries_the_token_in_argv(): void
     {
-        // KNOWN EXPOSURE (Plan 003, D-22): this characterization test documents
-        // the argv transport that Plan 009 Step 3 must invert. The exact command
-        // string is the assertion seam — the display redaction is not enough.
+        // Plan 009 Step 1 documented the exposed argv; the fix inverts it. The
+        // exact command string is the assertion seam — display redaction alone
+        // would never catch a regression here.
         $this->seedLogin();
         config_set('LIBSQL_DATABASE_ENDPOINT', 'https://db.example.invalid:8080');
         $calls = 0;
@@ -102,10 +127,11 @@ final class DbShellTest extends Libsql3TestCase
         $this->assertSame(0, $exit);
         $this->assertSame(1, $calls);
         $this->assertSame(
-            "/bin/sh db shell 'https://demo.db.example.invalid:8080?authToken=minted-secret'",
+            "/bin/sh db shell 'https://demo.db.example.invalid:8080' --proxy 'http://127.0.0.1:45999'",
             $command->captured['command']
         );
-        $this->assertStringContainsString('authToken=minted-secret', $command->captured['command']);
+        $this->assertStringNotContainsString('authToken=', $command->captured['command']);
+        $this->assertStringNotContainsString('minted-secret', $command->captured['command']);
     }
 
     public function test_db_shell_uses_scheme_default_port_when_endpoint_has_none(): void
@@ -121,7 +147,27 @@ final class DbShellTest extends Libsql3TestCase
 
         $this->assertSame(0, $exit);
         $this->assertSame(1, $calls);
-        $this->assertSame('http://demo.127.0.0.1:80?authToken=minted-secret', $command->captured['url']);
+        $this->assertSame('http://demo.127.0.0.1:80', $command->captured['url']);
+        $this->assertStringNotContainsString('minted-secret', $command->captured['command']);
+    }
+
+    public function test_db_shell_removes_credential_when_child_shell_fails(): void
+    {
+        $this->seedLogin();
+        config_set('LIBSQL_DATABASE_ENDPOINT', 'https://db.example.invalid:8080');
+        $calls = 0;
+        $this->fakeMint($calls);
+
+        $command = new StubDbShell();
+        $command->shellFailure = true;
+        $tester = new CommandTester($command);
+        $exit = $tester->execute(['database_name' => 'demo']);
+
+        $this->assertSame(1, $exit);
+        $this->assertSame(1, $calls);
+        $this->assertStringContainsString('Turso shell exited with code 1', $tester->getDisplay());
+        $this->assertFileDoesNotExist($command->captured['tokenFile']);
+        $this->assertDirectoryDoesNotExist($command->captured['directory']);
     }
 
     public function test_db_shell_does_not_mint_when_turso_is_missing_without_opt_in(): void

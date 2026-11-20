@@ -27,7 +27,7 @@ final class ShellTokenProxy
     private const CONNECT_TIMEOUT = 10;
     private const IO_TIMEOUT = 15;
 
-    private function __construct(
+    public function __construct(
         public readonly int $port,
         public readonly string $tokenFile,
         public readonly string $directory,
@@ -96,6 +96,12 @@ final class ShellTokenProxy
     /** Terminate the injector child and remove its credential file. */
     public function stop(): void
     {
+        // pid <= 0 is a test-injected handle with no child to terminate.
+        if ($this->pid <= 0) {
+            self::removeTokenFile($this->tokenFile, $this->directory);
+            return;
+        }
+
         @posix_kill($this->pid, SIGTERM);
 
         $reaped = false;

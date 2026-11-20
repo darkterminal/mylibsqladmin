@@ -3,6 +3,7 @@ namespace Libsql3\Cmd;
 
 use Libsql3\Internal\CliStore;
 use Libsql3\Internal\Endpoint;
+use Libsql3\Internal\ShellTokenProxy;
 use Psy\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
@@ -103,36 +104,26 @@ class DbShell extends Command
             // Get database authentication token
             $authToken = $this->getDatabaseToken($dbName, $userIdentifier, $token);
 
-            if ($authToken) {
-                $url = $this->addAuthTokenToUrl($url, $authToken);
+            $proxy = null;
+            try {
+                if ($authToken !== null && $authToken !== '') {
+                    // The token never reaches the child argv. It lives in a
+                    // private file read only by the loopback injector.
+                    $proxy = $this->startTokenProxy($authToken, $url);
+                }
+
+                // Run Turso shell with a token-free URL.
+                $output->writeln("<info>libsql3 for MylibSQLAdmin</info>");
+                $output->writeln("<info>Opening Turso database shell for: {$this->getSafeUrl($url)}</info>");
+
+                $this->runTursoShell($tursoPath, $url, $output, $proxy?->proxyUrl());
+
+                return 0;
+            } finally {
+                // Always stop the injector and delete the credential, including
+                // when the shell exits with an error or the operator interrupts.
+                $proxy?->stop();
             }
-
-            // Run Turso shell
-            $output->writeln("<info>libsql3 for MylibSQLAdmin</info>");
-            $output->writeln("<info>Opening Turso database shell for: {$this->getSafeUrl($url)}</info>");
-
-            if ($authToken) {
-                // KNOWN EXPOSURE (Plan 003, intentionally open): turso v1.0.31
-                // accepts a database token only through the `authToken` query
-                // parameter, which lands in the child's argv. Do not call this
-                // "fixed" — tell the operator plainly and point at rotation.
-                $output->writeln('');
-                $output->writeln(
-                    '<error>WARNING: the database token is passed to Turso as a process argument.</error>'
-                );
-                $output->writeln(
-                    '<error>Other local users can read it from the process list while the shell is open.</error>'
-                );
-                $output->writeln(
-                    '<comment>Treat this token as exposed. Rotate it after this session with: '
-                    . 'db:token:create ' . $dbName . '</comment>'
-                );
-                $output->writeln('');
-            }
-
-            $this->runTursoShell($tursoPath, $url, $output);
-
-            return 0;
         } catch (\Exception $e) {
             $output->writeln("<error>Error: " . $e->getMessage() . "</error>");
             return 1;
@@ -155,31 +146,12 @@ class DbShell extends Command
     }
 
 
-    private function addAuthTokenToUrl(string $url, string $token): string
+    /**
+     * Protected so tests can inject a proxy handle without forking a process.
+     */
+    protected function startTokenProxy(string $token, string $upstreamUrl): ?ShellTokenProxy
     {
-        // Parse URL to handle existing query parameters
-        $parsedUrl = parse_url($url);
-        $query = [];
-
-        if (isset($parsedUrl['query'])) {
-            parse_str($parsedUrl['query'], $query);
-        }
-
-        // Add or replace authToken parameter
-        $query['authToken'] = $token;
-
-        // Rebuild URL with new query parameters
-        $scheme = isset($parsedUrl['scheme']) ? $parsedUrl['scheme'] . '://' : '';
-        $host = $parsedUrl['host'] ?? '';
-        $port = isset($parsedUrl['port']) ? ':' . $parsedUrl['port'] : '';
-        $user = isset($parsedUrl['user']) ? $parsedUrl['user'] : '';
-        $pass = isset($parsedUrl['pass']) ? ':' . $parsedUrl['pass'] : '';
-        $pass = ($user || $pass) ? "$pass@" : '';
-        $path = $parsedUrl['path'] ?? '';
-        $query = '?' . http_build_query($query);
-        $fragment = isset($parsedUrl['fragment']) ? '#' . $parsedUrl['fragment'] : '';
-
-        return "$scheme$user$pass$host$port$path$query$fragment";
+        return ShellTokenProxy::start($token, $upstreamUrl);
     }
 
     private function getSafeUrl(string $url): string
@@ -224,23 +196,33 @@ class DbShell extends Command
     /**
      * Protected so tests can assert the exact child command without launching it.
      */
-    protected function buildTursoCommand(string $tursoPath, string $url): string
+    protected function buildTursoCommand(string $tursoPath, string $url, ?string $proxyUrl): string
     {
-        return "{$tursoPath} db shell " . escapeshellarg($url);
+        $command = "{$tursoPath} db shell " . escapeshellarg($url);
+
+        if ($proxyUrl !== null) {
+            $command .= ' --proxy ' . escapeshellarg($proxyUrl);
+        }
+
+        return $command;
     }
 
     /**
      * Protected so tests can capture the child command without launching it.
      */
-    protected function runTursoShell(string $tursoPath, string $url, OutputInterface $output): void
-    {
+    protected function runTursoShell(
+        string $tursoPath,
+        string $url,
+        OutputInterface $output,
+        ?string $proxyUrl = null
+    ): void {
         $descriptorSpec = [
             0 => STDIN,
             1 => STDOUT,
             2 => STDERR
         ];
 
-        $process = proc_open($this->buildTursoCommand($tursoPath, $url), $descriptorSpec, $pipes);
+        $process = proc_open($this->buildTursoCommand($tursoPath, $url, $proxyUrl), $descriptorSpec, $pipes);
 
         if (!is_resource($process)) {
             throw new \RuntimeException('Failed to open Turso shell');
