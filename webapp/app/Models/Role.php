@@ -15,6 +15,14 @@ class Role extends Model
         'description'
     ];
 
+    /** Canonical role keys accepted by every team-member validator. */
+    public const KEYS = [
+        'super-admin',
+        'team-manager',
+        'database-maintainer',
+        'member',
+    ];
+
     public static function getRoleName(string $name): string
     {
         $roles = [

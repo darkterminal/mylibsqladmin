@@ -9,13 +9,16 @@
  * (e.g. Team Manager may not create teams; Super Admin may).
  */
 
+use App\Http\Controllers\TeamController;
 use App\Models\Invitation;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
@@ -167,4 +170,38 @@ test('a team manager can invite their team (member admin), super admin can, memb
         ])
         ->assertOk()
         ->assertJsonPath('success', true);
+});
+
+test('storeMember accepts the canonical database-maintainer role key', function () {
+    $admin = superAdminUser();
+    $team = Team::create(['name' => 'Role Keys', 'description' => 'test']);
+    $team->members()->attach($admin->id, ['permission_level' => 'super-admin']);
+    $candidate = User::factory()->create();
+
+    $this->actingAs($admin);
+
+    app(TeamController::class)->storeMember(new Request([
+        'user_id' => $candidate->id,
+        'permission_level' => 'database-maintainer',
+    ]), $team);
+
+    $membership = $team->members()->where('user_id', $candidate->id)->firstOrFail();
+
+    expect($membership->pivot->permission_level)->toBe('database-maintainer');
+});
+
+test('storeMember rejects the misspelled database-maintener role key', function () {
+    $admin = superAdminUser();
+    $team = Team::create(['name' => 'Typo Role Keys', 'description' => 'test']);
+    $team->members()->attach($admin->id, ['permission_level' => 'super-admin']);
+    $candidate = User::factory()->create();
+
+    $this->actingAs($admin);
+
+    expect(fn () => app(TeamController::class)->storeMember(new Request([
+        'user_id' => $candidate->id,
+        'permission_level' => 'database-maintener',
+    ]), $team))->toThrow(ValidationException::class);
+
+    expect($team->members()->where('user_id', $candidate->id)->exists())->toBeFalse();
 });
