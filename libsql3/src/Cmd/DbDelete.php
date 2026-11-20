@@ -49,8 +49,10 @@ class DbDelete extends Command
         }
 
         try {
-            // Confirm deletion unless forced
-            if (!$input->getOption('force')) {
+            // --force is the explicit intent: skip the prompt entirely.
+            if ($input->getOption('force')) {
+                $result = $this->forceDeleteDatabase($dbName, $userIdentifier, $token);
+            } else {
                 $confirmation = $io->confirm(
                     "Are you sure you want to delete database <comment>'$dbName'</comment>?",
                     false
@@ -58,23 +60,10 @@ class DbDelete extends Command
 
                 if (!$confirmation) {
                     $io->warning('Database deletion cancelled');
-                    return 0;
+                    return 4;
                 }
 
-                // Make API request to delete database
                 $result = $this->deleteDatabase($dbName, $userIdentifier, $token);
-            } else {
-                $confirmation = $io->confirm(
-                    "Are you sure you want to <comment>PERMANENTLY</comment> delete database <comment>'$dbName'</comment>?",
-                    false
-                );
-
-                if (!$confirmation) {
-                    $io->warning('Database deletion cancelled');
-                    return 0;
-                }
-
-                $result = $this->forceDeleteDatabase($dbName, $userIdentifier, $token);
             }
 
             if ($result['status'] === 204 || $result['status'] === 200) {

@@ -6,6 +6,7 @@ namespace Libsql3\Tests;
 
 use Libsql3\Cmd\AuthLogin;
 use Libsql3\Cmd\DbCreate;
+use Libsql3\Cmd\DbDelete;
 use Libsql3\Cmd\DbList;
 use Libsql3\Cmd\DbTokenCreate;
 use Libsql3\Cmd\DbShell;
@@ -295,6 +296,61 @@ final class ContractTest extends Libsql3TestCase
         $this->assertSame('2', (string) $create['payload']['group_id']);
         $this->assertStringContainsString('Using configured default team: Team A (ID: 3)', $tester->getDisplay());
         $this->assertStringContainsString('Using configured default group: Group A (ID: 2)', $tester->getDisplay());
+    }
+
+    public function test_db_delete_force_skips_confirmation_and_calls_force_endpoint(): void
+    {
+        $this->seedLogin();
+        $seen = [];
+        HttpTransport::fake(function (string $url) use (&$seen): array {
+            $seen[] = $url;
+
+            return ['status' => 204, 'body' => [], 'raw' => ''];
+        });
+
+        $tester = new CommandTester(new DbDelete());
+        $exit = $tester->execute(['database_name' => 'demo', '--force' => true]);
+
+        $this->assertSame(0, $exit, $tester->getDisplay());
+        $this->assertSame(['https://example.invalid/api/cli/db/force-delete/demo'], $seen);
+        $this->assertStringNotContainsString('Are you sure', $tester->getDisplay());
+        $this->assertStringContainsString("Database 'demo' deleted successfully!", $tester->getDisplay());
+    }
+
+    public function test_db_delete_declining_confirmation_returns_exit_code_4(): void
+    {
+        $this->seedLogin();
+        $seen = [];
+        HttpTransport::fake(function (string $url) use (&$seen): array {
+            $seen[] = $url;
+
+            return ['status' => 204, 'body' => [], 'raw' => ''];
+        });
+
+        $tester = new CommandTester(new DbDelete());
+        $exit = $tester->execute(['database_name' => 'demo']);
+
+        $this->assertSame(4, $exit, $tester->getDisplay());
+        $this->assertSame([], $seen);
+        $this->assertStringContainsString('Database deletion cancelled', $tester->getDisplay());
+    }
+
+    public function test_db_delete_accepting_confirmation_calls_delete_endpoint(): void
+    {
+        $this->seedLogin();
+        $seen = [];
+        HttpTransport::fake(function (string $url) use (&$seen): array {
+            $seen[] = $url;
+
+            return ['status' => 204, 'body' => [], 'raw' => ''];
+        });
+
+        $tester = new CommandTester(new DbDelete());
+        $tester->setInputs(['y']);
+        $exit = $tester->execute(['database_name' => 'demo']);
+
+        $this->assertSame(0, $exit, $tester->getDisplay());
+        $this->assertSame(['https://example.invalid/api/cli/db/delete/demo'], $seen);
     }
 
     /**
