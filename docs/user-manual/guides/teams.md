@@ -8,7 +8,7 @@ eyebrow: People
 A **team** is the container for groups, databases, tokens and invitations. Almost every object in MylibSQLAdmin belongs to exactly one team, and policies compare that team with your membership before they allow anything.
 
 <figure class="screenshot">
-    <img src="/images/teams.png" alt="Teams page with member avatars, groups, databases and recent activity">
+    <img src="{{ site.baseurl }}/images/teams.png" alt="Teams page with member avatars, groups, databases and recent activity">
     <figcaption>The team dashboard: members, groups, databases and recent activity in one row.</figcaption>
 </figure>
 
@@ -29,7 +29,7 @@ Open the team's **Manage members** action.
 The invitation is bound to that email address. If someone else opens the link, acceptance fails — the invitee must register or sign in with the invited address.
 
 <figure class="screenshot">
-    <img src="/images/team-manager-groups.png" alt="Groups page as a team manager sees it">
+    <img src="{{ site.baseurl }}/images/team-manager-groups.png" alt="Groups page as a team manager sees it">
     <figcaption>Team structure — groups and their databases — is what a Team Manager is accountable for.</figcaption>
 </figure>
 
@@ -66,6 +66,6 @@ Removing a member ends their access to the team's objects immediately. It does n
 
 ## Related
 
-- [Roles at a glance](/user-manual/roles/)
-- [Databases &amp; groups](/user-manual/guides/databases/)
-- [Permission matrix](/user-manual/reference/permissions/)
+- [Roles at a glance]({{ site.baseurl }}/user-manual/roles/)
+- [Databases &amp; groups]({{ site.baseurl }}/user-manual/guides/databases/)
+- [Permission matrix]({{ site.baseurl }}/user-manual/reference/permissions/)

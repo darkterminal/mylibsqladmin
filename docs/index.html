@@ -1,5 +1,7 @@
+---
+---
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="dark" data-baseurl="{{ site.baseurl }}">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -24,23 +26,23 @@
         />
 
         <!-- The same light/dark favicons the application serves. -->
-        <link rel="icon" id="site-favicon" href="/favicon-dark-32.png" type="image/png" />
-        <link rel="shortcut icon" href="/favicon-dark.ico" />
+        <link rel="icon" id="site-favicon" href="{{ site.baseurl }}/favicon-dark-32.png" type="image/png" />
+        <link rel="shortcut icon" href="{{ site.baseurl }}/favicon-dark.ico" />
         <link
             rel="preload"
-            href="/assets/fonts/instrument-sans-600.woff2"
+            href="{{ site.baseurl }}/assets/fonts/instrument-sans-600.woff2"
             as="font"
             type="font/woff2"
             crossorigin
         />
         <link
             rel="preload"
-            href="/assets/fonts/instrument-sans-400.woff2"
+            href="{{ site.baseurl }}/assets/fonts/instrument-sans-400.woff2"
             as="font"
             type="font/woff2"
             crossorigin
         />
-        <link rel="stylesheet" href="/assets/css/landing.css" />
+        <link rel="stylesheet" href="{{ site.baseurl }}/assets/css/landing.css" />
 
         <script>
             // Set the theme before paint. Same key as the user manual so the
@@ -61,16 +63,16 @@
                 }
             </style>
         </noscript>
-        <script src="/assets/js/landing.js" defer></script>
+        <script src="{{ site.baseurl }}/assets/js/landing.js" defer></script>
     </head>
     <body>
         <a class="skip-link" href="#content">Skip to content</a>
 
         <header class="site-header">
             <div class="container header-inner">
-                <a class="brand" href="/" aria-label="MylibSQLAdmin home">
+                <a class="brand" href="{{ site.baseurl }}/" aria-label="MylibSQLAdmin home">
                     <span class="brand__mark" aria-hidden="true">
-                        <img src="/images/app-logo-icon.svg" alt="" width="18" height="20" />
+                        <img src="{{ site.baseurl }}/images/app-logo-icon.svg" alt="" width="18" height="20" />
                     </span>
                     <span>MylibSQLAdmin</span>
                     <span class="brand__tag">libSQL console</span>
@@ -80,7 +82,7 @@
                     <a href="#features">Features</a>
                     <a href="#roles">Roles</a>
                     <a href="#quick-start">Quick start</a>
-                    <a href="/user-manual/">Manual</a>
+                    <a href="{{ site.baseurl }}/user-manual/">Manual</a>
                 </nav>
 
                 <div class="header-actions">
@@ -146,7 +148,7 @@
                     <a href="#features">Features</a>
                     <a href="#roles">Roles</a>
                     <a href="#quick-start">Quick start</a>
-                    <a href="/user-manual/">Manual</a>
+                    <a href="{{ site.baseurl }}/user-manual/">Manual</a>
                     <a href="https://github.com/darkterminal/mylibsqladmin">GitHub</a>
                 </div>
             </nav>
@@ -170,7 +172,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6" />
                                 </svg>
                             </a>
-                            <a class="btn btn--secondary" href="/user-manual/">Read the manual</a>
+                            <a class="btn btn--secondary" href="{{ site.baseurl }}/user-manual/">Read the manual</a>
                         </div>
                     </div>
 
@@ -183,7 +185,7 @@
                                 <span class="shot-frame__label">mylibsqladmin / dashboard</span>
                             </div>
                             <img
-                                src="/images/dashboard.png"
+                                src="{{ site.baseurl }}/images/dashboard.png"
                                 alt="MylibSQLAdmin dashboard showing database metrics, recent activity, and team information"
                                 width="1440"
                                 height="900"
@@ -214,7 +216,7 @@
                             </p>
                             <figure class="tile__figure">
                                 <img
-                                    src="/images/studio.png"
+                                    src="{{ site.baseurl }}/images/studio.png"
                                     alt="SQL Studio editor with a query and its result set"
                                     width="1440"
                                     height="900"
@@ -257,7 +259,7 @@
                             </p>
                             <figure class="tile__figure">
                                 <img
-                                    src="/images/databases.png"
+                                    src="{{ site.baseurl }}/images/databases.png"
                                     alt="Database list with namespaces, token counts, and actions"
                                     width="1440"
                                     height="900"
@@ -281,22 +283,22 @@
                     </div>
                 </div>
                 <div class="roles">
-                    <a class="role" href="/user-manual/roles/super-admin/">
+                    <a class="role" href="{{ site.baseurl }}/user-manual/roles/super-admin/">
                         <span class="role__index">01</span>
                         <h3>Super Admin</h3>
                         <p>Full access across users, teams, databases, and tokens.</p>
                     </a>
-                    <a class="role" href="/user-manual/roles/team-manager/">
+                    <a class="role" href="{{ site.baseurl }}/user-manual/roles/team-manager/">
                         <span class="role__index">02</span>
                         <h3>Team Manager</h3>
                         <p>Manages team membership, groups, and group tokens.</p>
                     </a>
-                    <a class="role" href="/user-manual/roles/database-maintainer/">
+                    <a class="role" href="{{ site.baseurl }}/user-manual/roles/database-maintainer/">
                         <span class="role__index">03</span>
                         <h3>Database Maintainer</h3>
                         <p>Works on granted databases and mints their tokens.</p>
                     </a>
-                    <a class="role" href="/user-manual/roles/member/">
+                    <a class="role" href="{{ site.baseurl }}/user-manual/roles/member/">
                         <span class="role__index">04</span>
                         <h3>Member</h3>
                         <p>Queries shared databases and inspects group membership.</p>
@@ -475,9 +477,9 @@
             <div class="container">
                 <div class="footer__grid">
                     <div class="footer__about">
-                        <a class="brand" href="/">
+                        <a class="brand" href="{{ site.baseurl }}/">
                             <span class="brand__mark" aria-hidden="true">
-                                <img src="/images/app-logo-icon.svg" alt="" width="18" height="20" />
+                                <img src="{{ site.baseurl }}/images/app-logo-icon.svg" alt="" width="18" height="20" />
                             </span>
                             <span>MylibSQLAdmin</span>
                         </a>
@@ -490,7 +492,7 @@
                     <div class="footer__col">
                         <h3>Resources</h3>
                         <ul>
-                            <li><a href="/user-manual/">Manual</a></li>
+                            <li><a href="{{ site.baseurl }}/user-manual/">Manual</a></li>
                             <li><a href="https://github.com/darkterminal/mylibsqladmin/releases">Releases</a></li>
                             <li><a href="https://github.com/darkterminal/mylibsqladmin/issues">Issues</a></li>
                         </ul>
@@ -510,7 +512,7 @@
                         © <span id="year">2026</span> MylibSQLAdmin ·
                         <span id="release-tag">v1.6.2</span> · Apache-2.0
                     </span>
-                    <a href="/user-manual/">Manual</a>
+                    <a href="{{ site.baseurl }}/user-manual/">Manual</a>
                 </div>
             </div>
         </footer>

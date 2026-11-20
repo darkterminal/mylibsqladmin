@@ -8,7 +8,7 @@ eyebrow: Credentials
 Every database credential in MylibSQLAdmin is issued as a **pair**: a full-access token that can write, and a read-only token that cannot. Both are generated together, shown once, and stored only as SHA-256 hashes.
 
 <figure class="screenshot">
-    <img src="/images/tokens.png" alt="Tokens table with database, access owner, token name, expiration and created date">
+    <img src="{{ site.baseurl }}/images/tokens.png" alt="Tokens table with database, access owner, token name, expiration and created date">
     <figcaption>The token list shows metadata only — a fingerprint, never the credential itself.</figcaption>
 </figure>
 
@@ -22,7 +22,7 @@ Every database credential in MylibSQLAdmin is issued as a **pair**: a full-acces
 6. Submit.
 
 <figure class="screenshot">
-    <img src="/images/tokens-reveal.png" alt="One-time reveal dialog with both token values blurred">
+    <img src="{{ site.baseurl }}/images/tokens-reveal.png" alt="One-time reveal dialog with both token values blurred">
     <figcaption>The one-time reveal. This is the only moment both values exist in plaintext. Values are blurred here.</figcaption>
 </figure>
 
@@ -66,6 +66,6 @@ Database Studio does not ask you to paste a token. On every visit it mints a sho
 
 ## Related
 
-- [Databases &amp; groups](/user-manual/guides/databases/)
-- [Database Studio](/user-manual/guides/studio/)
-- [Permission matrix](/user-manual/reference/permissions/)
+- [Databases &amp; groups]({{ site.baseurl }}/user-manual/guides/databases/)
+- [Database Studio]({{ site.baseurl }}/user-manual/guides/studio/)
+- [Permission matrix]({{ site.baseurl }}/user-manual/reference/permissions/)

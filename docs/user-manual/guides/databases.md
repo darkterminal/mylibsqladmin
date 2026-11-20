@@ -8,7 +8,7 @@ eyebrow: Operations
 A **database** is a libSQL namespace. Creating one writes a directory under the sqld data volume — it is a real object, not a row in the app's database. A **group** is an organisational layer that lets several databases share one credential.
 
 <figure class="screenshot">
-    <img src="/images/databases.png" alt="Databases table with type, granted users, owner, teams, groups, metrics, storage and status">
+    <img src="{{ site.baseurl }}/images/databases.png" alt="Databases table with type, granted users, owner, teams, groups, metrics, storage and status">
     <figcaption>The databases table. Every column answers an operational question: who owns it, who can see it, how much it costs, and whether it has credentials.</figcaption>
 </figure>
 
@@ -33,7 +33,7 @@ The name becomes part of the connection URL (`<name>.<sqld-host>:<port>`), so ch
 Open **Groups**. Each group shows how many databases it contains, and selecting one reveals the list.
 
 <figure class="screenshot">
-    <img src="/images/groups.png" alt="Analytics group selected with its databases listed">
+    <img src="{{ site.baseurl }}/images/groups.png" alt="Analytics group selected with its databases listed">
     <figcaption>A group and its databases. The group is also where a shared credential is minted.</figcaption>
 </figure>
 
@@ -91,6 +91,6 @@ Only a Super Admin reaches these actions: **Archive** appears on a database row 
 
 ## Related
 
-- [Tokens](/user-manual/guides/tokens/)
-- [Database Studio](/user-manual/guides/studio/)
-- [Permission matrix](/user-manual/reference/permissions/)
+- [Tokens]({{ site.baseurl }}/user-manual/guides/tokens/)
+- [Database Studio]({{ site.baseurl }}/user-manual/guides/studio/)
+- [Permission matrix]({{ site.baseurl }}/user-manual/reference/permissions/)

@@ -6,17 +6,17 @@
             </svg>
         </button>
 
-        <a class="brand" href="/">
+        <a class="brand" href="{{ site.baseurl }}/">
             <span class="brand__mark" aria-hidden="true">
-                <img src="/images/app-logo-icon.svg" alt="" width="18" height="20" />
+                <img src="{{ site.baseurl }}/images/app-logo-icon.svg" alt="" width="18" height="20" />
             </span>
             <span>MylibSQLAdmin</span>
             <span class="brand__sub">User Manual</span>
         </a>
 
         <nav class="site-nav" aria-label="Site">
-            <a href="/" {% if page.url == "/" %}aria-current="page"{% endif %}>Landing</a>
-            <a href="/user-manual/" {% if page.url contains "/user-manual" %}aria-current="page"{% endif %}>Manual</a>
+            <a class="site-nav__landing" href="{{ site.baseurl }}/" {% if page.url == "/" %}aria-current="page"{% endif %}>Landing</a>
+            <a href="{{ site.baseurl }}/user-manual/" {% if page.url contains "/user-manual" %}aria-current="page"{% endif %}>Manual</a>
             <a href="https://github.com/darkterminal/mylibsqladmin">GitHub</a>
             <button class="icon-button" type="button" data-theme-toggle aria-label="Toggle color theme">
                 <svg class="icon-moon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">

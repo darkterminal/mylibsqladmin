@@ -10,7 +10,7 @@ MylibSQLAdmin is a web control plane for [`libsql-server`](https://github.com/tu
 This manual is organised around **what you are allowed to do**, not around the menu bar. Each role has its own guide with the screens it can actually reach, the actions it can actually perform, and the boundaries it cannot cross.
 
 <figure class="screenshot">
-    <img src="/images/dashboard.png" alt="MylibSQLAdmin dashboard showing three databases and usage metrics">
+    <img src="{{ site.baseurl }}/images/dashboard.png" alt="MylibSQLAdmin dashboard showing three databases and usage metrics">
     <figcaption>The dashboard as a Super Admin sees it: every database in the team, with live query and storage metrics.</figcaption>
 </figure>
 
@@ -27,19 +27,19 @@ Server-side policies enforce all three. The UI hides what you cannot use, but hi
 ## Start here
 
 <div class="card-grid">
-    <a class="card" href="/user-manual/getting-started/">
+    <a class="card" href="{{ site.baseurl }}/user-manual/getting-started/">
         <span class="card__title">Getting started</span>
         <span class="card__desc">Install with the installer script, log in with the bootstrap credentials, and create your first database.</span>
     </a>
-    <a class="card" href="/user-manual/roles/">
+    <a class="card" href="{{ site.baseurl }}/user-manual/roles/">
         <span class="card__title">Roles at a glance</span>
         <span class="card__desc">The four roles, what each one is for, and the permission matrix behind them.</span>
     </a>
-    <a class="card" href="/user-manual/guides/databases/">
+    <a class="card" href="{{ site.baseurl }}/user-manual/guides/databases/">
         <span class="card__title">Databases &amp; groups</span>
         <span class="card__desc">Create, group, grant, archive and restore libSQL databases.</span>
     </a>
-    <a class="card" href="/user-manual/guides/tokens/">
+    <a class="card" href="{{ site.baseurl }}/user-manual/guides/tokens/">
         <span class="card__title">Tokens</span>
         <span class="card__desc">Full-access and read-only credential pairs, shown once and hashed at rest.</span>
     </a>

@@ -115,5 +115,5 @@ And two list-level rules that are not permissions at all:
 
 ## Related
 
-- [Roles at a glance](/user-manual/roles/)
-- [Teams &amp; members](/user-manual/guides/teams/)
+- [Roles at a glance]({{ site.baseurl }}/user-manual/roles/)
+- [Teams &amp; members]({{ site.baseurl }}/user-manual/guides/teams/)
