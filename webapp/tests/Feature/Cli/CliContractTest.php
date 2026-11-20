@@ -12,10 +12,13 @@
  * The contract is asserted through the real HTTP kernel; no mocks.
  */
 
+use App\Models\GrantedDatabase;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
+use App\Models\UserDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\PersonalAccessToken;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
@@ -38,6 +41,19 @@ function cliContractHeaders(string $token): array
         'Authorization' => "Bearer {$token}",
         'X-Request-Source' => 'CLI',
     ];
+}
+
+function cliDatabaseOwnedBy(User $owner, string $name): UserDatabase
+{
+    $team = Team::firstOrCreate(['name' => 'CLI DB Team'], ['description' => 't']);
+
+    return UserDatabase::create([
+        'user_id' => $owner->id,
+        'team_id' => $team->id,
+        'database_name' => $name,
+        'is_schema' => false,
+        'created_by' => $owner->id,
+    ]);
 }
 
 
@@ -221,4 +237,54 @@ test('super admin can restore an archived team through the CLI', function () {
 
     expect(Team::find($team->id))->not->toBeNull()
         ->and(Team::onlyTrashed()->find($team->id))->toBeNull();
+});
+
+test('db:list includes a database shared with the caller through a grant', function () {
+    $caller = cliSuperAdmin();
+    $owner = User::factory()->create();
+    $shared = cliDatabaseOwnedBy($owner, 'shared-with-caller');
+    GrantedDatabase::create(['user_id' => $caller->id, 'database_id' => $shared->id]);
+
+    $token = $caller->createToken('cli-auth-token', [], now()->addDays(30))->plainTextToken;
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+    $response = $this->withHeaders(cliContractHeaders($token))->getJson('/api/cli/db/lists');
+    $queries = collect(DB::getQueryLog())->pluck('query')->implode("\n");
+    DB::disableQueryLog();
+
+    $response->assertOk()
+        ->assertJsonPath('data.databases.0.database_name', 'shared-with-caller')
+        ->assertJsonPath('data.databases.0.owner', $owner->username);
+    expect($queries)->toContain('granted_user_databases');
+});
+
+test('db:archives excludes a live shared database and keeps soft-delete outside the OR', function () {
+    $caller = cliSuperAdmin();
+    $owner = User::factory()->create();
+
+    $live = cliDatabaseOwnedBy($owner, 'live-shared-db');
+    GrantedDatabase::create(['user_id' => $caller->id, 'database_id' => $live->id]);
+
+    $archived = cliDatabaseOwnedBy($owner, 'archived-shared-db');
+    GrantedDatabase::create(['user_id' => $caller->id, 'database_id' => $archived->id]);
+    $archived->delete();
+
+    $token = $caller->createToken('cli-auth-token', [], now()->addDays(30))->plainTextToken;
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+    $response = $this->withHeaders(cliContractHeaders($token))->getJson('/api/cli/db/archives');
+    $queries = collect(DB::getQueryLog())->pluck('query')->implode("\n");
+    DB::disableQueryLog();
+
+    $response->assertOk();
+    $names = collect($response->json('data.databases'))->pluck('database_name')->all();
+    expect($names)->toContain('archived-shared-db')
+        ->not->toContain('live-shared-db');
+
+    // Query-log confirmation, not just a green assertion: the soft-delete
+    // guard must wrap the owner/grant OR, otherwise the OR escapes it.
+    expect($queries)->toContain('granted_user_databases')
+        ->and($queries)->toMatch('/"deleted_at" is not null and \(/');
 });

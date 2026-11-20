@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Cli;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\UserDatabase;
 use Illuminate\Http\Request;
 
@@ -17,10 +16,16 @@ class CliDatabaseListController extends Controller
         // Identity comes from the Sanctum session, not from client headers.
         $user = $request->user();
 
-        $databases = UserDatabase::where('user_id', $user->id)
-            ->orWhereHas('groups.members', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })
+        // A database is visible when the caller owns it or holds an explicit
+        // grant. Group both branches so the soft-delete scope (applied by the
+        // model) cannot be bypassed by the OR — that belongs to the archive
+        // controller, not here.
+        $databases = UserDatabase::where(function ($query) use ($user) {
+            $query->where('user_id', $user->id)
+                ->orWhereHas('grant', function ($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                });
+        })
             ->with([
                 'groups' => function ($query) {
                     $query->select('id', 'name');
