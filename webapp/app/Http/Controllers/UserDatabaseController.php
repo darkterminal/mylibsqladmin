@@ -257,7 +257,7 @@ class UserDatabaseController extends Controller
             abort(403);
         }
 
-        if (!SqldService::archiveDatabase($database, 'web')) {
+        if (!SqldService::archiveDatabase($database, (int) $userDb->user_id, 'web')) {
             return redirect()->back()->with(['error' => 'Database deletion failed']);
         }
 
@@ -267,19 +267,18 @@ class UserDatabaseController extends Controller
     public function restoreDatabase(Request $request)
     {
         $database = $request->input('name');
+        abort_if(!is_string($database), 404, 'Database not found');
 
-        if (is_string($database)) {
-            // Authorize against the (soft-deleted) database record, same as delete.
-            $userDb = UserDatabase::withTrashed()->where('database_name', $database)->first();
+        // Authorize against the (soft-deleted) database record, same as delete.
+        $userDb = UserDatabase::withTrashed()->where('database_name', $database)->first();
 
-            abort_if(!$userDb, 404, 'Database not found');
+        abort_if(!$userDb, 404, 'Database not found');
 
-            if (!auth()->user()->can('restore', $userDb)) {
-                abort(403);
-            }
+        if (!auth()->user()->can('restore', $userDb)) {
+            abort(403);
         }
 
-        if (!SqldService::restoreDatabase($database, 'web')) {
+        if (!SqldService::restoreDatabase($database, (int) $userDb->user_id, 'web')) {
             return redirect()->back()->with(['error' => 'Database restore failed']);
         }
 
@@ -295,7 +294,7 @@ class UserDatabaseController extends Controller
             abort(403);
         }
 
-        if (!SqldService::deleteDatabase($database, 'web')) {
+        if (!SqldService::deleteDatabase($database, (int) $userDb->user_id, 'web')) {
             return redirect()->back()->with(['error' => 'Database force deletion failed']);
         }
 
