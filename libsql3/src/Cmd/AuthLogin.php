@@ -91,17 +91,11 @@ class AuthLogin extends Command implements Configurable
             throw new \Exception("Invalid API response");
         }
 
-        if (isset($body['data']['app_url'])) {
-            config_set('LIBSQL_API_ENDPOINT', $body['data']['app_url']);
-
-            if (str_contains($body['data']['app_url'], 'localhost')) {
-                $databaseEndpoint = str_replace('8000', '8080', $body['data']['app_url']);
-                config_set('LIBSQL_DATABASE_ENDPOINT', $databaseEndpoint);
-            } else {
-                config_set('LIBSQL_DATABASE_ENDPOINT', "{$body['data']['app_url']}:8080");
-            }
-        }
-
+        // Endpoints are operator-owned configuration. The old behavior overwrote
+        // them on every login and fabricated the DB endpoint from app_url with
+        // a fragile ':8000' -> ':8080' rewrite. app_url is still returned by the
+        // platform for other consumers, but the CLI must not derive endpoints
+        // from it.
         return [
             'token' => $body['data']['token'],
             'expires_at' => $body['data']['expires_at']

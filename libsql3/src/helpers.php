@@ -1,5 +1,6 @@
 <?php
 
+use Libsql3\Internal\Endpoint;
 use Libsql3\Internal\HttpTransport;
 
 if (!function_exists('use_database')) {
@@ -63,9 +64,77 @@ if (!function_exists('initialize_local_store')) {
     }
 }
 
+if (!function_exists('is_endpoint_config_key')) {
+    function is_endpoint_config_key(string $key): bool
+    {
+        return $key === 'LIBSQL_API_ENDPOINT' || $key === 'LIBSQL_DATABASE_ENDPOINT';
+    }
+}
+
+if (!function_exists('assert_endpoint_write')) {
+    /**
+     * Validate an endpoint write and refuse an HTTPS -> HTTP downgrade.
+     */
+    function assert_endpoint_write(string $key, string $value): void
+    {
+        // Parse first so malformed URLs fail before touching the store.
+        Endpoint::parse($value, $key);
+
+        $current = config_get($key);
+        if ($current === null || trim($current) === '') {
+            return;
+        }
+
+        try {
+            $previous = Endpoint::parse($current, $key);
+        } catch (\RuntimeException) {
+            // A corrupt legacy value cannot defend itself; allow a clean write.
+            return;
+        }
+
+        if ($previous->isSecure()) {
+            throw new \RuntimeException(
+                "Refusing to downgrade {$key} from HTTPS to plain HTTP; clear the stored value first"
+            );
+        }
+    }
+}
+
+if (!function_exists('warn_if_insecure_endpoint')) {
+    /**
+     * Emit one visible warning per non-TLS endpoint value per process.
+     */
+    function warn_if_insecure_endpoint(string $url, string $context): void
+    {
+        static $warned = [];
+        if (isset($warned[$url])) {
+            return;
+        }
+
+        $endpoint = Endpoint::parse($url, $context);
+        if ($endpoint->isSecure()) {
+            return;
+        }
+
+        $warned[$url] = true;
+        $message = "Warning: {$context} uses plain HTTP; credentials can be observed in transit. "
+            . 'Use https:// for non-loopback deployments.';
+
+        if (defined('STDERR')) {
+            fwrite(STDERR, $message . PHP_EOL);
+        } else {
+            error_log($message);
+        }
+    }
+}
+
 if (!function_exists('config_set')) {
     function config_set(string $key, $value): void
     {
+        if (is_endpoint_config_key($key)) {
+            assert_endpoint_write($key, (string) $value);
+        }
+
         $db = use_database();
         $table = config('tables.config');
 
@@ -177,8 +246,19 @@ if (!function_exists('http_request')) {
         array $headers = [],
         int|array $okCodes = 200,
     ): array {
-        $endpoint = config_get('LIBSQL_API_ENDPOINT') ?? config('api_endpoint');
-        $baseUrl = rtrim($endpoint, '/');
+        // config_get() returns "" for a missing row, so `??` alone never
+        // reaches the env fallback. Treat both null and "" as unset here.
+        $stored = config_get('LIBSQL_API_ENDPOINT');
+        $endpoint = ($stored !== null && trim($stored) !== '') ? $stored : config('api_endpoint');
+
+        if (!is_string($endpoint) || trim($endpoint) === '') {
+            throw new \RuntimeException('LIBSQL_API_ENDPOINT is not configured');
+        }
+
+        $validated = Endpoint::parse($endpoint, 'LIBSQL_API_ENDPOINT');
+        warn_if_insecure_endpoint($validated->value, 'LIBSQL_API_ENDPOINT');
+
+        $baseUrl = $validated->value;
         $url = $baseUrl . '/' . ltrim($pathUrl, '/');
 
         $retries = 0;

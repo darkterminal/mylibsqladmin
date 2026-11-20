@@ -32,7 +32,11 @@ final class ContractTest extends Libsql3TestCase
             return [
                 'status' => 200,
                 'body' => [],
-                'raw' => json_encode(['data' => ['token' => 'test-token', 'expires_at' => '2030-01-01 00:00:00']]),
+                'raw' => json_encode(['data' => [
+                    'token' => 'test-token',
+                    'expires_at' => '2030-01-01 00:00:00',
+                    'app_url' => 'http://localhost:8000',
+                ]]),
             ];
         });
 
@@ -49,6 +53,10 @@ final class ContractTest extends Libsql3TestCase
         foreach ($seen['headers'] as $header) {
             $this->assertStringNotContainsString('secret', $header);
         }
+
+        // F-03: app_url is operator-owned data, never an endpoint source.
+        $this->assertSame('https://example.invalid', config_get('LIBSQL_API_ENDPOINT'));
+        $this->assertEmpty(config_get('LIBSQL_DATABASE_ENDPOINT'));
     }
 
     public function test_db_list_sends_bearer_token_and_reads_databases(): void
