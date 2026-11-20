@@ -64,25 +64,16 @@ class DbTokenCreate extends Command implements Configurable
                 ]
             );
 
-            if ($request['status'] !== 201 && $request['status'] !== 200) {
-                $body = json_decode((string) $request['raw'], true);
-                $message = $body['message'] ?? substr((string) $request['raw'], 0, 200);
-                $output->writeln("<error>API returned status {$request['status']}: $message</error>");
-                return 3;
-            }
+            $parsed = parse_database_token_mint_response($request);
 
-            $body = json_decode((string) $request['raw'], true);
-            $plaintext = $body['data']['token'] ?? null;
-            $fingerprint = $body['data']['fingerprint'] ?? null;
-
-            if (!$plaintext) {
-                $output->writeln('<error>Malformed response from server</error>');
-                return 4;
+            if (!$parsed['ok']) {
+                $output->writeln("<error>API returned status {$parsed['status']}: {$parsed['error']}</error>");
+                return $parsed['kind'] === 'malformed' ? 4 : 3;
             }
 
             $output->writeln('<info>Full-access token minted for</info> ' . $databaseName);
-            $output->writeln($plaintext);
-            $output->writeln('<comment>Fingerprint: ' . ($fingerprint ?? 'unknown') . '</comment>');
+            $output->writeln($parsed['token']);
+            $output->writeln('<comment>Fingerprint: ' . ($parsed['fingerprint'] ?? 'unknown') . '</comment>');
             $output->writeln('<comment>Store this token now — it will never be shown again.</comment>');
 
             return 0;

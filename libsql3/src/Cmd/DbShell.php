@@ -95,16 +95,13 @@ class DbShell extends Command
             "Authorization: Bearer " . $token,
         ]);
 
-        $response = $request['raw'];
-        $httpCode = $request['status'];
+        $parsed = parse_database_token_mint_response($request);
 
-        if ($httpCode !== 200) {
-            throw new \Exception("API returned status $httpCode: " . substr($response, 0, 200));
+        if (!$parsed['ok']) {
+            throw new \RuntimeException($parsed['error']);
         }
 
-        $body = json_decode($response, true);
-
-        return $body['data']['token'];
+        return $parsed['token'];
     }
 
     private function getTokenForUser(string $userIdentifier): ?string

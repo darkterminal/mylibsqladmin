@@ -244,3 +244,62 @@ if (!function_exists('try_request')) {
         return $response;
     }
 }
+
+if (!function_exists('parse_database_token_mint_response')) {
+    /**
+     * Normalize the plaintext response from /api/cli/db/token/mint.
+     *
+     * Both 200 and 201 are accepted because the platform mint endpoint has
+     * returned 201 since v1.6.2. Callers keep their own exit codes; this helper
+     * only decides whether a token was actually delivered.
+     *
+     * @param array{status:int, raw:string} $request
+     * @return array{ok:bool, kind:?string, status:int, token:?string, fingerprint:?string, error:?string}
+     */
+    function parse_database_token_mint_response(array $request): array
+    {
+        $status = (int) ($request['status'] ?? 0);
+        $raw = (string) ($request['raw'] ?? '');
+        $decoded = json_decode($raw, true);
+        $body = is_array($decoded) ? $decoded : [];
+
+        if ($status !== 200 && $status !== 201) {
+            $message = $body['message'] ?? null;
+            $error = is_string($message) && $message !== ''
+                ? $message
+                : "Unexpected HTTP status {$status}";
+
+            return [
+                'ok' => false,
+                'kind' => 'status',
+                'status' => $status,
+                'token' => null,
+                'fingerprint' => null,
+                'error' => $error,
+            ];
+        }
+
+        $token = $body['data']['token'] ?? null;
+        if (!is_string($token) || $token === '') {
+            return [
+                'ok' => false,
+                'kind' => 'malformed',
+                'status' => $status,
+                'token' => null,
+                'fingerprint' => null,
+                'error' => 'Malformed response from server',
+            ];
+        }
+
+        $fingerprint = $body['data']['fingerprint'] ?? null;
+
+        return [
+            'ok' => true,
+            'kind' => null,
+            'status' => $status,
+            'token' => $token,
+            'fingerprint' => is_string($fingerprint) ? $fingerprint : null,
+            'error' => null,
+        ];
+    }
+}

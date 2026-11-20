@@ -102,10 +102,11 @@ final class ContractTest extends Libsql3TestCase
     }
 
     /**
-     * @todo F-02: the mint endpoint returns 201, but DbShell only accepts 200.
-     * This assertion documents the bug; Plan 003 must flip it to a success path.
+     * F-02 fixed: the mint endpoint's 201 is accepted and its plaintext token
+     * is consumed by db:shell. The shared parser is the single place that
+     * decides which statuses and payload shapes are valid.
      */
-    public function test_db_shell_currently_rejects_the_201_from_the_token_mint_endpoint(): void
+    public function test_db_shell_accepts_201_from_the_token_mint_endpoint(): void
     {
         HttpTransport::fake(fn (): array => [
             'status' => 201,
@@ -116,9 +117,46 @@ final class ContractTest extends Libsql3TestCase
         $command = new DbShell();
         $getDatabaseToken = new ReflectionMethod($command, 'getDatabaseToken');
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('API returned status 201');
-        $getDatabaseToken->invoke($command, 'demo', 'tester', 'test-token');
+        $this->assertSame(
+            'full-access-token',
+            $getDatabaseToken->invoke($command, 'demo', 'tester', 'test-token')
+        );
+    }
+
+    public function test_db_shell_accepts_200_from_the_token_mint_endpoint(): void
+    {
+        HttpTransport::fake(fn (): array => [
+            'status' => 200,
+            'body' => [],
+            'raw' => json_encode(['data' => ['token' => 'legacy-token']]),
+        ]);
+
+        $command = new DbShell();
+        $getDatabaseToken = new ReflectionMethod($command, 'getDatabaseToken');
+
+        $this->assertSame(
+            'legacy-token',
+            $getDatabaseToken->invoke($command, 'demo', 'tester', 'test-token')
+        );
+    }
+
+    public function test_mint_parser_surfaces_server_message_and_rejects_missing_token(): void
+    {
+        $serverError = parse_database_token_mint_response([
+            'status' => 422,
+            'raw' => json_encode(['message' => 'database is archived']),
+        ]);
+        $this->assertFalse($serverError['ok']);
+        $this->assertSame('status', $serverError['kind']);
+        $this->assertSame('database is archived', $serverError['error']);
+
+        $missing = parse_database_token_mint_response([
+            'status' => 201,
+            'raw' => json_encode(['data' => []]),
+        ]);
+        $this->assertFalse($missing['ok']);
+        $this->assertSame('malformed', $missing['kind']);
+        $this->assertSame('Malformed response from server', $missing['error']);
     }
 
     /**
