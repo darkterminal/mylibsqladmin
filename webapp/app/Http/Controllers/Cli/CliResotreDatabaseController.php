@@ -15,7 +15,7 @@ class CliResotreDatabaseController extends Controller
     {
         $dbName = $request->route('database_name') ?? $request->input('database_name');
 
-        if (SqldService::restoreDatabase($dbName, 'web')) {
+        if (SqldService::restoreDatabase($dbName, (int) auth()->id(), 'web')) {
             return response()->json([
                 'success' => true,
                 'message' => 'Database restored successfully',

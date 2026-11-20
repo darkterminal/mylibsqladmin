@@ -13,7 +13,7 @@ class CliForceDeleteDatabaseController extends Controller
      */
     public function __invoke(Request $request, $databaseName)
     {
-        if (SqldService::deleteDatabase($databaseName, 'web')) {
+        if (SqldService::deleteDatabase($databaseName, (int) auth()->id(), 'web')) {
             return response()->json([
                 'success' => true,
                 'message' => 'Database deleted successfully',
