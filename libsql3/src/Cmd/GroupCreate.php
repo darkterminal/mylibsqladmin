@@ -93,7 +93,7 @@ class GroupCreate extends Command
             $result = $this->createGroup($teamId, $groupName, $userIdentifier, $token);
 
             if ($result['status'] !== true) {
-                $error = $result['data']['message'] ?? $result['raw'];
+                $error = api_error_message($result['raw']);
                 throw new \Exception("API error ({$result['status']}): $error");
             }
 

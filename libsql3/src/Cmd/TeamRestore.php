@@ -168,7 +168,7 @@ class TeamRestore extends Command
                 $index + 1,
                 $team['name'],
                 $team['id'],
-                (new DateTime($team['deleted_at']))->format('Y-m-d')
+                format_api_date($team['deleted_at'] ?? null, 'Y-m-d')
             ];
         }
 
@@ -222,7 +222,7 @@ class TeamRestore extends Command
         $httpCode = $request['status'] ?? 0;
 
         if ($httpCode !== 200) {
-            throw new \Exception("API returned status $httpCode: " . substr((string) $response, 0, 200));
+            throw new \Exception("API returned status $httpCode: " . api_error_message($response));
         }
 
         $body = json_decode($response, true);

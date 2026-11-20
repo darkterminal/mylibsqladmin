@@ -1,7 +1,6 @@
 <?php
 namespace Libsql3\Cmd;
 
-use DateTime;
 use Libsql3\Internal\CliStore;
 use Psy\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -80,7 +79,7 @@ class TeamList extends Command
         $httpCode = $request['status'];
 
         if ($httpCode !== 200) {
-            throw new \Exception("API returned status $httpCode: " . substr($response, 0, 200));
+            throw new \Exception("API returned status $httpCode: " . api_error_message($response));
         }
 
         $body = json_decode($response, true);
@@ -102,8 +101,8 @@ class TeamList extends Command
                 $team['id'] ?? 'N/A',
                 $team['name'] ?? 'Unknown',
                 $team['description'] ?? 'Unknown',
-                (new DateTime($team['created_at']))->format('Y-m-d H:i:s') ?? 'Unknown',
-                (new DateTime($team['updated_at']))->format('Y-m-d H:i:s') ?? 'Unknown',
+                format_api_date($team['created_at'] ?? null),
+                format_api_date($team['updated_at'] ?? null),
             ];
         }
 

@@ -109,7 +109,7 @@ class GroupDelete extends Command
             $result = $this->deleteGroup($groupId, $userIdentifier, $token);
 
             if ($result['status'] !== true) {
-                throw new \Exception("API returned status {$result['status']}: " . substr($result['raw'], 0, 200));
+                throw new \Exception("API returned status {$result['status']}: " . api_error_message($result['raw']));
             }
 
             $io->success('Group deleted successfully!');

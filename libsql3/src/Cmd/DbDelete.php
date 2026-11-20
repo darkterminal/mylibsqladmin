@@ -71,7 +71,7 @@ class DbDelete extends Command
                 return 0;
             }
 
-            throw new \Exception("API returned status {$result['status']}: " . substr($result['raw'], 0, 200));
+            throw new \Exception("API returned status {$result['status']}: " . api_error_message($result['raw']));
         } catch (\Exception $e) {
             $io->error('Database deletion failed: ' . $e->getMessage());
             return 3;

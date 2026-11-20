@@ -1,7 +1,6 @@
 <?php
 namespace Libsql3\Cmd;
 
-use DateTime;
 use Libsql3\Internal\CliStore;
 use Psy\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -33,6 +32,15 @@ class GroupList extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
+        // An unknown --sort used to fall through to unsorted output with exit 0.
+        // Reject it up front so the caller can tell a typo from a valid listing.
+        $sort = $input->getOption('sort');
+        $allowedSorts = ['id', 'name', 'created_at', 'updated_at'];
+        if (!is_string($sort) || !in_array($sort, $allowedSorts, true)) {
+            $io->error('Invalid --sort value. Allowed values: ' . implode(', ', $allowedSorts));
+            return 4;
+        }
+
         // Get current user identifier
         $userIdentifier = $this->getCurrentLoggedInUser() ?: null;
 
@@ -61,7 +69,7 @@ class GroupList extends Command
             }
 
             // Display groups in a table
-            $this->renderGroupTable($io, $groups, $input->getOption('sort'));
+            $this->renderGroupTable($io, $groups, $sort);
 
             return 0;
         } catch (\Exception $e) {
@@ -82,7 +90,7 @@ class GroupList extends Command
         $httpCode = $request['status'];
 
         if ($httpCode !== 200) {
-            throw new \Exception("API returned status $httpCode: " . substr($response, 0, 200));
+            throw new \Exception("API returned status $httpCode: " . api_error_message($response));
         }
 
         $body = json_decode($response, true);
@@ -104,8 +112,8 @@ class GroupList extends Command
                 $group['id'] ?? 'N/A',
                 $group['name'] ?? 'Unknown',
                 $group['members_count'] ?? 0,
-                (new DateTime($group['created_at']))->format('Y-m-d H:i:s') ?? 'Unknown',
-                (new DateTime($group['updated_at']))->format('Y-m-d H:i:s') ?? 'Unknown',
+                format_api_date($group['created_at'] ?? null),
+                format_api_date($group['updated_at'] ?? null),
             ];
         }
 

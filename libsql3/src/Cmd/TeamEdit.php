@@ -74,7 +74,7 @@ class TeamEdit extends Command
             $helper = $this->getHelper('question');
 
             // Handle name
-            if ($name = $input->getOption('name')) {
+            if (($name = $input->getOption('name')) !== null) {
                 $data['name'] = $name;
             } else {
                 $nameQuestion = new Question(
@@ -96,7 +96,7 @@ class TeamEdit extends Command
 
             // Handle description
             $currentDescription = $currentTeam['description'] ?? null;
-            if ($desc = $input->getOption('description')) {
+            if (($desc = $input->getOption('description')) !== null) {
                 $data['description'] = $desc;
             } else {
                 $descQuestion = new Question(
@@ -131,7 +131,7 @@ class TeamEdit extends Command
             $response = json_decode($request['raw'], true);
 
             if ($status !== 200) {
-                $error = $response['message'] ?? $request['raw'];
+                $error = api_error_message($request['raw']);
                 throw new \Exception("API error ($status): $error");
             }
 
@@ -165,7 +165,7 @@ class TeamEdit extends Command
         $response = json_decode($request['raw'], true);
 
         if ($status !== 200) {
-            $error = $response['message'] ?? $request['raw'];
+            $error = api_error_message($request['raw']);
             throw new \Exception("Failed to fetch team: $error");
         }
 

@@ -79,7 +79,7 @@ class DbArchive extends Command implements Configurable
         $httpCode = $request['status'];
 
         if ($httpCode !== 200) {
-            throw new \Exception("API returned status $httpCode: $response");
+            throw new \Exception("API returned status $httpCode: " . api_error_message($response));
         }
 
         $body = json_decode($response, true);

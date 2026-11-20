@@ -62,7 +62,7 @@ class TeamCreate extends Command
             $response = json_decode($request['raw'], true);
 
             if ($status !== 200 && $status !== 201) {
-                $error = $response['message'] ?? $request['raw'];
+                $error = api_error_message($request['raw']);
                 throw new \Exception("API error ($status): $error");
             }
 

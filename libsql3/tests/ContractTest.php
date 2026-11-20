@@ -12,8 +12,12 @@ use Libsql3\Cmd\DbTokenCreate;
 use Libsql3\Cmd\DbTokenStatus;
 use Libsql3\Cmd\DbShell;
 use Libsql3\Cmd\GroupCreate;
+use Libsql3\Cmd\GroupList;
+use Libsql3\Cmd\TeamEdit;
 use Libsql3\Cmd\TeamFind;
+use Libsql3\Cmd\TeamList;
 use Libsql3\Cmd\TeamRestore;
+use Libsql3\Cmd\UserList;
 use Libsql3\Internal\HttpTransport;
 use Psy\Configuration;
 use Psy\Shell;
@@ -704,6 +708,176 @@ final class ContractTest extends Libsql3TestCase
             ['GET', 'https://example.invalid/api/cli/team/archives'],
             ['POST', 'https://example.invalid/api/cli/team/restore/7'],
         ], $seen);
+    }
+
+    public function test_team_edit_accepts_an_explicit_empty_description(): void
+    {
+        $this->seedLogin();
+        $seen = [];
+        HttpTransport::fake(function (string $url, string $method, ?array $payload) use (&$seen): array {
+            $seen[] = compact('url', 'method', 'payload');
+
+            if (str_contains($url, '/api/cli/team/get/')) {
+                return [
+                    'status' => 200,
+                    'body' => [],
+                    'raw' => json_encode(['data' => ['team' => [
+                        'id' => 7,
+                        'name' => 'Original',
+                        'description' => 'keep me',
+                        'created_at' => '2026-01-01 00:00:00',
+                        'updated_at' => '2026-01-15 00:00:00',
+                    ]]]),
+                ];
+            }
+
+            return [
+                'status' => 200,
+                'body' => [],
+                'raw' => json_encode(['data' => ['team' => [
+                    'id' => 7,
+                    'name' => 'Renamed',
+                    'description' => '',
+                    'updated_at' => '2026-02-01 00:00:00',
+                ]]]),
+            ];
+        });
+
+        $command = new TeamEdit();
+        $command->setApplication(new Shell(new Configuration()));
+        $tester = new CommandTester($command);
+        $exit = $tester->execute([
+            'id' => '7',
+            '--name' => 'Renamed',
+            '--description' => '',
+        ]);
+
+        $this->assertSame(0, $exit, $tester->getDisplay());
+        $update = $this->firstRequestTo($seen, '/api/cli/team/update/7');
+        $this->assertSame('', $update['payload']['description']);
+        $this->assertSame('Renamed', $update['payload']['name']);
+    }
+
+    public function test_team_list_renders_missing_and_malformed_dates_as_unknown(): void
+    {
+        $this->seedLogin();
+        HttpTransport::fake(fn (): array => [
+            'status' => 200,
+            'body' => [],
+            'raw' => json_encode(['data' => ['teams' => [[
+                'id' => 7,
+                'name' => 'Team with bad dates',
+                'description' => 'n/a',
+                'created_at' => 'not-a-date',
+            ]]]]),
+        ]);
+
+        $tester = new CommandTester(new TeamList());
+        $exit = $tester->execute([]);
+
+        $this->assertSame(0, $exit, $tester->getDisplay());
+        $display = $tester->getDisplay();
+        $this->assertStringContainsString('Unknown', $display);
+        $this->assertStringNotContainsString('DateTime', $display);
+        $this->assertSame('Unknown', format_api_date(null));
+        $this->assertSame('Unknown', format_api_date(''));
+        $this->assertSame('Unknown', format_api_date('not-a-date'));
+        $this->assertSame('2026-01-02', format_api_date('2026-01-02 03:04:05', 'Y-m-d'));
+    }
+
+    public function test_group_list_rejects_an_unknown_sort_instead_of_silently_unsorting(): void
+    {
+        HttpTransport::fake(function (): array {
+            $this->fail('No API request should be made for an invalid --sort.');
+        });
+
+        $tester = new CommandTester(new GroupList());
+        $exit = $tester->execute(['--sort' => 'bogus']);
+
+        $this->assertSame(4, $exit);
+        $this->assertStringContainsString('Invalid --sort value', $tester->getDisplay());
+        $this->assertStringContainsString('created_at', $tester->getDisplay());
+    }
+
+    public function test_user_list_reports_an_out_of_range_page_instead_of_clamping(): void
+    {
+        $this->seedLogin();
+        HttpTransport::fake(fn (): array => [
+            'status' => 200,
+            'body' => [],
+            'raw' => json_encode(['data' => ['users' => [
+                ['id' => 1, 'username' => 'alice', 'email' => 'alice@example.test'],
+                ['id' => 2, 'username' => 'bob', 'email' => 'bob@example.test'],
+            ]]]),
+        ]);
+
+        $tester = new CommandTester(new UserList());
+        $exit = $tester->execute(['--page' => '5', '--per-page' => '1']);
+
+        $this->assertSame(4, $exit);
+        $display = $tester->getDisplay();
+        $this->assertStringContainsString('out of range', $display);
+        $this->assertStringContainsString('2 page(s)', $display);
+        $this->assertStringNotContainsString('alice', $display, 'No partial page should be rendered.');
+    }
+
+    public function test_api_error_message_strips_control_characters_and_never_leaks_the_raw_body(): void
+    {
+        $raw = json_encode(['message' => "Invalid\ninput\u{0000}with control chars"]);
+        $message = api_error_message($raw);
+
+        $this->assertSame('Invalid input with control chars', $message);
+        $this->assertStringNotContainsString("\n", $message);
+        $this->assertStringNotContainsString("\u{0000}", $message);
+        $this->assertSame(
+            'Unexpected HTTP status',
+            api_error_message('{"secret":"do-not-leak-me"}'),
+            'Non-message bodies must fail closed.'
+        );
+        $this->assertSame(
+            str_repeat('a', 10),
+            api_error_message(json_encode(['message' => str_repeat('a', 50)]), 10)
+        );
+
+        putenv('LIBSQL3_DEBUG=1');
+        try {
+            $this->assertSame(
+                '{"secret":"do-not-leak-me"}',
+                api_error_message('{"secret":"do-not-leak-me"}'),
+                'The full body is available only behind the explicit debug flag.'
+            );
+        } finally {
+            putenv('LIBSQL3_DEBUG');
+        }
+    }
+
+    public function test_db_list_surfaces_a_sanitized_error_message(): void
+    {
+        $this->seedLogin();
+        HttpTransport::fake(fn (): array => [
+            'status' => 422,
+            'body' => [],
+            'raw' => json_encode(['message' => "bad request\nINJECTED"]),
+        ]);
+
+        $tester = new CommandTester(new DbList());
+        $exit = $tester->execute([]);
+
+        $this->assertSame(3, $exit);
+        $display = $tester->getDisplay();
+        $this->assertStringContainsString('API returned status 422: bad request INJECTED', $display);
+        $this->assertStringNotContainsString("bad request\nINJECTED", $display);
+    }
+
+    private function firstRequestTo(array $seen, string $path): array
+    {
+        foreach ($seen as $request) {
+            if (str_ends_with($request['url'], $path)) {
+                return $request;
+            }
+        }
+
+        $this->fail("No request recorded for $path");
     }
 
     /**

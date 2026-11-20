@@ -65,7 +65,7 @@ class TeamDelete extends Command
             $response = json_decode($request['raw'], true);
 
             if ($status !== 204 && $status !== 200) {
-                $error = $response['message'] ?? $request['raw'];
+                $error = api_error_message($request['raw']);
                 throw new \Exception("API error ($status): $error");
             }
 
@@ -88,7 +88,7 @@ class TeamDelete extends Command
         $response = json_decode($request['raw'], true);
 
         if ($status !== 200) {
-            $error = $response['message'] ?? $request['raw'];
+            $error = api_error_message($request['raw']);
             throw new \Exception("Failed to fetch team: $error");
         }
 

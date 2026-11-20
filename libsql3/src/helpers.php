@@ -237,6 +237,63 @@ if (!function_exists('array_get')) {
     }
 }
 
+if (!function_exists('format_api_date')) {
+    /**
+     * Format an API-supplied date for display. Malformed or missing values must
+     * never throw or print an empty cell: `new DateTime(null)` is a fatal error
+     * and the old trailing `?? 'Unknown'` was unreachable after ->format().
+     */
+    function format_api_date(mixed $value, string $format = 'Y-m-d H:i:s'): string
+    {
+        if (!is_string($value) || trim($value) === '') {
+            return 'Unknown';
+        }
+
+        $timestamp = strtotime($value);
+
+        return $timestamp === false ? 'Unknown' : date($format, $timestamp);
+    }
+}
+
+if (!function_exists('api_error_clean')) {
+    /**
+     * Collapse control characters (including newlines) into single spaces so a
+     * hostile response body cannot forge terminal output or escape a log line.
+     */
+    function api_error_clean(string $text): string
+    {
+        $clean = preg_replace('/[\x00-\x1F\x7F]+/', ' ', $text) ?? $text;
+
+        return trim((string) preg_replace('/\s+/', ' ', $clean));
+    }
+}
+
+if (!function_exists('api_error_message')) {
+    /**
+     * Safe summary of an API error body for exceptions and CLI output.
+     *
+     * By default only the JSON `message` field is used, capped at $maxLength.
+     * The full body is available only when LIBSQL3_DEBUG=1 is set explicitly —
+     * bodies can contain tokens or other data that must not leak by default.
+     */
+    function api_error_message(mixed $raw, int $maxLength = 200): string
+    {
+        $rawText = is_string($raw) ? $raw : (is_scalar($raw) ? (string) $raw : '');
+
+        if (getenv('LIBSQL3_DEBUG') === '1') {
+            return api_error_clean($rawText);
+        }
+
+        $decoded = json_decode($rawText, true);
+        $message = is_array($decoded) && is_scalar($decoded['message'] ?? null)
+            ? (string) $decoded['message']
+            : '';
+        $clean = api_error_clean($message);
+
+        return $clean !== '' ? substr($clean, 0, max(1, $maxLength)) : 'Unexpected HTTP status';
+    }
+}
+
 if (!function_exists('http_request')) {
     /**
      * Send an HTTP request (GET, POST, PUT, PATCH, DELETE) with JSON payload and custom headers.
@@ -319,12 +376,7 @@ if (!function_exists('http_request')) {
 
         $status = (int) ($response['status'] ?? 0);
         if (!in_array($status, $okCodes, true)) {
-            $raw = (string) ($response['raw'] ?? '');
-            $decoded = json_decode($raw, true);
-            $message = is_array($decoded) ? ($decoded['message'] ?? null) : null;
-            if (!is_string($message) || $message === '') {
-                $message = $raw !== '' ? substr($raw, 0, 200) : 'Unexpected HTTP status';
-            }
+            $message = api_error_message($response['raw'] ?? '');
             throw new \RuntimeException("API returned status {$status}: {$message}");
         }
 
