@@ -180,12 +180,13 @@ class SqldService
      * Archive a database
      *
      * @param string $database The name of the database to archive
+     * @param int $userId Owner of the authorized record (not necessarily the caller)
      * @return bool True if archiving was successful, false otherwise
      */
-    public static function archiveDatabase(string $database, ?string $source = null): bool
+    public static function archiveDatabase(string $database, int $userId, ?string $source = null): bool
     {
         $userDatabase = UserDatabase::where('database_name', $database)
-            ->where('user_id', auth()->user()->id)
+            ->where('user_id', $userId)
             ->first();
 
         if (!$userDatabase) {
@@ -241,10 +242,10 @@ class SqldService
         return true;
     }
 
-    public static function restoreDatabase(string $database, ?string $source = null): bool
+    public static function restoreDatabase(string $database, int $userId, ?string $source = null): bool
     {
         $userDatabase = UserDatabase::where('database_name', $database)
-            ->where('user_id', auth()->user()->id)
+            ->where('user_id', $userId)
             ->onlyTrashed()
             ->first();
 
@@ -345,11 +346,11 @@ class SqldService
         return true;
     }
 
-    public static function deleteDatabase(string $database, ?string $source = null): bool
+    public static function deleteDatabase(string $database, int $userId, ?string $source = null): bool
     {
         $archivedDatabase = null;
         $userDatabase = UserDatabase::where('database_name', $database)
-            ->where('user_id', auth()->user()->id)
+            ->where('user_id', $userId)
             ->onlyTrashed()
             ->first();
 
@@ -380,7 +381,7 @@ class SqldService
         }
 
         $deletedCount = UserDatabase::where('database_name', $database)
-            ->where('user_id', auth()->user()->id)
+            ->where('user_id', $userId)
             ->forceDelete();
 
         if (!$deletedCount) {

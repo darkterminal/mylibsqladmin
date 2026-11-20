@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use App\Http\Controllers\Concerns\RespondsWithInternalError;
 use App\Services\TeamDashboardQuery;
 use App\Services\TeamMembershipService;
@@ -338,7 +339,7 @@ class TeamController extends Controller
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
-            'permission_level' => 'required|in:super-admin,team-manager,database-maintener,member'
+            'permission_level' => ['required', Rule::in(Role::KEYS)]
         ]);
 
         $this->membership->storeMember($team, (int) $request->user_id, $request->permission_level);
@@ -364,7 +365,7 @@ class TeamController extends Controller
         $validated = $request->validate([
             'name' => 'nullable|string|max:255',
             'email' => 'required|email',
-            'role' => 'required|in:super-admin,team-manager,database-maintainer,member'
+            'role' => ['required', Rule::in(Role::KEYS)]
         ]);
 
         $this->membership->invite($team, $validated['name'] ?? null, $validated['email'], $validated['role']);
@@ -469,7 +470,7 @@ class TeamController extends Controller
     {
         try {
             $validated = $request->validate([
-                'role' => ['required', 'in:super-admin,team-manager,database-maintainer,member']
+                'role' => ['required', Rule::in(Role::KEYS)]
             ]);
 
             $this->membership->updateMemberRole($team, $user, $validated['role']);
