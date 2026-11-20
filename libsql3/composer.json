@@ -11,6 +11,11 @@
             "Libsql3\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Libsql3\\Tests\\": "tests/"
+        }
+    },
     "authors": [
         {
             "name": "Imam Ali Mustofa",
@@ -18,6 +23,20 @@
         }
     ],
     "require": {
+        "php": "^8.4",
         "psy/psysh": "^0.12.9"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    },
+    "config": {
+        "audit": {
+            "ignore": {
+                "PKSA-4s4z-t146-6123": "D-05: medium advisory recorded; dependency refresh deferred to Plan 007"
+            }
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+use Libsql3\Internal\HttpTransport;
+
 if (!function_exists('use_database')) {
     function use_database(): PDO
     {
@@ -222,72 +224,23 @@ if (!function_exists('try_request')) {
         array $headers = [],
         int|array $okCodes = 200
     ): ?array {
-        $method = strtoupper($method);
+        // All cURL work lives in HttpTransport so tests can fake the boundary.
+        // Status-code acceptance stays here; retry semantics are unchanged.
+        $response = (new HttpTransport())->send($url, $method, $payload, $headers);
 
-        // Build payload
-        $sendBody = null;
-        $sendFields = null;
-
-        if ($method === 'GET' && $payload) {
-            // Encode as query string
-            $url .= (str_contains($url, '?') ? '&' : '?') . http_build_query($payload);
-        } elseif ($payload !== null) {
-            // Encode as JSON for non‑GET methods
-            $sendBody = json_encode($payload);
-            $sendFields = $sendBody;
-        }
-
-        // Default headers (add Content‑Length only when sending a body)
-        $defaultHeaders = [
-            'Content-Type: application/json',
-            'X-Request-Source: CLI',
-        ];
-        if ($sendBody !== null) {
-            $defaultHeaders[] = 'Content-Length: ' . strlen($sendBody);
-        }
-
-        // Initialise cURL
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL => $url,
-            CURLOPT_CUSTOMREQUEST => $method,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER => array_merge($defaultHeaders, $headers),
-        ]);
-
-        // Attach body for non‑GET
-        if ($sendFields !== null) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $sendFields);
-        }
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        curl_close($ch);
-
-        // Handle cURL‑level errors
-        if ($curlError) {
+        if ($response === null) {
             return null;
         }
 
-        // Validate HTTP status code
         $okCodes = (array) $okCodes;
         if ($okCodes === [200]) {
             // Default: treat any 2xx as success
             $okCodes = range(200, 299);
         }
-        if (!in_array($httpCode, $okCodes, true)) {
+        if (!in_array($response['status'], $okCodes, true)) {
             return null;
         }
 
-        // Attempt JSON‑decode; fallback to raw string
-        $decoded = json_decode($response, true);
-        $body = json_last_error() === JSON_ERROR_NONE ? $decoded : $response;
-
-        return [
-            'status' => $httpCode,
-            'body' => $body,
-            'raw' => $response,
-        ];
+        return $response;
     }
 }
