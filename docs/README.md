@@ -232,3 +232,11 @@ Layout of the site source:
 `README.md` and `libsql3-man.md` are excluded from the Jekyll build on purpose;
 they stay repository-facing guides and are not part of the published site.
 
+### libsql3 distribution status
+
+`libsql3/build/libsql3` is a **historical PHAR artifact from 2025-06-27**. It
+does not match the current `libsql3/src/` sources (several commands are missing
+and older behavior is still present). Do not use or redistribute that binary as
+the current CLI. A rebuilt, source-verified artifact is tracked in a later plan;
+until then, run the CLI from source via `php libsql3/libsql3`.
+
