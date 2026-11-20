@@ -54,11 +54,28 @@ COPY . .
 RUN mkdir -p /var/www/html/database && \
     rm -rf public/build
 
-# Install Turso PHP extension
-ENV COMPOSER_HOME=/root/.composer
-ENV PATH="${COMPOSER_HOME}/vendor/bin:${PATH}"
-RUN composer global require darkterminal/turso-php-installer
-RUN turso-php-installer install -n --thread-safe
+# Install Turso PHP extension (pinned and hermetic).
+# This intentionally avoids `turso-php-installer`: its release lookup goes
+# through the GitHub API unauthenticated, which rate-limits shared CI egress
+# IPs (observed: v1.6.1 build passed, v1.6.2 build failed with "API rate
+# limit exceeded"). Instead, the exact release asset for this base image
+# (PHP 8.4, ZTS/TS build for frankenphp worker mode) is downloaded directly.
+# github.com/.../releases/download/... is not API-rate-limited.
+# Bump TURSO_PHP_EXTENSION_TAG deliberately, in sync with the extension
+# releases; keep PHP_VERSION_MM aligned with the base image.
+ARG PHP_VERSION_MM=8.4
+ARG TURSO_PHP_EXTENSION_TAG=turso-php-extension-v1.7.1
+RUN set -eux; \
+    ext_dir="$(php -r 'echo ini_get("extension_dir");')"; \
+    asset="libsql_php-${TURSO_PHP_EXTENSION_TAG}-php-${PHP_VERSION_MM}-ts-x86_64-unknown-linux-gnu.tar.gz"; \
+    curl -fsSL "https://github.com/tursodatabase/turso-client-php/releases/download/${TURSO_PHP_EXTENSION_TAG}/${asset}" -o /tmp/libsql.tar.gz; \
+    mkdir -p /tmp/libsql; \
+    tar -xzf /tmp/libsql.tar.gz -C /tmp/libsql --strip-components=1; \
+    install -m 0755 /tmp/libsql/liblibsql_php.so "${ext_dir}/liblibsql_php.so"; \
+    install -m 0644 /tmp/libsql/libsql_php_extension.stubs.php "${ext_dir}/libsql_php_extension.stubs.php"; \
+    echo 'extension=liblibsql_php.so' > /usr/local/etc/php/conf.d/zz-libsql.ini; \
+    php -m | grep -i libsql; \
+    rm -rf /tmp/libsql /tmp/libsql.tar.gz
 
 # Install dependencies
 RUN composer install --optimize-autoloader --no-dev --no-interaction \
