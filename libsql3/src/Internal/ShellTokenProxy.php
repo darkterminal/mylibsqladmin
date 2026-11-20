@@ -169,12 +169,23 @@ final class ShellTokenProxy
     public static function serve($server, string $tokenFile, string $upstreamUrl, int $parentPid): void
     {
         $token = trim((string) file_get_contents($tokenFile));
-        register_shutdown_function(static function () use ($tokenFile): void {
+        $cleanup = static function () use ($tokenFile): void {
             @unlink($tokenFile);
             @rmdir(dirname($tokenFile));
-        });
+        };
+        register_shutdown_function($cleanup);
 
-        while (posix_kill($parentPid, 0)) {
+        // Ctrl-C is delivered to the whole process group, so the parent's
+        // finally block may never run. The child must clean up after itself.
+        pcntl_async_signals(true);
+        foreach ([SIGTERM, SIGINT, SIGHUP] as $signal) {
+            pcntl_signal($signal, static function () use ($cleanup): void {
+                $cleanup();
+                exit(0);
+            });
+        }
+
+        while (posix_getppid() === $parentPid) {
             $client = @stream_socket_accept($server, 0.5);
             if ($client === false) {
                 continue;
