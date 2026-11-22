@@ -1,7 +1,15 @@
 import { createClient } from "@libsql/client";
 
+const url = process.env.LIBSQL_SYNC_URL;
+const authToken = process.env.LIBSQL_AUTH_TOKEN;
+
+if (!url || !authToken) {
+    throw new Error("Set LIBSQL_SYNC_URL and LIBSQL_AUTH_TOKEN before running this example.");
+}
+
 export const turso = createClient({
-    url: 'http://foo.localhost:8080',
+    url,
+    authToken,
 });
 
 const txn = await turso.transaction("read");

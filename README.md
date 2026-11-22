@@ -71,7 +71,8 @@ Make sure the installer script is running inside your preferred directory!
 curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/darkterminal/mylibsqladmin/refs/heads/main/scripts/installer.sh | sh
 ```
 
-or read the [Manual Installation Guides](/docs/README.md)
+or read the [Manual Installation Guides](docs/README.md). For a custom domain
+with TLS termination, see [Custom domain + TLS](docs/README.md#custom-domain--tls).
 
 ### Bootstrap
 

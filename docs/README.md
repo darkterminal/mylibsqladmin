@@ -51,6 +51,8 @@ services:
             - LIBSQL_LOCAL_INSTANCE=false
             - LIBSQL_HOST=your-libsql-server-address
             - LIBSQL_PORT=your-libsql-server-port
+            # For a custom domain, set this on the webapp too (see below).
+            # - LIBSQL_PARENT_DOMAIN=example.com
             - LIBSQL_API_HOST=your-libsql-server-admin-address
             - LIBSQL_API_PORT=your-libsql-server-admin-port
             - LIBSQL_API_USERNAME=
@@ -81,6 +83,7 @@ services:
             - LIBSQL_LOCAL_INSTANCE=true
             - LIBSQL_HOST=proxy
             - LIBSQL_PORT=8080
+            - LIBSQL_PARENT_DOMAIN=localhost
             - LIBSQL_API_HOST=db
             - LIBSQL_API_PORT=8081
             - LIBSQL_API_USERNAME=
@@ -92,6 +95,7 @@ services:
         container_name: mylibsqladmin-proxy
         image: ghcr.io/darkterminal/mylibsqladmin-proxy:latest
         environment:
+            # Kept for images <= 1.6.2; ignored by the current proxy.
             - APP_ENV=production
             - LIBSQL_PARENT_DOMAIN=example.com
             - LIBSQL_VALIDATOR_UPSTREAM=mylibsqladmin-webui-prod:8000
@@ -140,6 +144,19 @@ docker compose up -d
 
 #### Custom domain + TLS
 
+Host-based routing and these environment variables are part of the **current
+source tree**. The image published as `:latest` is still v1.6.2, which uses the
+old `.localhost` config and ignores `LIBSQL_PARENT_DOMAIN`. Build the proxy from
+this checkout and pin the resulting tag until a release includes the change:
+
+```bash
+docker build -t mylibsqladmin-proxy:custom -f nginx/Dockerfile ./nginx
+```
+
+Replace the proxy `image:` line in the LLI example above with
+`mylibsqladmin-proxy:custom`. The installer script generates a localhost-only
+stack; use the manual compose example for a custom domain.
+
 The proxy routes by the `Host` header. It does **not** terminate TLS; put a
 TLS-terminating reverse proxy (Caddy, Traefik, nginx) in front of `:8080` and
 make sure it forwards the original `Host`. If the edge rewrites `Host` to
@@ -156,18 +173,20 @@ For `https://admin.example.com` with databases at `https://<db>.example.com`:
 3. Set the webapp's `APP_URL=https://admin.example.com`, `LIBSQL_HOST=example.com`
    and `LIBSQL_PORT=443`. `LIBSQL_HOST` is the **client-facing** host used by
    the browser, not an internal Docker service name.
-4. Set `LIBSQL_VALIDATOR_UPSTREAM` to the webapp's internal `host:port`.
-   This replaced the old `APP_ENV`-based `sed` rewrite; the mounted config is
-   now read-only and rendered at startup into a writable path.
+4. Set `LIBSQL_VALIDATOR_UPSTREAM` to the webapp's internal `host:port`
+   (for example `mylibsqladmin-webui-prod:8000`). In the current image this
+   replaces the old `APP_ENV`-based `sed` rewrite: the mounted template stays
+   read-only and is rendered at startup into a writable path. `APP_ENV` can
+   remain in the compose file for compatibility with older images.
 
 Keep `:8080` and the sqld admin API `:8081` off the public internet. Only the
 TLS terminator should be exposed.
 
 ### First-time Bootstrap (fresh installs)
 
-v1.5.0 does **not** ship any seeded user accounts. The container
-entrypoint applies migrations automatically on first boot. To create the
-single super-admin, either:
+Fresh installs since v1.5.0 do **not** ship any seeded user accounts. The
+container entrypoint applies migrations automatically on first boot. To create
+the single super-admin, either:
 
 **Option A — automatic (recommended):** set `LIBSQL_SEED_DEFAULTS=true` in
 `environment:` before the first `docker compose up`. The entrypoint writes

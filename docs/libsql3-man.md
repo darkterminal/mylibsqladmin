@@ -53,7 +53,7 @@ Two supported paths:
 
 To upgrade, replace the PHAR with a newer verified artifact, or pull the new
 source and rerun `composer install`. The root `curl | sh` installer is described
-in the repository `README.md` (line 65); this guide does not redefine it.
+in the repository `README.md`; this guide does not redefine it.
 
 ## Build from source
 
@@ -187,8 +187,10 @@ parent/child relationships in the archive list.
 Database tokens are opaque random bytes and are stored as SHA-256 hashes on the
 platform. Minting prints the plaintext exactly once; save it then because no
 command can show it again. The status command returns only a fingerprint, never
-token material. Minting a fresh token replaces the previous CLI-minted token for
-that database; re-minting is the response to a suspected leak.
+token material. Both `db:token:create` and `db:token:status` derive that
+fingerprint from the stored hash, so the two values can be compared after a
+rotation. Minting a fresh token replaces the previous CLI-minted token for that
+database; re-minting is the response to a suspected leak.
 
 Releases built before this artifact passed the database token in the database
 shell child process arguments, where other local processes could observe it in
