@@ -130,6 +130,11 @@ interactive: commands that need a missing value exit with an input error instead
 of prompting. `--version` prints one line and does not require
 `LIBSQL_API_ENDPOINT`.
 
+PsySH 0.12.24 treats a `.psysh.php` in the working directory as an untrusted
+project feature. One-shot runs never load it. In the REPL, an interactive run
+asks for trust first; a non-interactive run skips it with a `Restricted Mode`
+warning. This blocks the CWD-poisoning issue in GHSA-4486-gxhx-5mg7.
+
 Destructive commands that normally ask for confirmation accept `--yes` as the
 explicit acknowledgement in one-shot mode. Without `--yes`, the confirmation
 defaults to "no" and the command exits `4` without changing data:

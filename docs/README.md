@@ -313,9 +313,9 @@ The exact rebuild-and-check command is:
 ```
 
 For the committed binary the raw SHA-256 is
-`f928e5c7af0425b7eaf3d62c0f730f86530c5db319b8f566d02e776a1161a0a5` and the
+`fe00561ba016dd3be078f0c2a6f8abf49b5d56ba135d1fc69ad6b35811640a8c` and the
 content fingerprint is
-`04c8d6ca4c0f72aac4bee0ae2a2fde5088cbadf22c30e327727bf995a1c2af95`.
+`34d1cf5dc93135fc1b4a8a669d5ea39e855be227fcf267e9a7472026087cdc29`.
 The workflow rebuilds from a clean checkout using pinned Box 3.8.4 and asserts
 the **fingerprint**, not the raw SHA-256: Box orders manifest entries with
 `readdir()`, which differs between filesystems, while the fingerprint sorts

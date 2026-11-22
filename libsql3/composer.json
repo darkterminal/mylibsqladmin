@@ -25,17 +25,10 @@
     ],
     "require": {
         "php": "^8.4",
-        "psy/psysh": "^0.12.9"
+        "psy/psysh": "^0.12.19"
     },
     "require-dev": {
         "phpunit/phpunit": "^11.5"
-    },
-    "config": {
-        "audit": {
-            "ignore": {
-                "PKSA-4s4z-t146-6123": "D-05: medium advisory recorded; dependency refresh deferred to Plan 007"
-            }
-        }
     },
     "scripts": {
         "test": "phpunit",

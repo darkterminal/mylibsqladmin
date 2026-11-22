@@ -23,6 +23,14 @@ updated out-of-band on 2026-11-22 with the proxy fixes below (pinned tag
   `sed -i`, and `:5001` now has an auth-checked gRPC listener instead of a dead
   port. Added `make proxy/test` (31 Lua assertions across both templates).
 
+### Security — CLI dependency
+
+- `psy/psysh` upgraded from 0.12.9 to 0.12.24 (floor raised to `^0.12.19`),
+  fixing GHSA-4486-gxhx-5mg7 / CVE-2026-25129: a `.psysh.php` planted in the
+  current working directory is no longer auto-loaded without project trust.
+  Non-interactive runs skip it with a warning; interactive runs prompt. The
+  bundled PHAR was rebuilt with the patched dependency (D-05/D-06).
+
 ### Fixes
 
 - CLI token fingerprints from `db:token:create` and `db:token:status` agree
