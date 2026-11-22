@@ -22,6 +22,7 @@ permalink: pretty
 # CLI reference are both published as part of this site.
 exclude:
   - README.md
+  - cli-smoke-test.md
   - Gemfile
   - Gemfile.lock
   - vendor

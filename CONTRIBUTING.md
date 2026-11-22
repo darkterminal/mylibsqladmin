@@ -91,6 +91,7 @@ A few rules keep its contracts stable:
 - The narrative manual in `docs/libsql3-man.md` owns workflows, first-run guidance, endpoint policy, and exit codes. Do not duplicate argument/option tables there.
 - The committed PHAR is rebuilt by the build-only `.github/workflows/libsql3-phar.yml` gate and verified byte-for-byte against `libsql3/src/**`. Do not hand-edit the binary or silently swap it.
 - `libsql3` output for one-shot commands is human-readable and is not a stable machine contract. Adding `--format=json` needs a named consumer and a new finding first.
+- For a full end-to-end sweep against a disposable local stack, follow [the contributor CLI smoke guide](docs/cli-smoke-test.md). It walks all 25 commands, the negative cases, and the safe order of destructive operations.
 
 ## Code Standards
 
