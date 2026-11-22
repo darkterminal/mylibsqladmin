@@ -80,7 +80,7 @@ class DbDelete extends Command
 
     private function deleteDatabase(string $dbName, string $userIdentifier, string $token): array
     {
-        $request = http_request('/api/cli/db/delete/' . urlencode($dbName), 'DELETE', null, [
+        $request = http_request('/api/cli/db/delete/' . rawurlencode($dbName), 'DELETE', null, [
             "Authorization: Bearer $token",
         ]);
 
@@ -92,7 +92,7 @@ class DbDelete extends Command
 
     private function forceDeleteDatabase(string $dbName, string $userIdentifier, string $token): array
     {
-        $request = http_request('/api/cli/db/force-delete/' . urlencode($dbName), 'DELETE', null, [
+        $request = http_request('/api/cli/db/force-delete/' . rawurlencode($dbName), 'DELETE', null, [
             "Authorization: Bearer $token",
         ]);
 

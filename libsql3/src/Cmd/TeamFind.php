@@ -49,7 +49,7 @@ class TeamFind extends Command
 
         try {
             $request = http_request(
-                '/api/cli/team/find/' . urlencode($teamName),
+                '/api/cli/team/find/' . rawurlencode($teamName),
                 'GET',
                 null,
                 ["Authorization: Bearer $token"]

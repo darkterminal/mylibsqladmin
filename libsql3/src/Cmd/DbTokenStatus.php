@@ -49,7 +49,7 @@ class DbTokenStatus extends Command
 
         try {
             $request = http_request(
-                '/api/cli/db/token/' . urlencode($databaseName),
+                '/api/cli/db/token/' . rawurlencode($databaseName),
                 'GET',
                 null,
                 ["Authorization: Bearer $token"]

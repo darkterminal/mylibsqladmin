@@ -55,7 +55,7 @@ class DbTokenCreate extends Command implements Configurable
             }
 
             $request = http_request(
-                '/api/cli/db/token/mint/' . urlencode($databaseName),
+                '/api/cli/db/token/mint/' . rawurlencode($databaseName),
                 'POST',
                 null,
                 [

@@ -79,7 +79,7 @@ class DbRestore extends Command
 
     private function restoreDatabase(string $dbName, $userIdentifier, string $token): array
     {
-        $request = http_request('/api/cli/db/restore/' . urlencode($dbName), 'POST', null, [
+        $request = http_request('/api/cli/db/restore/' . rawurlencode($dbName), 'POST', null, [
             "Authorization: Bearer $token",
             "Content-Type: application/json"
         ]);

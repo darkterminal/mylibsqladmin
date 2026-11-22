@@ -110,7 +110,7 @@ final class ContractTest extends Libsql3TestCase
         $exit = $tester->execute(['database' => 'my db']);
 
         $this->assertSame(0, $exit);
-        $this->assertSame('https://example.invalid/api/cli/db/token/mint/my+db', $seen['url']);
+        $this->assertSame('https://example.invalid/api/cli/db/token/mint/my%20db', $seen['url']);
         $this->assertSame('POST', $seen['method']);
         $this->assertContains('Authorization: Bearer test-token', $seen['headers']);
         $display = $tester->getDisplay();
@@ -413,7 +413,7 @@ final class ContractTest extends Libsql3TestCase
 
         $this->assertSame(0, $exit);
         $this->assertSame('GET', $seen[0]['method']);
-        $this->assertSame('https://example.invalid/api/cli/db/token/my+db', $seen[0]['url']);
+        $this->assertSame('https://example.invalid/api/cli/db/token/my%20db', $seen[0]['url']);
         $this->assertContains('Authorization: Bearer test-token', $seen[0]['headers']);
         $display = $tester->getDisplay();
         $this->assertStringContainsString('••••••••abcd1234', $display);
@@ -457,7 +457,7 @@ final class ContractTest extends Libsql3TestCase
         $exit = $tester->execute(['team_name' => 'Team A']);
 
         $this->assertSame(0, $exit);
-        $this->assertSame(['GET https://example.invalid/api/cli/team/find/Team+A'], $seen);
+        $this->assertSame(['GET https://example.invalid/api/cli/team/find/Team%20A'], $seen);
         $display = preg_replace('/\s+/', ' ', $tester->getDisplay());
         $this->assertStringContainsString('Team found successfully!', $display);
         $this->assertStringContainsString('Team A', $display);

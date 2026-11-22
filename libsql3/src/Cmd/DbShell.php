@@ -132,7 +132,7 @@ class DbShell extends Command
 
     private function getDatabaseToken(string $databaseName, string $userIdentifier, string $token): ?string
     {
-        $request = http_request('/api/cli/db/token/mint/' . urlencode($databaseName), 'POST', null, [
+        $request = http_request('/api/cli/db/token/mint/' . rawurlencode($databaseName), 'POST', null, [
             "Authorization: Bearer " . $token,
         ]);
 
