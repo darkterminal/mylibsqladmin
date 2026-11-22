@@ -17,6 +17,7 @@ use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
 use App\Models\UserDatabase;
+use App\Services\SystemSettings;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -69,11 +70,13 @@ test('cli login issues a Sanctum token for a super admin', function () {
         ->assertJsonStructure([
             'status',
             'message',
-            'data' => ['token', 'expires_at', 'expires_in', 'app_url'],
+            'data' => ['token', 'expires_at', 'expires_in', 'app_url', 'timezone'],
         ])
-        ->assertJsonPath('status', 'success');
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.timezone', SystemSettings::timezone());
 
-    expect(PersonalAccessToken::count())->toBe(1)
+    expect(in_array($response->json('data.timezone'), timezone_identifiers_list(), true))->toBeTrue()
+        ->and(PersonalAccessToken::count())->toBe(1)
         ->and(PersonalAccessToken::first()->name)->toBe('cli-auth-token');
 });
 
