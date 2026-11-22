@@ -42,9 +42,14 @@ jobs:
           echo 'f2058b50b126f1e9e811538ef2688cdbf578ae24f881de6d32a5f30c4eb6e3fb  /tmp/box.phar' | sha256sum -c -
           sudo install -m 0755 /tmp/box.phar /usr/local/bin/box
 
-      - name: Record committed SHA-256
+      - name: Record committed PHAR fingerprint
         id: committed
-        run: echo "sha=$(sha256sum libsql3/build/libsql3 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+        # A raw sha256sum is not stable across build hosts here: Box orders
+        # PHAR manifest entries with readdir(), which differs between local
+        # ext4 and Actions' overlayfs. phar-fingerprint.php sorts entries
+        # before hashing, so the assertion below checks content rather than
+        # filesystem iteration order.
+        run: echo "fingerprint=$(php .github/scripts/phar-fingerprint.php libsql3/build/libsql3)" >> "$GITHUB_OUTPUT"
 
       - name: Rebuild PHAR
         working-directory: libsql3
@@ -57,12 +62,13 @@ jobs:
 
       - name: Verify rebuilt PHAR matches committed artifact
         env:
-          EXPECTED_SHA: ${{ steps.committed.outputs.sha }}
+          EXPECTED_FINGERPRINT: ${{ steps.committed.outputs.fingerprint }}
         run: |
-          actual=$(sha256sum libsql3/build/libsql3 | cut -d' ' -f1)
-          echo "expected=$EXPECTED_SHA"
+          actual=$(php .github/scripts/phar-fingerprint.php libsql3/build/libsql3)
+          echo "expected=$EXPECTED_FINGERPRINT"
           echo "actual=$actual"
-          test "$actual" = "$EXPECTED_SHA"
+          test -n "$actual"
+          test "$actual" = "$EXPECTED_FINGERPRINT"
 
       - name: Verify source files inside PHAR are byte-identical
         run: |
