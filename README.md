@@ -29,7 +29,7 @@ In the age of data-driven applications, the demand for lightweight, scalable, an
 **MylibSQLAdmin** is an open-source platform for managing libSQL databases. It ships two clients for the same admin API: an intuitive **web GUI** for day-to-day administration and **`libsql3`**, a PHP CLI for terminal workflows and scripts. By harnessing the full potential of libSQL-server functionalities, the platform makes it easier to manage databases from the interface you prefer. You can connect with `libsql-server` from **Docker Service** or use your existing `libsql-server` instance.
 
 <p align="center">
-    <img width="100%" alt="MylibSQLAdmin dashboard" src="docs/images/dashboard.png" />
+    <img width="100%" alt="MylibSQLAdmin dashboard" src="https://darkterminal.github.io/mylibsqladmin/images/dashboard.png" />
 </p>
 <p align="center">
     <img width="49%" alt="Database management" src="docs/images/databases.png" />
