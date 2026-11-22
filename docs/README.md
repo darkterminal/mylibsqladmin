@@ -201,8 +201,9 @@ by the entrypoint on first boot (re-read it once, then delete it).
 ## Documentation site (Jekyll)
 
 This directory is also a Jekyll site: `index.html` is the product landing page,
-and `user-manual/` is the role-based user manual (Super Admin, Team Manager,
-Database Maintainer, Member) with screenshots.
+`user-manual/` is the role-based user manual (Super Admin, Team Manager,
+Database Maintainer, Member) with screenshots, and `libsql3-man.md` plus the
+generated `libsql3-cli-reference.md` are published as the CLI section.
 
 ```bash
 # from the repository root
@@ -228,9 +229,13 @@ Layout of the site source:
 - `images/app-logo-icon.svg` — the app's `AppLogoIcon`, used by both headers
 - `favicon-light.*` / `favicon-dark.*` — the app's real favicons, theme-aware
 - `images/` — screenshots referenced by both the landing page and the manual
+- `libsql3-man.md` — narrative CLI guide, published at `/cli/`
+- `libsql3-cli-reference.md` — generated command reference, published at `/cli/reference/`
 
-`README.md` and `libsql3-man.md` are excluded from the Jekyll build on purpose;
-they stay repository-facing guides and are not part of the published site.
+`README.md` is excluded from the Jekyll build and stays repository-facing. The
+Jekyll front matter on `libsql3-cli-reference.md` is emitted by
+`libsql3/bin/generate-cli-reference.php`; do not add it by hand or regeneration
+will undo it. Both CLI pages are reachable from the `_data/nav.yml` sidebar.
 
 ### libsql3 distribution status
 

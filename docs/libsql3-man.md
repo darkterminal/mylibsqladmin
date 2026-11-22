@@ -1,4 +1,11 @@
-# libsql3 Command Line Interface
+---
+layout: manual
+title: libsql3 CLI
+description: Terminal client for the MylibSQLAdmin platform — authenticate, set local defaults, and administer databases from a REPL or one-shot commands.
+section: CLI
+eyebrow: Terminal client
+permalink: /cli/
+---
 
 **Connect to MylibSQLAdmin Database Platform directly from your terminal.**
 
@@ -102,11 +109,10 @@ this release.
 ## Command reference
 
 Command names, descriptions, arguments, options, and defaults are generated from
-Symfony Console metadata in
-[`docs/libsql3-cli-reference.md`](libsql3-cli-reference.md). Regenerate it with
-`cd libsql3 && composer docs`; CI fails on an uncommitted signature change.
-Command signatures are not duplicated here — the generated file is the only
-authoritative list.
+Symfony Console metadata in the **CLI command reference** page (see the sidebar).
+Regenerate it with `cd libsql3 && composer docs`; CI fails on an uncommitted
+signature change. Command signatures are not duplicated here — the generated
+file is the only authoritative list.
 
 ## Workflows
 

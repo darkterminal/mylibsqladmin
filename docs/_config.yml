@@ -1,8 +1,9 @@
 title: MylibSQLAdmin
 tagline: Modern libSQL database management
 description: >-
-  MylibSQLAdmin is an open-source web GUI for managing libSQL databases.
-  This site is the product landing page and the complete user manual.
+  MylibSQLAdmin is an open-source platform for managing libSQL databases
+  through a web GUI and the libsql3 CLI. This site is the product landing
+  page and the complete user manual, including the CLI reference.
 url: https://darkterminal.github.io
 baseurl: /mylibsqladmin
 
@@ -17,11 +18,10 @@ kramdown:
 
 permalink: pretty
 
-# The repository-facing markdown files stay on GitHub; the site serves the
-# landing page and the manual only.
+# The root installation guide stays on GitHub; the manual and the generated
+# CLI reference are both published as part of this site.
 exclude:
   - README.md
-  - libsql3-man.md
   - Gemfile
   - Gemfile.lock
   - vendor
