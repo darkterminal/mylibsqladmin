@@ -1,12 +1,13 @@
 #!/bin/sh
-# Run the proxy Lua unit tests in an OpenResty container. Kiri by default,
-# Docker as fallback. No stack or network is required.
+# Run the proxy Lua unit tests in an OpenResty container. Docker by default;
+# Kiri is opt-in via CONTAINER_ENGINE=kiri. No stack or network is required.
 set -eu
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
-ENGINE=${CONTAINER_ENGINE:-kiri}
+ENGINE=${CONTAINER_ENGINE:-docker}
 if ! command -v "$ENGINE" >/dev/null 2>&1; then
-    ENGINE=docker
+    echo "proxy/test: '$ENGINE' not found. Install Docker or set CONTAINER_ENGINE=kiri." >&2
+    exit 1
 fi
 
 exec "$ENGINE" run --rm \

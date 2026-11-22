@@ -42,7 +42,7 @@ help:
 	@echo "  make compose-dev/rebuild\t\tRebuild development containers"
 	@echo "  make compose-prod/rebuild\t\tRebuild production containers"
 	@echo "  make compose-proxy/build\t\tBuild proxy container"
-	@echo "  make proxy/test\t\t\tRun proxy Lua unit tests (Kiri by default)"
+	@echo "  make proxy/test\t\t\tRun proxy Lua unit tests (Docker default; CONTAINER_ENGINE=kiri for Kiri)"
 
 compose-prod/build:
 	$(BUILDX) build --push -t ghcr.io/darkterminal/mylibsqladmin-web:latest -f webapp/Dockerfile.production ./webapp

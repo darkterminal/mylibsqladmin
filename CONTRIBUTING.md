@@ -62,6 +62,17 @@ Thank you for considering contributing to **MylibSQLAdmin**—a modern, open-sou
 - **Makefile**: Utilize the provided `Makefile` for common tasks.
 - **Environment Variables**: Use `.env.example` as a template for your environment configuration.
 
+## Working on the proxy
+
+The nginx/OpenResty proxy has a Lua unit suite covering subdomain extraction and the HRANA auth gate:
+
+```bash
+make proxy/test                        # Docker (default)
+CONTAINER_ENGINE=kiri make proxy/test   # Kiri, opt-in for local development
+```
+
+It mounts the Lua modules into `openresty/openresty:alpine`; no running stack or network is required. Add a case there whenever either Lua module changes.
+
 ## Working on libsql3
 
 `libsql3` is the CLI client for the same admin API as the web application. It has its own Composer project and test suite:
