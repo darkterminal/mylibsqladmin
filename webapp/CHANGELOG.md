@@ -1,7 +1,9 @@
 ## [Unreleased]
 
-Not yet released or tagged. These changes are in the current source tree only;
-published images and the `:latest` pointer are unaffected.
+Not yet released or tagged. These changes are in the current source tree. The
+web image and version tags are still v1.6.2; the proxy `:latest` image was
+updated out-of-band on 2026-11-22 with the proxy fixes below (pinned tag
+`1.6.2-proxy-f57`). No release was cut.
 
 ### Security — proxy (F-54)
 
@@ -12,10 +14,14 @@ published images and the `:latest` pointer are unaffected.
   `LIBSQL_PARENT_DOMAIN`, so `example.com`, `example.co.uk` and `example.id`
   work. Nested or foreign hosts are rejected. TLS terminates in front of the
   proxy; the edge must forward `Host`.
+- Routing and validation now derive the subdomain from one canonical Host
+  source in both nginx templates (F-57). An absolute-form request line with a
+  conflicting `Host` can no longer make a token for database A authorize a
+  query routed to database B; mismatches fail closed.
 - Upstreams and the parent domain are rendered from env at startup into a
   writable config. The read-only template mount is no longer edited with
   `sed -i`, and `:5001` now has an auth-checked gRPC listener instead of a dead
-  port. Added `make proxy/test` (19 Lua assertions).
+  port. Added `make proxy/test` (31 Lua assertions across both templates).
 
 ### Fixes
 
@@ -38,11 +44,14 @@ published images and the `:latest` pointer are unaffected.
 
 ### Verification gaps
 
-- `compose.lri.yml` (the remote-instance development stack) was **not**
-  re-tested with these changes. Verified locally: the LLI/Kiri stack, the
-  19-assertion proxy Lua suite, the webapp and libsql3 test suites, and a Jekyll
-  build. Do not treat LRI as release-certified; smoke-test it before cutting a
-  release that depends on it.
+- LRI mode got a scoped smoke test on 2026-11-22: LRI render, web health,
+  admin-API reachability and frontend `sqldHost` all passed with
+  `LIBSQL_LOCAL_INSTANCE=false`. The remote endpoint was local sqld over the
+  network, not a hosted instance, so a real LRI deployment remains unverified.
+- Verified locally: the LLI/Kiri stack, the 31-assertion proxy Lua suite, the
+  webapp and libsql3 test suites, and a Jekyll build. Dependabot alert #3 was
+  confirmed stale (`form-data` was removed from the lockfile on 2026-11-15,
+  before v1.6.2); no dependency change was needed.
 
 ## [1.6.2] - 2026-11-19
 

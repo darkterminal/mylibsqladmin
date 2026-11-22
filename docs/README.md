@@ -30,12 +30,13 @@ Create directory to save the `compose.yml` file in your desire location.
 
 #### LRI (libSQL Remote Instance)
 
-> **Verification status:** the repository's `compose.lri.yml` development
-> stack has **not** been re-tested against the current source changes (proxy
-> `Host` routing and env contract, CSP parent domain, CLI token fingerprints,
-> display timezone and `--yes`). The local-instance (LLI) development stack is
-> the verified path. Treat LRI as untested until it gets its own smoke run;
-> no release has been cut and the published `:latest` images are unchanged.
+> **Verification status:** LRI mode passed a scoped smoke test on 2026-11-22:
+> the `compose.lri.yml` development profile renders `web` and `mailpit` only,
+> and a web container with `LIBSQL_LOCAL_INSTANCE=false` reached the remote-style
+> sqld admin API, served `/up` and `/login`, and published `sqldHost` to the
+> frontend. The remote endpoint was local sqld reachable over the network, not
+> a hosted instance, so a real LRI deployment is still unverified. No release
+> has been cut; the web `:latest` image is still v1.6.2.
 
 Install MylibSQLAdmin Platform with your existing `libsql-server` instance
 
@@ -151,18 +152,22 @@ docker compose up -d
 
 #### Custom domain + TLS
 
-Host-based routing and these environment variables are part of the **current
-source tree**. The image published as `:latest` is still v1.6.2, which uses the
-old `.localhost` config and ignores `LIBSQL_PARENT_DOMAIN`. Build the proxy from
-this checkout and pin the resulting tag until a release includes the change:
+Host-based routing and these environment variables are in the current source
+tree and in the proxy image published as `:latest` since 2026-11-22 (pinned tag
+`1.6.2-proxy-f57`, digest `sha256:d962c507…`). That is an out-of-band proxy
+update, not a versioned release: the web `:latest` image and the `1.6.2` image
+tag are still v1.6.2, and no release was cut. Pin the proxy tag in production
+so the image cannot drift:
 
 ```bash
-docker build -t mylibsqladmin-proxy:custom -f nginx/Dockerfile ./nginx
+docker pull ghcr.io/darkterminal/mylibsqladmin-proxy:1.6.2-proxy-f57
 ```
 
 Replace the proxy `image:` line in the LLI example above with
-`mylibsqladmin-proxy:custom`. The installer script generates a localhost-only
-stack; use the manual compose example for a custom domain.
+`ghcr.io/darkterminal/mylibsqladmin-proxy:1.6.2-proxy-f57`. To build from source
+instead, use `docker build -t mylibsqladmin-proxy:custom -f nginx/Dockerfile ./nginx`.
+The installer script generates a localhost-only stack; use the manual compose
+example for a custom domain.
 
 The proxy routes by the `Host` header. It does **not** terminate TLS; put a
 TLS-terminating reverse proxy (Caddy, Traefik, nginx) in front of `:8080` and
