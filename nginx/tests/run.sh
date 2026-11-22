@@ -13,5 +13,7 @@ fi
 exec "$ENGINE" run --rm \
     -v "$ROOT/nginx/lua:/etc/nginx/lua:ro" \
     -v "$ROOT/nginx/tests/proxy_lua_test.lua:/tmp/proxy_lua_test.lua:ro" \
+    -v "$ROOT/nginx/nginx.conf:/tmp/proxy-nginx.conf:ro" \
+    -v "$ROOT/nginx/nginx.dev.conf:/tmp/proxy-nginx-dev.conf:ro" \
     openresty/openresty:alpine \
     /usr/local/openresty/luajit/bin/luajit /tmp/proxy_lua_test.lua

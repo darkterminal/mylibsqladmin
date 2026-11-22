@@ -68,6 +68,24 @@ ngx = {
     },
 }
 
+-- canonical Host source ----------------------------------------------------
+-- The routing subdomain and the validator subdomain must come from the same
+-- value. An absolute-form request line makes $host and $http_host disagree,
+-- which previously let a token for one database authorize another.
+local function host_case(i, header, request_line, want)
+    ngx.var.http_host = header
+    ngx.var.host = request_line
+    expect("from_request #" .. i .. " (" .. header .. "/" .. request_line .. ")",
+        subdomain.from_request("example.com"), want)
+end
+
+host_case(1, "a.example.com", "b.example.com", "")
+host_case(2, "a.example.com", "a.example.com", "a")
+host_case(3, "", "a.example.com", "a")
+host_case(4, "a.example.com", "", "a")
+host_case(5, "db.example.com:8080", "DB.EXAMPLE.COM", "db")
+host_case(6, "a.example.com", "a.other.com", "")
+
 local function pipeline(sql, kind)
     return cjson.encode({ requests = { { type = kind or "execute",
         stmt = { sql = sql, want_rows = false } } } })
@@ -103,6 +121,34 @@ gate("read-only lowercase update", "read-only", pipeline("update t set x=1"), fa
 gate("read-only non-execute", "read-only", pipeline("ignored", "close"), true)
 gate("read-only malformed", "read-only", "not-json", false)
 gate("read-only empty body", "read-only", "", false)
+
+-- nginx template drift guard ----------------------------------------------
+local function count_occurrences(haystack, needle)
+    local count, pos = 0, 1
+    while true do
+        local start = string.find(haystack, needle, pos, true)
+        if not start then break end
+        count = count + 1
+        pos = start + #needle
+    end
+    return count
+end
+
+for _, name in ipairs({ "proxy-nginx.conf", "proxy-nginx-dev.conf" }) do
+    local conf_file = io.open("/tmp/" .. name, "r")
+    if conf_file then
+        local conf = conf_file:read("*a")
+        conf_file:close()
+        expect("no split Host sources in " .. name,
+            count_occurrences(conf, 'from("__LIBSQL_PARENT_DOMAIN__", ngx.var'), 0)
+        expect("all four derivations use from_request in " .. name,
+            count_occurrences(conf, 'from_request("__LIBSQL_PARENT_DOMAIN__")'), 4)
+        expect("both HRANA locations forward original Host in " .. name,
+            count_occurrences(conf, "proxy_set_header Host $host;"), 2)
+    else
+        print("SKIP drift guard for " .. name .. " (template not mounted)")
+    end
+end
 
 print(string.format("TOTAL passed=%d failed=%d", passed, failed))
 os.exit(failed == 0 and 0 or 1)
