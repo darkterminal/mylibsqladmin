@@ -307,13 +307,20 @@ Verify it with the build-only gate in `.github/workflows/libsql3-phar.yml`.
 The exact rebuild-and-check command is:
 
 ```bash
-cd libsql3 && BOX_REQUIREMENT_CHECKER=0 box compile && sha256sum build/libsql3
+(cd libsql3 && BOX_REQUIREMENT_CHECKER=0 box compile) \
+  && sha256sum libsql3/build/libsql3 \
+  && php .github/scripts/phar-fingerprint.php libsql3/build/libsql3
 ```
 
-It must print `78eaee946be63311ca6b621c991554633963921b0b63fb0eba8ccabc1871e0ae`.
-The workflow performs the same rebuild from a clean checkout using pinned Box
-3.8.4, compares that SHA-256 against the committed binary, and checks every
-source file inside the PHAR byte-for-byte. A mismatch fails CI.
+For the committed binary the raw SHA-256 is
+`825a885f0ee4c0b8e989603e7d970a5900aa05fa59eabf9adb715ecc41b6822b` and the
+content fingerprint is
+`bfccf4e51fa56c523dc852a2bb3ef9c17f2ac3fc03318b5f04957b8115790894`.
+The workflow rebuilds from a clean checkout using pinned Box 3.8.4 and asserts
+the **fingerprint**, not the raw SHA-256: Box orders manifest entries with
+`readdir()`, which differs between filesystems, while the fingerprint sorts
+entries before hashing. It then checks every source file inside the PHAR
+byte-for-byte. A mismatch fails CI.
 
 The PHAR is rebuilt only by that workflow. Do not hand-build or silently replace
 the tracked binary; commit it together with the source change that justifies the
