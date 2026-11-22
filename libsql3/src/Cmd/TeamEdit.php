@@ -64,8 +64,8 @@ class TeamEdit extends Command
                     ['ID', $currentTeam['id']],
                     ['Name', $currentTeam['name']],
                     ['Description', $currentTeam['description'] ?? 'None'],
-                    ['Created At', $currentTeam['created_at']],
-                    ['Updated At', $currentTeam['updated_at']]
+                    ['Created At', format_api_date($currentTeam['created_at'] ?? null)],
+                    ['Updated At', format_api_date($currentTeam['updated_at'] ?? null)]
                 ]
             );
 
@@ -144,7 +144,7 @@ class TeamEdit extends Command
                     ['ID', $teamData['id']],
                     ['Name', $teamData['name']],
                     ['Description', $teamData['description'] ?? 'None'],
-                    ['Updated At', $teamData['updated_at']]
+                    ['Updated At', format_api_date($teamData['updated_at'] ?? null)]
                 ]
             );
 

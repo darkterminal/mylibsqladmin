@@ -105,7 +105,7 @@ class GroupCreate extends Command
                     [
                         $groupData['name'],
                         $groupData['team_name'],
-                        $groupData['created_at']
+                        format_api_date($groupData['created_at'] ?? null)
                     ]
                 ]
             );

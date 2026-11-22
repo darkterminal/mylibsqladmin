@@ -105,8 +105,8 @@ class DbArchive extends Command implements Configurable
                 $db['is_schema'] === '0' ? 'standalone' : ('1' === $db['is_schema'] ? 'schema database' : "child of [" . $db['is_schema'] . "]"),
                 $db['group_name'] ?? 'default',
                 $db['owner'] ?? 'Unknown',
-                $db['created_at'] ?? 'Unknown',
-                $db['deleted_at'] ?? 'Unknown',
+                format_api_date($db['created_at'] ?? null),
+                format_api_date($db['deleted_at'] ?? null),
             ]);
         }
 

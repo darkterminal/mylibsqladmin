@@ -87,6 +87,27 @@ authentication. Setting default team and group avoids selection prompts later.
 `config:list` shows the stored state; `config:get` checks one key;
 `config:delete` removes a key immediately and is not undone by the CLI.
 
+### Display timezone
+
+Timestamps are stored and returned by the platform in UTC. The CLI converts
+them for display using the installation's effective display timezone — the same
+value the web UI uses. `auth:login` caches it locally as
+`LIBSQL3_DISPLAY_TIMEZONE`, so `team:list`, `db:list`, `user:list` and the other
+table commands print local wall-clock time in both the REPL and one-shot mode.
+Existing sessions without that cached value fall back to the machine zone
+(`/etc/localtime` or `TZ`), then UTC.
+
+To override the rendering for one shell, set `LIBSQL3_TIMEZONE` to a valid IANA
+identifier:
+
+```bash
+export LIBSQL3_TIMEZONE=Asia/Jakarta
+php libsql3/libsql3 team:list
+```
+
+An invalid override fails closed to UTC rather than guessing. This setting is
+display-only: token expiry checks and stored data remain UTC.
+
 ## One-shot mode
 
 Passing arguments runs one command without starting the REPL:

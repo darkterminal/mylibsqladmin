@@ -88,14 +88,21 @@ class AuthLogin extends Command implements Configurable
         $output->writeln('<info>Authentication successful!</info>');
 
         if ($tokenData === 1) {
-            $expiresAt = new \DateTime((string) $this->getExpiresAt($username));
-            $output->writeln("<comment>You are already logged in until {$expiresAt->format('Y-m-d H:i:s')}.</comment>");
+            $output->writeln(
+                '<comment>You are already logged in until '
+                . format_api_date($this->getExpiresAt($username)) . '.</comment>'
+            );
 
             return 0;
         }
 
         try {
-            $this->storeToken($username, $tokenData['token'], $tokenData['expires_at']);
+            $this->storeToken(
+                $username,
+                $tokenData['token'],
+                $tokenData['expires_at'],
+                $tokenData['timezone'] ?? null
+            );
         } catch (\Exception $e) {
             $output->writeln('<error>Token storage failed: ' . $e->getMessage() . '</error>');
 
@@ -109,7 +116,7 @@ class AuthLogin extends Command implements Configurable
      * Non-interactive callers supply a pre-obtained token via --token or the
      * namespaced env var; the password question is never asked without a TTY.
      *
-     * @return array{token:string, expires_at:string}|int 1 means "already logged in"
+     * @return array{token:string, expires_at:string, timezone:?string}|int 1 means "already logged in"
      */
     private function resolveCredential(
         InputInterface $input,
@@ -220,9 +227,12 @@ class AuthLogin extends Command implements Configurable
         // a fragile ':8000' -> ':8080' rewrite. app_url is still returned by the
         // platform for other consumers, but the CLI must not derive endpoints
         // from it.
+        $timezone = $body['data']['timezone'] ?? null;
+
         return [
             'token' => $body['data']['token'],
-            'expires_at' => $body['data']['expires_at']
+            'expires_at' => $body['data']['expires_at'],
+            'timezone' => is_valid_display_timezone($timezone) ? $timezone : null,
         ];
     }
 }

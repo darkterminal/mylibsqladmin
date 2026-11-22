@@ -133,7 +133,7 @@ class DbCreate extends Command
                 $dbData['team_name'] ?? $dbData['team_id'],
                 $dbData['group_name'] ?? $dbData['group_id'],
                 $dbData['is_schema'] === true ? 'schema' : ($dbData['is_schema'] === false ? 'standalone' : $dbData['is_schema']),
-                $dbData['created_at'] ?? '',
+                format_api_date($dbData['created_at'] ?? null),
             ];
             if (array_key_exists('id', $dbData) && $dbData['id'] !== null && $dbData['id'] !== '') {
                 array_unshift($headers, 'ID');

@@ -168,7 +168,7 @@ class UserList extends Command implements Configurable
                 $user['name'] ?? '',
                 $email,
                 $roles,
-                $user['created_at'] ?? 'Unknown'
+                format_api_date($user['created_at'] ?? null)
             ]);
         }
 

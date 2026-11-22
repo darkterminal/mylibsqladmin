@@ -76,7 +76,7 @@ class TeamCreate extends Command
                         $teamData['id'],
                         $teamData['name'],
                         $teamData['description'] ?? 'None',
-                        $teamData['created_at']
+                        format_api_date($teamData['created_at'] ?? null)
                     ]
                 ]
             );

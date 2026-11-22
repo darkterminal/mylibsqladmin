@@ -27,7 +27,7 @@ trait CliStore
         return $this->authContext()->currentUser();
     }
 
-    protected function storeToken(string $username, string $token, string $expiresAt): void
+    protected function storeToken(string $username, string $token, string $expiresAt, ?string $timezone = null): void
     {
         $pdo = $this->getPdo();
 
@@ -62,6 +62,12 @@ trait CliStore
         // A successful token write defines the active identity. Commands must
         // never fall back to a global "latest expiry" guess after this point.
         $this->authContext()->setActiveUser($username);
+
+        // Display-only metadata from the server. An invalid value is ignored so
+        // a hostile/old endpoint cannot poison date rendering (F-51).
+        if (is_valid_display_timezone($timezone)) {
+            config_set('LIBSQL3_DISPLAY_TIMEZONE', $timezone);
+        }
     }
 
     /**

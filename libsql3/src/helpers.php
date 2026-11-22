@@ -237,11 +237,85 @@ if (!function_exists('array_get')) {
     }
 }
 
+if (!function_exists('is_valid_display_timezone')) {
+    function is_valid_display_timezone(mixed $value): bool
+    {
+        return is_string($value)
+            && $value !== ''
+            && in_array($value, timezone_identifiers_list(), true);
+    }
+}
+
+if (!function_exists('display_timezone')) {
+    /**
+     * Zone used for every date the CLI prints. Resolution order:
+     *
+     *  1. LIBSQL3_TIMEZONE — explicit operator override
+     *  2. LIBSQL3_DISPLAY_TIMEZONE — server value cached by auth:login
+     *  3. a non-UTC PHP default (php.ini explicitly configured by the operator)
+     *  4. the machine's /etc/localtime or TZ (the actual user's zone)
+     *  5. UTC, fail closed
+     *
+     * PHP ignores /etc/localtime when date.timezone is unset, which is why the
+     * CLI used to print UTC on a WIB machine. Nothing here calls
+     * date_default_timezone_set(): token expiry maths must keep using the
+     * process default (F-51).
+     */
+    function display_timezone(): string
+    {
+        static $seen = [];
+
+        $valid = static function (string $candidate) use (&$seen): bool {
+            if (!array_key_exists($candidate, $seen)) {
+                $seen[$candidate] = in_array($candidate, timezone_identifiers_list(), true);
+            }
+
+            return $seen[$candidate];
+        };
+
+        // An explicitly configured but invalid value fails closed to UTC. It
+        // must not silently fall through to the machine zone: that would make
+        // the same input render differently depending on the host.
+        $override = getenv('LIBSQL3_TIMEZONE');
+        if (is_string($override) && $override !== '') {
+            return $valid($override) ? $override : 'UTC';
+        }
+
+        try {
+            $stored = config_get('LIBSQL3_DISPLAY_TIMEZONE');
+            if (is_string($stored) && $stored !== '') {
+                return $valid($stored) ? $stored : 'UTC';
+            }
+        } catch (\Throwable) {
+            // A missing/unreadable local store must not break date rendering.
+        }
+
+        $phpDefault = date_default_timezone_get();
+        if ($phpDefault !== 'UTC' && $valid($phpDefault)) {
+            return $phpDefault;
+        }
+
+        $tzEnv = getenv('TZ');
+        if (is_string($tzEnv) && $tzEnv !== '' && $valid($tzEnv)) {
+            return $tzEnv;
+        }
+
+        $localtime = @readlink('/etc/localtime');
+        if (is_string($localtime) && preg_match('#/zoneinfo/(.+)$#', $localtime, $match) && $valid($match[1])) {
+            return $match[1];
+        }
+
+        return 'UTC';
+    }
+}
+
 if (!function_exists('format_api_date')) {
     /**
-     * Format an API-supplied date for display. Malformed or missing values must
-     * never throw or print an empty cell: `new DateTime(null)` is a fatal error
-     * and the old trailing `?? 'Unknown'` was unreachable after ->format().
+     * Format an API-supplied UTC timestamp in display_timezone(). The API emits
+     * either ISO-8601 with Z/offset or the legacy naive 'YYYY-MM-DD HH:mm:ss'
+     * form; naive values are the UTC instant, matching the web client's
+     * parseServerDate(). Malformed or missing values print 'Unknown' and never
+     * throw.
      */
     function format_api_date(mixed $value, string $format = 'Y-m-d H:i:s'): string
     {
@@ -249,9 +323,24 @@ if (!function_exists('format_api_date')) {
             return 'Unknown';
         }
 
-        $timestamp = strtotime($value);
+        $raw = trim($value);
 
-        return $timestamp === false ? 'Unknown' : date($format, $timestamp);
+        // Already carries a zone designator: let DateTimeImmutable honour it.
+        if (!preg_match('/(?:Z|[+-]\d{2}:?\d{2})$/i', $raw)) {
+            $raw = preg_replace('/\s+/', 'T', $raw);
+            if (!str_contains($raw, 'T')) {
+                $raw .= 'T00:00:00';
+            }
+            $raw .= 'Z';
+        }
+
+        try {
+            return (new \DateTimeImmutable($raw))
+                ->setTimezone(new \DateTimeZone(display_timezone()))
+                ->format($format);
+        } catch (\Throwable) {
+            return 'Unknown';
+        }
     }
 }
 
