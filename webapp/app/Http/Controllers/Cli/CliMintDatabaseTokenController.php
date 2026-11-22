@@ -11,10 +11,13 @@ use Illuminate\Http\Request;
 /**
  * POST /api/cli/db/token/mint/{database_name}
  *
- * Mints a fresh full-access token pair for the named database and returns
- * the plaintext once (storage is SHA-256 hashed, like every other token in
- * the platform). Replaces the previous cli-shell-token for this user and
- * database pair, so the CLI never accumulates stale credentials.
+ * Mints a fresh full-access token pair for the named database and returns the
+ * full-access plaintext once (storage is SHA-256 hashed, like every other
+ * token in the platform). The read-only half is stored hashed but never
+ * returned: no CLI command consumes it, so exposing it would only add a
+ * second live credential to logs and response bodies. Replaces the previous
+ * cli-shell-token for this user and database pair, so the CLI never
+ * accumulates stale credentials.
  */
 class CliMintDatabaseTokenController extends Controller
 {
@@ -60,7 +63,6 @@ class CliMintDatabaseTokenController extends Controller
             'message' => 'Database token minted',
             'data' => [
                 'token' => $pair['full_access_token'],
-                'read_only_token' => $pair['read_only_token'],
                 'fingerprint' => '••••••••' . substr($fullAccessHash, -8),
                 'database' => $databaseName,
                 'expires_at' => null,

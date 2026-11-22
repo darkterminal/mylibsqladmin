@@ -27,6 +27,10 @@ updated out-of-band on 2026-11-22 with the proxy fixes below (pinned tag
 
 - CLI token fingerprints from `db:token:create` and `db:token:status` agree
   (F-55): both derive from the stored SHA-256 hash.
+- CLI token mint no longer returns the unused plaintext `read_only_token`; only
+  the full-access token and its fingerprint are sent once (F-58).
+- `team:restore --force` is now a deprecated alias of `--yes` and prints a
+  notice. Existing scripts keep working; `--yes` is the canonical flag (F-59).
 - Webapp CSP honours `LIBSQL_PARENT_DOMAIN` when set, including ccTLDs; an
   explicitly malformed value fails closed. Unset keeps the legacy heuristic.
 - CLI display timezone follows the platform setting with a `LIBSQL3_TIMEZONE`

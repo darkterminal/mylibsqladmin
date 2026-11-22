@@ -30,7 +30,7 @@ class TeamRestore extends Command
             ->setName('team:restore')
             ->setDescription('Restore an archived team')
             ->addArgument('team_id', InputArgument::OPTIONAL, 'Team ID to restore')
-            ->addOption('force', null, InputOption::VALUE_NONE, 'Confirm the restore without a prompt (non-interactive)')
+            ->addOption('force', null, InputOption::VALUE_NONE, 'Deprecated alias of --yes (confirm without a prompt)')
             ->addOption('yes', null, InputOption::VALUE_NONE, 'Confirm the restore prompt without asking (one-shot)');
     }
 
@@ -50,9 +50,17 @@ class TeamRestore extends Command
                 return 4;
             }
             if (!$input->getOption('force') && !$input->getOption('yes')) {
-                $io->error('Non-interactive restore requires --force or --yes to confirm the operation.');
+                $io->error('Non-interactive restore requires --yes to confirm the operation.');
                 return 4;
             }
+        }
+
+        // D-44: --yes is the only prompt acknowledgement going forward. This
+        // command shipped with --force before --yes existed, so keep it as a
+        // compatibility alias but say so at runtime instead of leaving two
+        // flags that look equally canonical.
+        if ($input->getOption('force')) {
+            $io->text('<comment>--force is deprecated for team:restore; use --yes to acknowledge the confirmation.</comment>');
         }
 
         // Get current user identifier

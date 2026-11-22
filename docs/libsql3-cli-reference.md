@@ -429,7 +429,7 @@ Restore an archived team
 
 | Name | Shortcut | Value | Default | Description |
 | ---- | -------- | ----- | ------- | ----------- |
-| `--force` | — | flag | `false` | Confirm the restore without a prompt (non-interactive) |
+| `--force` | — | flag | `false` | Deprecated alias of --yes (confirm without a prompt) |
 | `--yes` | — | flag | `false` | Confirm the restore prompt without asking (one-shot) |
 
 ### `user:list`
