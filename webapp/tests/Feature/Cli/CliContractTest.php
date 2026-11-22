@@ -334,3 +334,148 @@ test('db:archives excludes a live shared database and keeps soft-delete outside 
     expect($queries)->toContain('granted_user_databases')
         ->and($queries)->toMatch('/"deleted_at" is not null and \(/');
 });
+
+/**
+ * D-15/G-3: the CLI is the administrative subset of the web platform. This
+ * gate reads route metadata and CLI source only; it issues no HTTP requests, so
+ * the Plan 002 HttpTransport fake remains the only CLI HTTP fake.
+ *
+ * @return array<string, string>
+ */
+function cliSurfaceRoutes(): array
+{
+    $routes = [];
+
+    foreach (app('router')->getRoutes()->getRoutes() as $route) {
+        $uri = '/' . ltrim($route->uri(), '/');
+        if (!str_starts_with($uri, '/api/cli')) {
+            continue;
+        }
+
+        foreach (['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as $method) {
+            if (in_array($method, $route->methods(), true)) {
+                $routes["{$method} {$uri}"] = $route->getActionName();
+            }
+        }
+    }
+
+    ksort($routes);
+
+    return $routes;
+}
+
+/**
+ * @return array<string, string> endpoint key => source file that calls it
+ */
+function cliSurfaceCalls(): array
+{
+    $root = base_path('../libsql3/src');
+    $routes = cliSurfaceRoutes();
+    $calls = [];
+
+    /** @var \Symfony\Component\Finder\SplFileInfo $file */
+    foreach (\Illuminate\Support\Facades\File::allFiles($root) as $file) {
+        if ($file->getExtension() !== 'php') {
+            continue;
+        }
+
+        $source = (string) file_get_contents($file->getRealPath());
+        $variables = [];
+        if (preg_match_all(
+            '/\$([A-Za-z_]\w*)\s*=\s*([\'"])(\/api\/cli\/[^\'"\n]*)\2\s*;/',
+            $source,
+            $assignments,
+            PREG_SET_ORDER
+        )) {
+            foreach ($assignments as $assignment) {
+                $variables[$assignment[1]] = $assignment[3];
+            }
+        }
+
+        $literals = [];
+        if (preg_match_all(
+            '/http_request\s*\(\s*([\'"])(\/api\/cli\/[^\'"\s]*)\1[^,]*,\s*([\'"])(GET|POST|PUT|PATCH|DELETE)\3/',
+            $source,
+            $direct,
+            PREG_SET_ORDER
+        )) {
+            foreach ($direct as $match) {
+                $literals[] = [$match[2], $match[4]];
+            }
+        }
+
+        if (preg_match_all(
+            '/http_request\s*\(\s*\$([A-Za-z_]\w*)\s*,\s*([\'"])(GET|POST|PUT|PATCH|DELETE)\2/',
+            $source,
+            $indirect,
+            PREG_SET_ORDER
+        )) {
+            foreach ($indirect as $match) {
+                if (isset($variables[$match[1]])) {
+                    $literals[] = [$variables[$match[1]], $match[3]];
+                }
+            }
+        }
+
+        foreach ($literals as [$literal, $method]) {
+            $callPath = cliSurfaceNormalizePath($literal);
+            $matched = null;
+
+            foreach (array_keys($routes) as $routeKey) {
+                [$routeMethod, $routePath] = explode(' ', $routeKey, 2);
+                if ($routeMethod === $method && preg_match(cliSurfacePathRegex($routePath), $callPath) === 1) {
+                    $matched = $routeKey;
+                    break;
+                }
+            }
+
+            $calls[$matched ?? "{$method} {$callPath}"] = $file->getRelativePathname();
+        }
+    }
+
+    ksort($calls);
+
+    return $calls;
+}
+
+function cliSurfaceNormalizePath(string $literal): string
+{
+    $endsWithSlash = str_ends_with($literal, '/');
+    $path = rtrim($literal, '/');
+    $path = preg_replace('/\$[A-Za-z_]\w*/', '{}', $path) ?? $path;
+
+    return $endsWithSlash ? $path . '/{}' : $path;
+}
+
+function cliSurfacePathRegex(string $path): string
+{
+    $segments = array_map(
+        fn (string $segment): string => $segment === '{}' || preg_match('/^\{[^}]+\}$/', $segment) === 1
+            ? '[^/]+'
+            : preg_quote($segment, '#'),
+        explode('/', $path)
+    );
+
+    return '#^' . implode('/', $segments) . '$#';
+}
+
+test('every CLI route has a calling command and every CLI call resolves to a route', function () {
+    $routes = cliSurfaceRoutes();
+    $calls = cliSurfaceCalls();
+
+    // D-39: explicit, reasoned exemptions. No CLI route is exempt today; add an
+    // entry only with a maintainer-approved reason (for example a route owned by
+    // a future non-CLI consumer), never as a silent way to hide drift.
+    $uncalled = [
+        // 'GET /api/cli/example' => 'Reason: ...',
+    ];
+
+    expect($routes)->not->toBeEmpty()
+        ->and($calls)->not->toBeEmpty();
+
+    $missingCallers = array_diff_key($routes, $calls, $uncalled);
+    $unknownEndpoints = array_diff_key($calls, $routes);
+
+    expect(array_keys($missingCallers))->toBe([])
+        ->and(array_keys($unknownEndpoints))->toBe([]);
+});

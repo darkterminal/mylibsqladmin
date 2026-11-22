@@ -20,6 +20,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          # The artifact version assertion compares against the release tag.
+          fetch-depth: 0
 
       - name: Setup PHP 8.4
         uses: shivammathur/setup-php@v2
@@ -93,9 +96,28 @@ jobs:
           exit (count($divergent) || count($missing)) ? 1 : 0;
           '
 
+      - name: Assert version constant inside the compiled PHAR
+        id: artifact_version
+        run: |
+          version=$(php -r '
+          Phar::loadPhar("libsql3/build/libsql3", "libsql3.phar");
+          $source = file_get_contents("phar://libsql3.phar/src/Version.php");
+          if (!preg_match("/CURRENT\s*=\s*\x27([^\x27]+)\x27/", $source, $m)) {
+              fwrite(STDERR, "Version::CURRENT is missing from the compiled PHAR\n");
+              exit(1);
+          }
+          echo $m[1];
+          ')
+          tag=$(git describe --tags --abbrev=0)
+          tag=${tag#v}
+          echo "phar_version=$version tag=$tag"
+          test "$version" != "1.0.0"
+          test "$version" = "$tag"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
       - name: Upload rebuilt PHAR
         uses: actions/upload-artifact@v4
         with:
-          name: libsql3-phar-${{ github.sha }}
+          name: libsql3-phar-${{ steps.artifact_version.outputs.version }}-${{ github.sha }}
           path: libsql3/build/libsql3
           if-no-files-found: error
