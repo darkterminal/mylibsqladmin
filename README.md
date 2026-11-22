@@ -29,10 +29,14 @@ In the age of data-driven applications, the demand for lightweight, scalable, an
 **MylibSQLAdmin** is an open-source platform for managing libSQL databases. It ships two clients for the same admin API: an intuitive **web GUI** for day-to-day administration and **`libsql3`**, a PHP CLI for terminal workflows and scripts. By harnessing the full potential of libSQL-server functionalities, the platform makes it easier to manage databases from the interface you prefer. You can connect with `libsql-server` from **Docker Service** or use your existing `libsql-server` instance.
 
 <p align="center">
-    <a href="https://www.youtube.com/watch?v=dntNiEYA4mU" target="_blank">
-        <img width="100%" src="https://github.com/user-attachments/assets/bfc06ec7-6265-481b-a493-ce5a0d440b05" />
-    </a>
-    <a href="https://www.youtube.com/watch?v=dntNiEYA4mU" target="_blank">View on YouTube</a>
+    <img width="100%" alt="MylibSQLAdmin dashboard" src="docs/images/dashboard.png" />
+</p>
+<p align="center">
+    <img width="49%" alt="Database management" src="docs/images/databases.png" />
+    <img width="49%" alt="Database Studio SQL editor" src="docs/images/studio.png" />
+</p>
+<p align="center">
+    <a href="https://www.youtube.com/watch?v=dntNiEYA4mU" target="_blank">Watch the demo on YouTube</a>
 </p>
 
 ## What Does MylibSQLAdmin Offer?
@@ -44,7 +48,7 @@ In the age of data-driven applications, the demand for lightweight, scalable, an
 -   **Team Management** - Collaborate efficiently by managing teams and their access levels.
 -   **User Management** - Easily handle user accounts, roles, and activity logs.
 -   **Member Invitation Management** - Invite new members and track their onboarding status with ease.
--   **CLI Access** - `libsql3` manages identity, teams, groups, databases, and tokens from the terminal. It provides an interactive REPL by default and one-shot commands for scripts. See the [libsql3 CLI manual](docs/libsql3-man.md) and the [generated command reference](docs/libsql3-cli-reference.md).
+-   **CLI Access** - `libsql3` manages identity, teams, groups, databases, and tokens from the terminal. It provides an interactive REPL by default and one-shot commands for scripts. Read it on the [published CLI docs](https://darkterminal.github.io/mylibsqladmin/cli/), or in the repository: [libsql3 CLI manual](docs/libsql3-man.md) and [generated command reference](docs/libsql3-cli-reference.md).
 
 ## Support this Project
 
