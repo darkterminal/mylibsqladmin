@@ -313,16 +313,17 @@ The exact rebuild-and-check command is:
 ```
 
 For the committed binary the raw SHA-256 is
-`825a885f0ee4c0b8e989603e7d970a5900aa05fa59eabf9adb715ecc41b6822b` and the
+`f928e5c7af0425b7eaf3d62c0f730f86530c5db319b8f566d02e776a1161a0a5` and the
 content fingerprint is
-`bfccf4e51fa56c523dc852a2bb3ef9c17f2ac3fc03318b5f04957b8115790894`.
+`04c8d6ca4c0f72aac4bee0ae2a2fde5088cbadf22c30e327727bf995a1c2af95`.
 The workflow rebuilds from a clean checkout using pinned Box 3.8.4 and asserts
 the **fingerprint**, not the raw SHA-256: Box orders manifest entries with
 `readdir()`, which differs between filesystems, while the fingerprint sorts
 entries before hashing. It then checks every source file inside the PHAR
 byte-for-byte. A mismatch fails CI.
 
-The PHAR is rebuilt only by that workflow. Do not hand-build or silently replace
-the tracked binary; commit it together with the source change that justifies the
-rebuild so the gate can confirm it.
+CI always rebuilds the PHAR from a clean checkout; a local rebuild is fine when
+it accompanies the source change that justifies it, but never replace the
+tracked binary silently. Commit it together with that source change so the
+build-only gate can confirm it.
 

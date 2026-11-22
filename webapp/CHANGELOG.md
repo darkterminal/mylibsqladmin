@@ -35,7 +35,9 @@ updated out-of-band on 2026-11-22 with the proxy fixes below (pinned tag
   explicitly malformed value fails closed. Unset keeps the legacy heuristic.
 - CLI display timezone follows the platform setting with a `LIBSQL3_TIMEZONE`
   override (F-51); one-shot confirmations accept `--yes` without repurposing
-  `--force` (F-52); `db:shell` credential cleanup is idempotent (F-53).
+  `--force` (F-52); `db:shell` credential cleanup is idempotent and rejects
+  IP-literal `LIBSQL_DATABASE_ENDPOINT` values with an actionable error before
+  minting a token, instead of returning a bare `502` (F-53).
 
 ### Docs
 

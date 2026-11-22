@@ -137,7 +137,7 @@ final class DbShellTest extends Libsql3TestCase
     public function test_db_shell_uses_scheme_default_port_when_endpoint_has_none(): void
     {
         $this->seedLogin();
-        config_set('LIBSQL_DATABASE_ENDPOINT', 'http://127.0.0.1');
+        config_set('LIBSQL_DATABASE_ENDPOINT', 'http://localhost');
         $calls = 0;
         $this->fakeMint($calls);
 
@@ -147,8 +147,34 @@ final class DbShellTest extends Libsql3TestCase
 
         $this->assertSame(0, $exit);
         $this->assertSame(1, $calls);
-        $this->assertSame('http://demo.127.0.0.1:80', $command->captured['url']);
+        $this->assertSame('http://demo.localhost:80', $command->captured['url']);
         $this->assertStringNotContainsString('minted-secret', $command->captured['command']);
+    }
+
+    /**
+     * F-53: an IP-literal parent used to produce an unresolvable
+     * <database>.<ip> host and a bare 502 from the injector. It must now fail
+     * in the CLI, before a token is minted or a process is forked.
+     */
+    public function test_db_shell_rejects_ip_literal_endpoints_before_minting(): void
+    {
+        $this->seedLogin();
+        foreach (['http://127.0.0.1:8080', 'http://[::1]:8080', 'https://192.0.2.10:8080'] as $raw) {
+            config_set('LIBSQL_DATABASE_ENDPOINT', $raw);
+            $calls = 0;
+            $this->fakeMint($calls);
+
+            $command = new StubDbShell();
+            $tester = new CommandTester($command);
+            $exit = $tester->execute(['database_name' => 'demo']);
+            $display = $tester->getDisplay();
+
+            $this->assertSame(1, $exit, $display);
+            $this->assertSame(0, $calls, "no credential may be minted for {$raw}");
+            $this->assertStringContainsString('is an IP literal', $display);
+            $this->assertStringContainsString('needs a DNS name', $display);
+            $this->assertEmpty($command->captured, 'no child process may be launched');
+        }
     }
 
     public function test_db_shell_removes_credential_when_child_shell_fails(): void

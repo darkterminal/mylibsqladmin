@@ -46,6 +46,20 @@ class DbShell extends Command
             warn_if_insecure_endpoint($endpoint->value, 'LIBSQL_DATABASE_ENDPOINT');
 
             $port = $endpoint->port ?? ($endpoint->scheme === 'https' ? 443 : 80);
+
+            // The shell addresses a database as <database>.<endpoint-host>.
+            // An IP literal makes that name unresolvable and the injector turns
+            // the DNS failure into a bare 502 (F-53). Fail here, before minting
+            // a credential or spawning the child process.
+            if (Endpoint::isIpLiteral($endpoint->host)) {
+                $portSuffix = $endpoint->port === null ? '' : ':' . $endpoint->port;
+                throw new \RuntimeException(
+                    "Invalid LIBSQL_DATABASE_ENDPOINT: host '{$endpoint->host}' is an IP literal. "
+                    . 'db:shell builds <database>.<host> hostnames and needs a DNS name. '
+                    . "Use a resolvable hostname instead (local instance: {$endpoint->scheme}://localhost{$portSuffix})"
+                );
+            }
+
             $url = $endpoint->scheme . '://' . $dbName . '.' . $endpoint->host . ':' . $port;
 
             // Get current user identifier from environment

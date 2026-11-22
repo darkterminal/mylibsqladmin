@@ -84,6 +84,17 @@ final class EndpointTest extends Libsql3TestCase
         http_request('/api/cli/team/lists');
     }
 
+    public function test_ip_literal_detection_covers_ipv4_ipv6_and_dns_names(): void
+    {
+        foreach (['127.0.0.1', '192.0.2.10', '::1', '[::1]', '[2001:db8::1]'] as $host) {
+            $this->assertTrue(Endpoint::isIpLiteral($host), $host);
+        }
+
+        foreach (['localhost', 'db.example.invalid', '127.0.0.1.nip.io'] as $host) {
+            $this->assertFalse(Endpoint::isIpLiteral($host), $host);
+        }
+    }
+
     public function test_database_name_accepts_safe_labels_only(): void
     {
         Endpoint::assertValidDatabaseName('my_db-1');
