@@ -659,7 +659,7 @@ final class ContractTest extends Libsql3TestCase
         $this->assertStringContainsString('created successfully', $tester->getDisplay());
     }
 
-    public function test_team_restore_non_interactive_requires_id_and_force(): void
+    public function test_team_restore_non_interactive_requires_id_and_yes(): void
     {
         $this->seedLogin();
 
@@ -673,11 +673,11 @@ final class ContractTest extends Libsql3TestCase
         $exit = $tester->execute(['team_id' => 7], ['interactive' => false]);
 
         $this->assertSame(4, $exit);
-        $this->assertStringContainsString('requires --force', $tester->getDisplay());
+        $this->assertStringContainsString('requires --yes', $tester->getDisplay());
         $this->assertStringNotContainsString('TypeError', $tester->getDisplay());
     }
 
-    public function test_team_restore_non_interactive_with_force_restores(): void
+    public function test_team_restore_legacy_force_alias_still_restores_with_deprecation_notice(): void
     {
         $this->seedLogin();
         $seen = [];
@@ -704,6 +704,7 @@ final class ContractTest extends Libsql3TestCase
 
         $this->assertSame(0, $exit, $tester->getDisplay());
         $this->assertStringContainsString('Team restored successfully', $tester->getDisplay());
+        $this->assertStringContainsString('--force is deprecated for team:restore', $tester->getDisplay());
         $this->assertSame([
             ['GET', 'https://example.invalid/api/cli/team/archives'],
             ['POST', 'https://example.invalid/api/cli/team/restore/7'],

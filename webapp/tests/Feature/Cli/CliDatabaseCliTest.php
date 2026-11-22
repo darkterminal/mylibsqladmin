@@ -155,6 +155,31 @@ test('cli mint endpoint issues a fresh token and stores only the hash', function
         ->and($stored->full_access_token)->not->toBe($minted); // stored = sha256 of minted
 });
 
+test('mint response never leaks the unused read-only token', function () {
+    [$admin, $token] = cliToken();
+
+    UserDatabase::create([
+        'user_id' => $admin->id,
+        'database_name' => 'cli-no-readonly-db',
+        'is_schema' => '0',
+        'created_by' => $admin->id,
+    ]);
+
+    $data = $this->withHeaders(cliHeaders($token))
+        ->postJson('/api/cli/db/token/mint/cli-no-readonly-db')
+        ->assertStatus(201)
+        ->json('data');
+
+    expect($data)->toHaveKeys(['token', 'fingerprint', 'database', 'expires_at'])
+        ->and($data)->not->toHaveKey('read_only_token')
+        ->and(json_encode($data))->not->toContain('read_only');
+
+    // The read-only half is still generated and stored hashed; only the
+    // response contract changed.
+    expect(UserDatabaseToken::where('name', 'cli-shell-token')->firstOrFail()->read_only_token)
+        ->toMatch('/^[a-f0-9]{64}$/');
+});
+
 test('cli token endpoint returns only a fingerprint', function () {
     [$admin, $token] = cliToken();
 
