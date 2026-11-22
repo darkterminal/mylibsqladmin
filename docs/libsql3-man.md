@@ -76,6 +76,22 @@ mylibsqladmin@libsql3> config:set DEFAULT_GROUP <group-id>
 `auth:login` comes first. `config:set DEFAULT_TEAM` and
 `config:set DEFAULT_GROUP` are functional after Plan 004.
 
+## One-shot mode
+
+Passing arguments runs one command without starting the REPL:
+
+```bash
+php libsql3/libsql3 config:list
+php libsql3/libsql3 db:list
+```
+
+With no arguments, the interactive REPL is unchanged. One-shot output is
+human-readable and is **not a stable machine contract** (D-13). Scripts that
+need structured data must call the MylibSQLAdmin platform API directly; do not
+parse CLI tables. There is no `--format=json` option in this release.
+
+`--version` prints one line and does not require `LIBSQL_API_ENDPOINT`.
+
 ## Exit codes
 
 These are the values commands return inside the REPL. The `libsql3` process exit

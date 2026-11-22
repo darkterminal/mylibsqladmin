@@ -2,6 +2,7 @@
 <?php
 
 use Libsql3\App;
+use Libsql3\Internal\OneShotRunner;
 use Psy\Configuration;
 use Psy\Shell;
 
@@ -41,6 +42,13 @@ register_shutdown_function(function (): void {
         exit(1);
     }
 });
+
+// Additive one-shot path (D-12): no args means the PsySH REPL keeps the exact
+// banner, prompt, and configuration below. Explicit args dispatch through the
+// thin adapter instead; vendor code is never touched.
+if (OneShotRunner::isOneShot($argv)) {
+    exit(OneShotRunner::run($argv));
+}
 
 $app = new App();
 

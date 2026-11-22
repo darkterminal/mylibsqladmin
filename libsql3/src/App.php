@@ -39,7 +39,7 @@ class App extends Application
 
     public function __construct()
     {
-        parent::__construct('Libsql3', '1.0.0');
+        parent::__construct('Libsql3', Version::CURRENT);
 
         // The endpoint check below reads the configuration table, so the local
         // store must exist before the first config read on a clean HOME.
