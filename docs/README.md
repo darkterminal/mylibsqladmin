@@ -250,7 +250,7 @@ The exact rebuild-and-check command is:
 cd libsql3 && BOX_REQUIREMENT_CHECKER=0 box compile && sha256sum build/libsql3
 ```
 
-It must print `37f6af4772b20326c6e323ffc5c4a2e132f9097d407234234b71516afde0b51e`.
+It must print `78eaee946be63311ca6b621c991554633963921b0b63fb0eba8ccabc1871e0ae`.
 The workflow performs the same rebuild from a clean checkout using pinned Box
 3.8.4, compares that SHA-256 against the committed binary, and checks every
 source file inside the PHAR byte-for-byte. A mismatch fails CI.
