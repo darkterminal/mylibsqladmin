@@ -39,6 +39,13 @@ services:
     ports:
       - '8080:8080'
       - '5001:5001'
+    environment:
+      LIBSQL_PARENT_DOMAIN: ${LIBSQL_PARENT_DOMAIN:-localhost}
+      LIBSQL_VALIDATOR_UPSTREAM: ${LIBSQL_VALIDATOR_UPSTREAM:-mylibsqladmin-webui-dev:8000}
+      LIBSQL_DB_HTTP_UPSTREAM: ${LIBSQL_DB_HTTP_UPSTREAM:-db:8080}
+      LIBSQL_DB_GRPC_UPSTREAM: ${LIBSQL_DB_GRPC_UPSTREAM:-db:5001}
+    volumes:
+      - ${NGINX_CONF:-./nginx/nginx.dev.conf}:/etc/nginx/templates/default.conf.template:ro
     networks:
       - app-network
     restart: always
