@@ -93,6 +93,10 @@ services:
         image: ghcr.io/darkterminal/mylibsqladmin-proxy:latest
         environment:
             - APP_ENV=production
+            - LIBSQL_PARENT_DOMAIN=example.com
+            - LIBSQL_VALIDATOR_UPSTREAM=mylibsqladmin-webui-prod:8000
+            - LIBSQL_DB_HTTP_UPSTREAM=db:8080
+            - LIBSQL_DB_GRPC_UPSTREAM=db:5001
         ports:
             - 8080:8080
             - 5001:5001
@@ -133,6 +137,31 @@ networks:
 ```bash
 docker compose up -d
 ```
+
+#### Custom domain + TLS
+
+The proxy routes by the `Host` header. It does **not** terminate TLS; put a
+TLS-terminating reverse proxy (Caddy, Traefik, nginx) in front of `:8080` and
+make sure it forwards the original `Host`. If the edge rewrites `Host` to
+`proxy:8080`, the database name is lost and every request is denied.
+
+For `https://admin.example.com` with databases at `https://<db>.example.com`:
+
+1. Point a wildcard DNS record `*.example.com` at the TLS terminator.
+2. Set `LIBSQL_PARENT_DOMAIN=example.com` on **both** the webapp and proxy
+   containers. The proxy uses it to extract the subdomain; the webapp uses it
+   to allow `https://*.example.com` in the Content Security Policy. Multi-label
+   parents such as `example.co.uk` and ccTLDs such as `example.id` are
+   supported when set explicitly.
+3. Set the webapp's `APP_URL=https://admin.example.com`, `LIBSQL_HOST=example.com`
+   and `LIBSQL_PORT=443`. `LIBSQL_HOST` is the **client-facing** host used by
+   the browser, not an internal Docker service name.
+4. Set `LIBSQL_VALIDATOR_UPSTREAM` to the webapp's internal `host:port`.
+   This replaced the old `APP_ENV`-based `sed` rewrite; the mounted config is
+   now read-only and rendered at startup into a writable path.
+
+Keep `:8080` and the sqld admin API `:8081` off the public internet. Only the
+TLS terminator should be exposed.
 
 ### First-time Bootstrap (fresh installs)
 

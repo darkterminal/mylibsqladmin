@@ -19,6 +19,11 @@ permalink: /cli/
   hosts (`localhost`, `127.0.0.1`, `::1`) and prints a visible warning because
   credentials can be observed in transit. The same rule applies to
   `LIBSQL_DATABASE_ENDPOINT`; there is no implicit default for it.
+- For a custom-domain deployment, `LIBSQL_DATABASE_ENDPOINT` must be the
+  client-facing parent (for example `https://example.com`), not an IP literal
+  or an internal container name. The shell connects to
+  `<database>.<endpoint-host>`; using `http://127.0.0.1:8080` produces an
+  unresolvable `cli-smoke-db.127.0.0.1` and a bare `502`.
 
 ## Install / upgrade
 
