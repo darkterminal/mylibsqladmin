@@ -22,8 +22,11 @@ permalink: /cli/
 - For a custom-domain deployment, `LIBSQL_DATABASE_ENDPOINT` must be the
   client-facing parent (for example `https://example.com`), not an IP literal
   or an internal container name. The shell connects to
-  `<database>.<endpoint-host>`; using `http://127.0.0.1:8080` produces an
-  unresolvable `cli-smoke-db.127.0.0.1` and a bare `502`.
+  `<database>.<endpoint-host>`, which requires a DNS name. `db:shell` rejects
+  an IP-literal host up front with an actionable error and exits before minting
+  a token; the old `http://127.0.0.1:8080` value produced an unresolvable
+  `cli-smoke-db.127.0.0.1` and a bare `502`. Use `http://localhost:8080` for a
+  local proxy.
 
 ## Install / upgrade
 
@@ -207,7 +210,9 @@ it, a missing binary is an error and nothing is downloaded.
 The connection flow is:
 
 1. Validate the database name and endpoint. HTTPS is required except for
-   loopback hosts; plain HTTP prints a visible warning.
+   loopback hosts; plain HTTP prints a visible warning. The endpoint host must
+   be a DNS name, not an IP literal, because the connection uses
+   `<database>.<host>`.
 2. Mint a database-scoped token through the admin API. Both HTTP 200 and 201 are
    accepted.
 3. Store the token in a private `0600` file inside a `0700` directory and start

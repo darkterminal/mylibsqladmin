@@ -245,9 +245,11 @@ arguments; a loopback injector adds the `Authorization` header and removes the
 credential file on exit. If `turso` is unavailable, skip this check and say so
 in your report rather than installing it implicitly.
 
-If `db:shell` fails with a bare `502`, check `LIBSQL_DATABASE_ENDPOINT`. Using
-`http://127.0.0.1:8080` makes the client request `cli-smoke-db.127.0.0.1`,
-which cannot resolve; use `http://localhost:8080` for a local proxy.
+If `db:shell` reports that `LIBSQL_DATABASE_ENDPOINT` uses an IP literal, set a
+resolvable hostname and retry: using `http://127.0.0.1:8080` would make the
+client request `cli-smoke-db.127.0.0.1`, which cannot resolve. Use
+`http://localhost:8080` for a local proxy. The CLI now fails before minting a
+token instead of surfacing a bare `502` from the injector.
 
 ### 4.7 Users and logout
 

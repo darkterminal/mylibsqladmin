@@ -72,6 +72,16 @@ final class Endpoint
         return $this->scheme === 'https';
     }
 
+    /**
+     * IP literals are valid endpoints for plain API calls, but cannot be used
+     * as the parent of a per-database hostname. Callers that build
+     * `<database>.<host>` must reject them before doing any network work.
+     */
+    public static function isIpLiteral(string $host): bool
+    {
+        return filter_var(trim($host, '[]'), FILTER_VALIDATE_IP) !== false;
+    }
+
     public static function assertValidDatabaseName(string $name): void
     {
         if (preg_match('/\A[A-Za-z0-9_-]+\z/D', $name) !== 1) {
