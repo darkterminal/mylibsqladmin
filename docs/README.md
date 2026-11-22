@@ -234,9 +234,9 @@ they stay repository-facing guides and are not part of the published site.
 
 ### libsql3 distribution status
 
-`libsql3/build/libsql3` was rebuilt on 2026-11-21 from the current `libsql3/src/`
+`libsql3/build/libsql3` was rebuilt on 2026-11-22 from the current `libsql3/src/`
 tree and is the CLI artifact tracked in this repository. It contains all 25
-commands and is byte-identical to the sources it ships.
+commands, reports version `1.6.2`, and is byte-identical to the sources it ships.
 
 Verify it with the build-only gate in `.github/workflows/libsql3-phar.yml`.
 The exact rebuild-and-check command is:
@@ -245,7 +245,7 @@ The exact rebuild-and-check command is:
 cd libsql3 && BOX_REQUIREMENT_CHECKER=0 box compile && sha256sum build/libsql3
 ```
 
-It must print `cb31dfa19e6e00257c78d93066caba65f56590a204f123d227b817014a1bf007`.
+It must print `08346a13c35cdc1a8c5409fcf8531b1224f8db0908e77f1996bed5cee23968d7`.
 The workflow performs the same rebuild from a clean checkout using pinned Box
 3.8.4, compares that SHA-256 against the committed binary, and checks every
 source file inside the PHAR byte-for-byte. A mismatch fails CI.
