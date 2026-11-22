@@ -1,11 +1,11 @@
 # Contribution Guidelines for MylibSQLAdmin
 
-Thank you for considering contributing to **MylibSQLAdmin**—a modern, open-source GUI for managing libSQL (SQLite-compatible) databases. Your contributions help improve the project for everyone.
+Thank you for considering contributing to **MylibSQLAdmin**—a modern, open-source platform for managing libSQL (SQLite-compatible) databases through a web GUI and the `libsql3` CLI. Your contributions help improve the project for everyone.
 
 ## Before You Start
 
 - **Check Existing Issues**: Review [open issues](https://github.com/darkterminal/mylibsqladmin/issues) to avoid duplicating efforts.
-- **Understand the Project**: Familiarize yourself with the project's structure and goals by reading the [README](https://github.com/darkterminal/mylibsqladmin/blob/main/README.md) or [DeepWiki](https://deepwiki.com/darkterminal/mylibsqladmin).
+- **Understand the Project**: Familiarize yourself with the project's structure and goals by reading the [README](https://github.com/darkterminal/mylibsqladmin/blob/main/README.md), the [libsql3 CLI manual](docs/libsql3-man.md), or [DeepWiki](https://deepwiki.com/darkterminal/mylibsqladmin).
 
 ## How to Contribute
 
@@ -61,6 +61,25 @@ Thank you for considering contributing to **MylibSQLAdmin**—a modern, open-sou
 
 - **Makefile**: Utilize the provided `Makefile` for common tasks.
 - **Environment Variables**: Use `.env.example` as a template for your environment configuration.
+
+## Working on libsql3
+
+`libsql3` is the CLI client for the same admin API as the web application. It has its own Composer project and test suite:
+
+```bash
+cd libsql3
+composer install
+composer test
+```
+
+A few rules keep its contracts stable:
+
+- The REPL is the default when no arguments are passed. One-shot argv dispatch is additive; do not change PsySH behaviour or edit `libsql3/vendor/**`.
+- `libsql3/src/Version.php::CURRENT` is the single version source. Update it in the same commit that bumps the platform version; CI compares it with the latest `v*` tag.
+- Command signatures are generated into `docs/libsql3-cli-reference.md`. After changing a command, run `composer docs` from `libsql3/` and commit the regenerated file. CI fails on a docs diff.
+- The narrative manual in `docs/libsql3-man.md` owns workflows, first-run guidance, endpoint policy, and exit codes. Do not duplicate argument/option tables there.
+- The committed PHAR is rebuilt by the build-only `.github/workflows/libsql3-phar.yml` gate and verified byte-for-byte against `libsql3/src/**`. Do not hand-edit the binary or silently swap it.
+- `libsql3` output for one-shot commands is human-readable and is not a stable machine contract. Adding `--format=json` needs a named consumer and a new finding first.
 
 ## Code Standards
 
