@@ -30,6 +30,13 @@ Create directory to save the `compose.yml` file in your desire location.
 
 #### LRI (libSQL Remote Instance)
 
+> **Verification status:** the repository's `compose.lri.yml` development
+> stack has **not** been re-tested against the current source changes (proxy
+> `Host` routing and env contract, CSP parent domain, CLI token fingerprints,
+> display timezone and `--yes`). The local-instance (LLI) development stack is
+> the verified path. Treat LRI as untested until it gets its own smoke run;
+> no release has been cut and the published `:latest` images are unchanged.
+
 Install MylibSQLAdmin Platform with your existing `libsql-server` instance
 
 ```yml

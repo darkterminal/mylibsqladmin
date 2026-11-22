@@ -34,6 +34,15 @@ published images and the `:latest` pointer are unaffected.
   the hash-derived fingerprint and explicit parent domain.
 - TypeScript example now reads `LIBSQL_AUTH_TOKEN`/`LIBSQL_SYNC_URL` as its
   README has always claimed.
+- Added a tracked contributor guide for the full 25-command CLI smoke run.
+
+### Verification gaps
+
+- `compose.lri.yml` (the remote-instance development stack) was **not**
+  re-tested with these changes. Verified locally: the LLI/Kiri stack, the
+  19-assertion proxy Lua suite, the webapp and libsql3 test suites, and a Jekyll
+  build. Do not treat LRI as release-certified; smoke-test it before cutting a
+  release that depends on it.
 
 ## [1.6.2] - 2026-11-19
 
