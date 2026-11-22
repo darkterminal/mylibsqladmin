@@ -18,6 +18,13 @@ return [
     'local_instance' => env('LIBSQL_LOCAL_INSTANCE', true),
 
     /**
+     * Client-facing parent domain used by the nginx proxy to derive the
+     * per-database subdomain and by CSP to allow Database Studio endpoints.
+     * Example: example.com (or example.co.uk). Empty keeps legacy behaviour.
+     */
+    'parent_domain' => env('LIBSQL_PARENT_DOMAIN'),
+
+    /**
      * Display-only timezone. All data is stored in UTC regardless of this
      * value; it is used solely for rendering dates and times for the user.
      * Can be overridden at runtime by a Super Admin via /settings/general.

@@ -36,61 +36,36 @@ class AuthLogout extends Command implements Configurable
             return 0;
         }
 
-        try {
-            // Get token for the user
-            $token = $this->getToken($username);
+        $remoteFailure = null;
+        $token = $this->getToken($username);
 
+        try {
             if ($token) {
-                // Try to revoke token on the server
                 $this->callLogoutApi($token);
             }
-
-            // Delete token locally regardless of API status
+        } catch (\Throwable $e) {
+            // Remember the failure, but do not let it abort local cleanup.
+            $remoteFailure = $e->getMessage();
+        } finally {
+            // Local cleanup is unconditional. An unreachable or hostile server
+            // must never leave a credential that still looks usable on disk.
             $this->deleteToken($username);
+            $this->clearActiveUser();
+        }
 
-            $output->writeln("<info>Successfully logged out user: {$username}</info>");
-            return 0;
-
-        } catch (\Exception $e) {
-            $output->writeln("<error>Logout failed: " . $e->getMessage() . "</error>");
+        if ($remoteFailure !== null) {
+            $output->writeln("<comment>Local session cleared for {$username}, but server revocation failed: {$remoteFailure}</comment>");
+            $output->writeln('<comment>The server token may still be valid; revoke it from the admin UI.</comment>');
             return 1;
         }
+
+        $output->writeln("<info>Successfully logged out user: {$username}</info>");
+        return 0;
     }
 
     private function callLogoutApi(string $token): void
     {
-        $apiUrl = '/api/cli/logout';
-        $payload = ['token' => $token];
-
-        $request = http_request($apiUrl, 'POST', $payload);
-        $response = $request['raw'];
-        $httpCode = $request['status'];
-
-        if ($httpCode !== 200) {
-            $message = "API returned status $httpCode";
-            $responseData = json_decode($response, true);
-            if (isset($responseData['message'])) {
-                $message = $responseData['message'];
-            }
-            throw new \Exception($message);
-        }
-    }
-
-    private function getToken(string $username): ?string
-    {
-        $stmt = $this->getPdo()->prepare("
-            SELECT token 
-            FROM " . config('tables.tokens') . " 
-            WHERE username = :username
-        ");
-        $stmt->execute(['username' => $username]);
-        return $stmt->fetchColumn() ?: null;
-    }
-
-    private function deleteToken(string $username): void
-    {
-        $pdo = $this->getPdo();
-        $stmt = $pdo->prepare("DELETE FROM " . config('tables.tokens') . " WHERE username = :username");
-        $stmt->execute(['username' => $username]);
+        // Reuse the same revocation boundary as auth:login --force.
+        revoke_cli_token($token);
     }
 }

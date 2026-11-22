@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Cli;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\UserDatabase;
 use Illuminate\Http\Request;
 
@@ -17,10 +16,15 @@ class CliDatabaseArchiveController extends Controller
         // Identity comes from the Sanctum session, not from client headers.
         $user = $request->user();
 
+        // onlyTrashed() must sit OUTSIDE the grouped owner/grant condition.
+        // With a bare ->orWhereHas() the OR escaped the soft-delete clause and
+        // live databases shared with the caller leaked into the archive list.
         $databases = UserDatabase::onlyTrashed()
-            ->where('user_id', $user->id)
-            ->orWhereHas('groups.members', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)
+                    ->orWhereHas('grant', function ($query) use ($user) {
+                        $query->where('user_id', $user->id);
+                    });
             })
             ->with([
                 'groups' => function ($query) {
@@ -49,5 +53,3 @@ class CliDatabaseArchiveController extends Controller
         ], 200);
     }
 }
-
-

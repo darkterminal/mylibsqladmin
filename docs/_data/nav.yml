@@ -31,6 +31,12 @@
 - title: Teams & members
   url: /user-manual/guides/teams/
   section: Guides
+- title: libsql3 CLI
+  url: /cli/
+  section: CLI
+- title: Command reference
+  url: /cli/reference/
+  section: CLI
 - title: Permission matrix
   url: /user-manual/reference/permissions/
   section: Reference

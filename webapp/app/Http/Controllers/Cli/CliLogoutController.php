@@ -41,11 +41,13 @@ class CliLogoutController extends Controller
         // Delete token
         $token->delete();
 
+        // Never echo credential material back to the caller. The token has
+        // already been deleted; only a boolean confirmation is useful here.
         return response()->json([
             'status' => 'success',
             'message' => 'Successfully logged out',
             'data' => [
-                'revoked_token' => $request->token
+                'revoked' => true
             ]
         ]);
     }

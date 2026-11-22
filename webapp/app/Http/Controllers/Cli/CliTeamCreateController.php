@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CliTeamCreateController extends Controller
 {
@@ -23,14 +24,21 @@ class CliTeamCreateController extends Controller
                 'description' => 'nullable|string|max:255',
             ]);
 
-            $team = $user->teams()->create([
-                'name' => $validated['name'],
-                'description' => $validated['description'],
-            ]);
+            $team = DB::transaction(function () use ($user, $validated) {
+                $team = $user->teams()->create([
+                    'name' => $validated['name'],
+                    'description' => $validated['description'],
+                ]);
 
-            $team->members()->attach($user->id, [
-                'permission_level' => Role::getRoleKey($user->getRoleAttribute())
-            ]);
+                // belongsToMany::create() already inserts the pivot row. Attaching
+                // again violates UNIQUE(team_id, user_id) and used to leave an
+                // orphan team behind because there was no transaction (F-50).
+                $team->members()->updateExistingPivot($user->id, [
+                    'permission_level' => Role::getRoleKey($user->getRoleAttribute())
+                ]);
+
+                return $team;
+            });
 
             return response()->json([
                 'status' => 'success',

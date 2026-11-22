@@ -1,1015 +1,235 @@
-# libsql3 Command Line Interface
+---
+layout: manual
+title: libsql3 CLI
+description: Terminal client for the MylibSQLAdmin platform — authenticate, set local defaults, and administer databases from a REPL or one-shot commands.
+section: CLI
+eyebrow: Terminal client
+permalink: /cli/
+---
 
 **Connect to MylibSQLAdmin Database Platform directly from your terminal.**
 
-## Availables Commands
+## Prerequisites
 
-| Command            | Description                                            | Status |
-| ------------------ | ------------------------------------------------------ | ------ |
-| `auth:login`       | Authenticate and store API token                       | ✅     |
-| `auth:logout`      | Logout from the API and remove local token             | ✅     |
-| `config:set`       | Set a configuration value (local)                      | ✅     |
-| `config:get`       | Get a configuration value (local)                      | ✅     |
-| `config:list`      | List all configuration values (local)                  | ✅     |
-| `config:delete`    | Delete a configuration value (local)                   | ✅     |
-| `db:shell`         | Open interactive shell for a database                  | ✅     |
-| `db:list`          | List databases                                         | ✅     |
-| `db:create`        | Create new database                                    | ✅     |
-| `db:delete`        | Delete a database from MylibSQLAdmin Platform          | ✅     |
-| `db:archive`       | List all archived databases                            | ✅     |
-| `db:restore`       | Restore a deleted database from archive                | ✅     |
-| `db:token:create`  | Mint a full-access token for a database (shown once)   | ✅     |
-| `group:list`       | List all available groups                              | ✅     |
-| `group:create`     | Create a new group                                     | ✅     |
-| `group:delete`     | Delete a group                                         | ✅     |
-| `team:list`        | List all available teams                               | ✅     |
-| `team:create`      | Create a new team                                      | ✅     |
-| `team:edit`        | Edit an existing team                                  | ✅     |
-| `team:delete`      | Delete a team                                          | ✅     |
-| `team:restore`     | Restore a soft-deleted team                            | ✅     |
-| `user:list`        | List all users                                         | ✅     |
-| `whoami`           | Display the current user                               | ✅     |
+- PHP 8.4 with the `pdo_sqlite`, `mbstring`, and `intl` extensions.
+- A reachable MylibSQLAdmin instance and a Super Admin account for CLI login.
+- `turso` on `PATH` or at `~/.turso/turso` for database shells. It is never
+  installed automatically; see the database-shell workflow below.
+- Endpoint URLs use `https://`. Plain `http://` is accepted only for loopback
+  hosts (`localhost`, `127.0.0.1`, `::1`) and prints a visible warning because
+  credentials can be observed in transit. The same rule applies to
+  `LIBSQL_DATABASE_ENDPOINT`; there is no implicit default for it.
+- For a custom-domain deployment, `LIBSQL_DATABASE_ENDPOINT` must be the
+  client-facing parent (for example `https://example.com`), not an IP literal
+  or an internal container name. The shell connects to
+  `<database>.<endpoint-host>`; using `http://127.0.0.1:8080` produces an
+  unresolvable `cli-smoke-db.127.0.0.1` and a bare `502`.
 
-Commands not listed above do not exist. Never trust a doc section that
-describes `token:list`, `token:edit`, `token:delete`, `user:create`,
-`user:edit`, `user:delete`, or `group:edit` — those are aspirational
-sketches, not shipped commands. To mint a token, use `db:token:create`.
+## Install / upgrade
 
----
+Two supported paths:
 
-## User Manual
+1. **Verified PHAR.** Obtain `libsql3/build/libsql3` from the artifact uploaded
+   by the build-only `libsql3 PHAR` workflow, then verify it:
 
-### `auth:login`
+   ```bash
+   sha256sum libsql3/build/libsql3
+   ```
 
-Log in to your MylibSQLAdmin account
+   The value must match the SHA-256 recorded in `docs/README.md` under
+   "libsql3 distribution status". The workflow artifact name includes the
+   CLI version stamped from `Version::CURRENT`.
 
-**Usage**
+2. **Source install.** From a checkout:
 
-```bash
-mylibsqladmin@libsql3> auth:login <username> [password]
-```
+   ```bash
+   cd libsql3
+   composer install
+   php libsql3
+   ```
 
-**What it does**
+   `composer.json` declares `"bin": ["libsql3"]`, so installing this package as
+   a Composer dependency also exposes `vendor/bin/libsql3`.
 
--   Securely authenticates your account
--   Saves session credentials locally
--   Detects active sessions to prevent redundant logins
+To upgrade, replace the PHAR with a newer verified artifact, or pull the new
+source and rerun `composer install`. The root `curl | sh` installer is described
+in the repository `README.md`; this guide does not redefine it.
 
-**Examples**
+## Build from source
 
 ```bash
-# Secure login with hidden password prompt
-mylibsqladmin@libsql3> auth:login user@example.com
-Enter password: ********
-Authentication successful!
-
-# Existing session detection
-mylibsqladmin@libsql3> auth:login user@example.com
-Authentication successful!
-You are already logged in until 2025-12-31 23:59:59.
+cd libsql3
+composer install
+BOX_REQUIREMENT_CHECKER=0 box compile
+sha256sum build/libsql3
 ```
 
-**Notes**
+`BOX_REQUIREMENT_CHECKER=0` skips only the stale PHP requirement check embedded
+in Box 3.8.4; compilation itself is unchanged. The build is reproducible, so the
+printed SHA-256 must match the committed artifact recorded in `docs/README.md`.
 
--   Omit password argument for secure hidden input
--   Sessions remain valid until expiration
-
----
-
-### `auth:logout`
-
-End your current session
-
-**Usage**
+Check that every bundled source file is byte-identical to the checkout:
 
 ```bash
-mylibsqladmin@libsql3> auth:logout
+php -r 'Phar::loadPhar("build/libsql3", "libsql3.phar"); foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator("src", FilesystemIterator::SKIP_DOTS)) as $f) { if ($f->getExtension() === "php") { $r = str_replace("src/", "", $f->getPathname()); if (hash_file("sha256", $f->getPathname()) !== hash_file("sha256", "phar://libsql3.phar/src/" . $r)) { echo "DIVERGENT: $r\n"; exit(1); } } } echo "all source files byte-identical\n";'
 ```
 
-**What it does**
+The tracked PHAR is rebuilt only by the build-only workflow. Do not hand-build a
+replacement for it.
 
--   Ends active session
--   Removes local credentials
--   Works even without network connection
-
-**Examples**
+## First run
 
 ```bash
-# Successful logout
-mylibsqladmin@libsql3> auth:logout
-Successfully logged out user: user@example.com
-
-# No active session
-mylibsqladmin@libsql3> auth:logout
-No active session found. You are not logged in.
+export LIBSQL_API_ENDPOINT=https://admin.example.com
+php libsql3/libsql3
+mylibsqladmin@libsql3> auth:login <username>
+mylibsqladmin@libsql3> config:set DEFAULT_TEAM <team-id>
+mylibsqladmin@libsql3> config:set DEFAULT_GROUP <group-id>
 ```
 
----
+`auth:login` comes first. Configuration is local to the machine and needs no
+authentication. Setting default team and group avoids selection prompts later.
+`config:list` shows the stored state; `config:get` checks one key;
+`config:delete` removes a key immediately and is not undone by the CLI.
 
-### `config:set`
+### Display timezone
 
-Configure CLI tool settings locally
+Timestamps are stored and returned by the platform in UTC. The CLI converts
+them for display using the installation's effective display timezone — the same
+value the web UI uses. `auth:login` caches it locally as
+`LIBSQL3_DISPLAY_TIMEZONE`, so `team:list`, `db:list`, `user:list` and the other
+table commands print local wall-clock time in both the REPL and one-shot mode.
+Existing sessions without that cached value fall back to the machine zone
+(`/etc/localtime` or `TZ`), then UTC.
 
-**Usage**
+To override the rendering for one shell, set `LIBSQL3_TIMEZONE` to a valid IANA
+identifier:
 
 ```bash
-mylibsqladmin@libsql3> config:set <key> <value>
+export LIBSQL3_TIMEZONE=Asia/Jakarta
+php libsql3/libsql3 team:list
 ```
 
-**What it does**
+An invalid override fails closed to UTC rather than guessing. This setting is
+display-only: token expiry checks and stored data remain UTC.
 
--   Stores custom settings for your CLI environment
--   Modifies local configuration only (doesn't affect server settings)
--   Instantly applies changes to subsequent commands
+## One-shot mode
 
-**Examples**
+Passing arguments runs one command without starting the REPL:
 
 ```bash
-# Set default organization
-mylibsqladmin@libsql3> config:set DEFAULT_TEAM "Engineering Team"
-
-# Set default api endpoint
-mylibsqladmin@libsql3> config:set LIBSQL_API_ENDPOINT http://localhost:8000
-
-# Successful confirmation
-[OK] Configuration set: DEFAULT_TEAM = Engineering Team
+php libsql3/libsql3 config:list
+php libsql3/libsql3 db:list
 ```
 
-**Common Settings**
+With no arguments, the interactive REPL is unchanged. One-shot input is never
+interactive: commands that need a missing value exit with an input error instead
+of prompting. `--version` prints one line and does not require
+`LIBSQL_API_ENDPOINT`.
 
-| Key                        | Values                | Description           |
-| -------------------------- | --------------------- | --------------------- |
-| `DEFAULT_TEAM`             | Engineering Team      | Default team name     |
-| `DEFAULT_GROUP`            | default               | Default group name    |
-| `LIBSQL_API_ENDPOINT`      | http://localhost:8000 | API endpoint URL      |
-| `LIBSQL_DATABASE_ENDPOINT` | http://localhost:8080 | Database endpoint URL |
-
-**Notes**
-
--   Changes persist between sessions
--   View current settings with `config:list` (not shown in code)
--   Configuration stored locally
--   Does not require authentication
-
----
-
-### `config:get`
-
-View saved configuration values
-
-**Usage**
+Destructive commands that normally ask for confirmation accept `--yes` as the
+explicit acknowledgement in one-shot mode. Without `--yes`, the confirmation
+defaults to "no" and the command exits `4` without changing data:
 
 ```bash
-mylibsqladmin@libsql3> config:get <key>
+php libsql3/libsql3 db:delete old-db --yes        # recoverable archive
+php libsql3/libsql3 db:delete old-db --force      # permanent, not restorable
+php libsql3/libsql3 db:restore old-db --yes
+php libsql3/libsql3 team:restore 7 --yes
 ```
 
-**Behavior**
-
--   Prints requested value directly
--   Handles missing keys gracefully
-
-**Examples**
-
-```bash
-# Get current setting
-mylibsqladmin@libsql3> config:get DEFAULT_TEAM
-Engineering Team
-
-# Attempt to get unset key
-mylibsqladmin@libsql3> config:get timezone
-[WARNING] Configuration key 'timezone' not found
-```
-
-**Key Features**
-
--   Instant access to current configuration
--   Supports all keys set via `config:set`
--   Error-tolerant design
-
----
-
-**Configuration Notes**
-
--   Changes stored locally
--   Use `config:set` for preferences, `config:get` for verification
--   No authentication required
-
----
-
-### `config:list`
-
-View all configured settings at once
-
-**Usage**
-
-```bash
-mylibsqladmin@libsql3> config:list
-```
-
-**What it shows**
-
--   Complete list of all stored configuration keys
--   Current values for each setting
--   Formatted as an easy-to-read table
-
-**Example Output**
-
-```
- -------------------------- -----------------------
-  Key                        Value
- -------------------------- -----------------------
-  DEFAULT_TEAM               Engineering Team
-  DEFAULT_GROUP              default
-  LIBSQL_API_ENDPOINT        http://localhost:8000
-  LIBSQL_DATABASE_ENDPOINT   http://localhost:8080
- -------------------------- -----------------------
-```
-
-**When no configurations exist**
-
-```bash
-[WARNING] No configuration values found
-```
-
-**Key Features**
-
--   Displays the complete configuration state
--   Maintains same format as `config:set`/`config:get`
--   Works with all stored settings
--   Clear visual presentation
-
-**Usage Tips**
-
-```bash
-# Verify changes after updates
-mylibsqladmin@libsql3> config:set timezone UTC
-mylibsqladmin@libsql3> config:list
-```
-
-**Technical Notes**
-
--   Pulls from same local storage as other config commands
--   Returns exit code 0 for empty results (warning only)
--   Preserves all security and privacy aspects of config system
-
----
-
-### `config:delete`
-
-Remove stored configuration settings
-
-**Usage**
-
-```bash
-mylibsqladmin@libsql3> config:delete <key>
-```
-
-**What it does**
-
--   Permanently removes the specified configuration
--   Returns to default behavior for that setting
--   Provides clear success/failure feedback
-
-**Examples**
-
-```bash
-# Successful deletion
-mylibsqladmin@libsql3> config:delete LIBSQL_API_ENDPOINT
-[OK] Configuration deleted: LIBSQL_API_ENDPOINT
-
-# Attempt to delete non-existent key
-mylibsqladmin@libsql3> config:delete non_existent_key
-[WARNING] Configuration key 'non_existent_key' not found
-```
-
-**Common Use Cases**
-
--   Resetting preferences to defaults
--   Cleaning up old/unused settings
--   Removing temporary configurations
-
-**Notes**
-
--   Changes take effect immediately
--   Cannot be undone (deletion is permanent)
--   Works with all keys viewable in `config:list`
--   No confirmation prompt (deletes immediately)
-
-**Usage Tip**
-
-```bash
-# Verify deletion with config:list
-mylibsqladmin@libsql3> config:delete LIBSQL_API_ENDPOINT
-mylibsqladmin@libsql3> config:list
-```
-
-**Security**
-
--   Only affects local configuration
--   Never modifies server settings
--   Requires no authentication
-
----
-
-### `db:list`
-
-View your accessible databases
-
-**Usage**
-
-```bash
-mylibsqladmin@libsql3> db:list
-```
-
-**What it shows**
-
--   Database names and types
--   Organization groups
--   Creation dates
--   Ownership information
-
-**Example output**
-
-```
-Databases for superadmin
-+-----------+----------------------+---------+------------+---------------------+---------------------+
-| Name      | Type                 | Group   | Owner      | Created At          | Updated At          |
-+-----------+----------------------+---------+------------+---------------------+---------------------+
-| db-demo   | standalone           | default | superadmin | 2025-06-25 02:12:30 | 2025-06-25 02:12:30 |
-| db-parent | schema database      | default | superadmin | 2025-07-03 10:51:10 | 2025-07-03 10:51:10 |
-| db-child  | child of [db-parent] | default | superadmin | 2025-07-03 10:51:31 | 2025-07-03 10:51:31 |
-+-----------+----------------------+---------+------------+---------------------+---------------------+
-3 databases found
-```
-
-**Requirements**
-
--   Active login session (`auth:login` first)
-
----
-
-### `db:shell`
-
-Open an interactive SQL console for your database
-
-**Usage**
-
-```bash
-mylibsqladmin@libsql3> db:shell <database_name>
-```
-
-**Key Features**
-
--   Direct SQL access to your databases
--   Auto-installs required tools on first use
--   Secure token handling with multiple authentication methods
--   Full terminal integration
-
-**Requirements**
-
--   Active login session (`auth:login` first)
--   Internet access for initial setup
-
-**Authentication Flow**
-
-1. Verifies your login credentials
-2. Automatically retrieves database-specific token
-3. Securely injects credentials into connection
-
-**First-Run Setup**
-
-```bash
-[INFO] Turso CLI not found. Installing now...
-... installation progress ...
-[OK] Turso CLI installed successfully!
-```
-
-**Connection Example**
-
-```bash
-mylibsqladmin@libsql3> db:shell orders_db
-[OK] Opening database shell for: orders_db.example.com
-[NOTE] Using authentication token from session
-```
-
-**Security Features**
-
--   Tokens never displayed in clear text
--   Credentials stored only in memory during session
--   All connections use encrypted channels
-
-**Troubleshooting**
-
-```bash
-# No active session
-[ERROR] There is no active session
-[NOTE] Login first using: auth:login <username>
-
-# Missing permissions
-[ERROR] API returned status 403: Access denied
-```
-
-**Technical Details**
-
--   Uses libSQL's Turso CLI under the hood
--   Stores configuration in `~/.libsql3`
--   Timeout: 5 minutes for inactive sessions
-
-**Best Practices**
-
-```bash
-# For production:
-mylibsqladmin@libsql3> auth:login
-mylibsqladmin@libsql3> db:shell production_db
-
-# For quick debugging:
-mylibsqladmin@libsql3> db:shell staging_db
-```
-
-**Notes**
-
--   All SQL commands are executed directly on your database
--   Press Ctrl+D or type `.exit` to end the session
--   Query history is not persisted for security
-
----
-
-### `db:create`
-
-Create a new database with interactive setup
-
-**Usage**
-
-```bash
-mylibsqladmin@libsql3> db:create <name> [options]
-```
-
-**Key Features**
-
--   Interactive team/group selection
--   Schema database support
--   Smart defaults and auto-completion
--   Detailed success output
-
-**Options**
-
-| Option         | Description              |
-| -------------- | ------------------------ |
-| `--team/-t`    | Specify team ID or name  |
-| `--group/-g`   | Specify group ID or name |
-| `--schema`     | Mark as schema database  |
-| `--use-schema` | Extend existing schema   |
-
-**Interactive Flow**
-
-1. Checks for active session
-2. Presents available teams/groups
-3. Confirms database type (schema/regular)
-4. Creates database with provided configuration
-
-**Examples**
-
-```bash
-# Simple creation (uses defaults)
-mylibsqladmin@libsql3> db:create db-a
-[OK] Database 'db-a' created successfully!
-
-# With team/group selection
-mylibsqladmin@libsql3> db:create inventory_db --team=retail --group=warehouse
-
-# Create schema database
-mylibsqladmin@libsql3> db:create product_schema --schema
-```
-
-**Success Output**
-
-```
-
- [OK] Database 'db-a' created successfully!
-
- ------ ------ ------------------ --------- ------------ ---------------------
-  ID     Name   Team               Group     Schema       Created At
- ------ ------ ------------------ --------- ------------ ---------------------
-  1799   db-a   Engineering Team   default   standalone   2025-07-18 20:23:37
- ------ ------ ------------------ --------- ------------ ---------------------
-
-```
-
-**Error Handling**
-
-```bash
-# No session
-[ERROR] No active session. Login first using: auth:login
-
-# Invalid team
-[ERROR] Team 'invalid_team' not found
-
-# Creation failed
-[ERROR] Database creation failed: Name already exists
-```
-
-**Best Practices**
-
--   Use `--schema` for template databases
--   Set default team/group in config to skip prompts
--   Combine with `db:list` to verify creation
-
-**Notes**
-
--   Requires team/group admin privileges
--   Schema databases can't be modified directly
--   Names must be URL-safe (a-z, 0-9, \_-)
-
----
-
-### `db:delete`
-
-Permanently remove a database
-
-**Usage**
-
-```bash
-mylibsqladmin@libsql3> db:delete <database_name> [--force]
-```
-
-**Key Features**
-
--   Interactive confirmation (unless forced)
--   Supports both normal and forced deletion
--   Verifies permissions before executing
--   Clear success/error messaging
-
-**Options**  
-| Option | Description |  
-|--------|-------------|  
-| `--force/-f` | Skip confirmation prompt |
-
-**Deletion Process**
-
-1. **Verification**
-
-    - Checks active session
-    - Validates database exists
-    - Confirms permissions
-
-2. **Confirmation** (unless forced)
-
-    ```bash
-    Are you sure you want to delete database 'orders_db'? (yes/no) [no]:
-    ```
-
-3. **Execution**
-    - Regular delete (recoverable for 7 days)
-    - Force delete (immediate and permanent)
-
-**Examples**
-
-```bash
-# Interactive deletion
-mylibsqladmin@libsql3> db:delete old_orders
-[WARNING] Are you sure? (yes/no) [no]: yes
-[OK] Database 'old_orders' deleted successfully!
-
-# Force deletion
-mylibsqladmin@libsql3> db:delete temp_data -f
-[WARNING] PERMANENT deletion - are you sure? (yes/no) [no]: yes
-[OK] Database 'temp_data' permanently deleted!
-```
-
-**Security Features**
-
--   Requires explicit confirmation
--   Separate force-delete pathway
--   Session validation
--   Permission checking
-
-**Error Handling**
-
-```bash
-# No permissions
-[ERROR] Database deletion failed: API returned status 403: Forbidden
-
-# Non-existent database
-[ERROR] Database deletion failed: API returned status 404: Not found
-```
-
-**Best Practices**
-
-```bash
-# First check what you're deleting
-mylibsqladmin@libsql3> db:list
-
-# Use regular delete first
-mylibsqladmin@libsql3> db:delete old_data
-
-# Only force delete when absolutely necessary
-mylibsqladmin@libsql3> db:delete sensitive_data -f
-```
-
-**Notes**
-
--   Regular deletions can be recovered within 7 days
--   Force deletions are **immediately permanent**
--   Requires database owner or admin privileges
--   Audit logs track all deletion activity
-
----
-
-### `db:archive`
-
-View and manage archived databases
-
-**Usage**
-
-```bash
-mylibsqladmin@libsql3> db:archive
-```
-
-**What it shows**
-
--   List of all archived databases
--   Scheduled deletion dates
--   Original ownership information
--   Database type (schema/standalone/child)
-
-**Example Output**
-
-```
-Archived Databases for superadmin
-+------------+----------------------+---------+------------+---------------------+-----------------------------+
-| Name       | Type                 | Group   | Owner      | Created At          | Delete At                   |
-+------------+----------------------+---------+------------+---------------------+-----------------------------+
-| db-child-2 | child of [db-parent] | default | superadmin | 2025-07-18 21:43:25 | 2025-07-18T15:05:05.000000Z |
-+------------+----------------------+---------+------------+---------------------+-----------------------------+
-1 databases found
-```
-
-**Key Features**
-
--   Displays recovery window (Delete At)
--   Preserves original metadata
--   Clear visual distinction of database types
--   Works with both schema and regular databases
-
-**Common Scenarios**
-
-```bash
-# Check what's archived
-mylibsqladmin@libsql3> db:archive
-```
-
-**Error Handling**
-
-```bash
-# No session
-[ERROR] There is no active session
-[NOTE] Login first using auth:login <username>
-
-# No permissions
-[ERROR] API returned status 403: Forbidden
-```
-
-**Technical Notes**
-
--   Schema databases show their relationships
--   Requires "view archives" permission
--   Data is read-only in archived state
-
-**Related Commands**
-
-```bash
-# Restore an archived database
-mylibsqladmin@libsql3> db:restore <name>
-
-# Permanently delete
-mylibsqladmin@libsql3> db:delete --force <name>
-```
-
----
-
-### `db:restore`
-
-Recover a previously deleted database from archive
-
-**Usage**
-
-```bash
-mylibsqladmin@libsql3> db:restore <database_name> [--force]
-```
-
-**Key Features**
-
--   Preserves all original data and permissions
--   Interactive confirmation (unless forced)
--   Verifies restore eligibility
-
-**Options**
-
-| Option       | Description              |
-| ------------ | ------------------------ |
-| `--force/-f` | Skip confirmation prompt |
-
-**Restoration Process**
-
-1. **Verification**
-
-    - Checks database exists in archive
-    - Validates user permissions
-    - Confirms no naming conflicts
-
-2. **Confirmation** (unless forced)
-
-    ```bash
-    Are you sure you want to restore database 'orders_backup'? (yes/no) [no]:
-    ```
-
-3. **Execution**
-    - Reactivates database with original configuration
-    - Maintains all relationships (for schema databases)
-
-**Examples**
-
-```bash
-# Interactive restore
-mylibsqladmin@libsql3> db:restore orders_backup
-[WARNING] Are you sure? (yes/no) [no]: yes
-[OK] Database 'orders_backup' restored successfully!
-
-# Force restore
-mylibsqladmin@libsql3> db:restore critical_db -f
-[OK] Database 'critical_db' restored immediately!
-```
-
-**Security Features**
-
--   Requires original owner or admin privileges
--   Separate confirmation for force restore
--   Session validation
--   Permission checking
-
-**Error Handling**
-
-```bash
-# Database expired
-[ERROR] Restoration failed: Database has been permanently deleted
-
-# Name conflict
-[ERROR] Restoration failed: Active database with this name exists
-
-# Insufficient permissions
-[ERROR] Restoration failed: API returned status 403
-```
-
-**Best Practices**
-
-```bash
-# First check archived databases
-mylibsqladmin@libsql3> db:archive
-
-# Verify restore eligibility
-mylibsqladmin@libsql3> db:archive
-
-# Use normal restore first
-mylibsqladmin@libsql3> db:restore orders_backup
-```
-
-**Notes**
-
--   Restores to original team/group
--   May take several minutes for large databases
--   Schema relationships remain intact
--   Original deletion date determines availability
-
-**Related Commands**
-
-```bash
-# View available archives
-mylibsqladmin@libsql3> db:archive
-
-# Check restored database
-mylibsqladmin@libsql3> db:list
-```
-
----
-
-### `group:list`
-
-View all available database groups
-
-**Usage**
-
-```bash
-mylibsqladmin@libsql3> group:list
-```
-
-**What it shows**
-
--   Complete list of groups you can access
--   Group IDs and names
--   Member counts
--   Creation/modification timestamps
-
-**Example Output**
-
-```
-Available Groups
-================
-
- ---- --------- --------------- --------------------- ---------------------
-  ID   Name      Members Count   Created At            Updated At
- ---- --------- --------------- --------------------- ---------------------
-  1    default   4               2025-06-23 23:28:25   2025-06-23 23:28:25
- ---- --------- --------------- --------------------- ---------------------
-
- Total groups: 1
-```
-
-**Key Features**
-
--   Clear tabular display
--   Shows active membership counts
--   Helpful for database creation (`db:create --group`)
--   Works with both personal and team groups
-
-**Common Use Cases**
-
-```bash
-# Find group ID for db:create
-mylibsqladmin@libsql3> group:list
-
-# Check group activity
-mylibsqladmin@libsql3> group:list --sort=updated_at
-```
-
-**Requirements**
-
--   Active login session (`auth:login` first)
--   Group view permissions
-
-**Error Handling**
-
-```bash
-# No session
-[ERROR] There is no active session
-[NOTE] Login first using: auth:login <username>
-
-# No permissions
-[ERROR] API returned status 403: Forbidden
-```
-
-**Technical Notes**
-
--   Sorted by creation date (oldest first)
--   Updated At shows last membership change
--   Group IDs are required for API operations
-
-**Related Commands**
-
-```bash
-# Create database in specific group
-mylibsqladmin@libsql3> db:create --group=<ID>
-
-# View team members
-mylibsqladmin@libsql3> team:members <team_id>
-```
-
-**Tips**
-
--   Use group IDs (not names) for scripting
--   Combine with `grep` to find specific groups
--   The "default" group appears if no others exist
-
----
-
-### `group:delete`
-
-Permanently remove a database group
-
-**Usage**
-
-```bash
-mylibsqladmin@libsql3> group:delete [<group_name>] [--force]
-```
-
-**Key Features**
-
--   Interactive group selection (if name not provided)
--   Force option to skip confirmation
--   Validates group existence and permissions
--   Handles both direct and interactive deletion
-
-**Options**  
-| Option | Description |  
-|--------|-------------|  
-| `--force/-f` | Skip confirmation prompt |
-
-**Deletion Process**
-
-1. **Group Selection**
-
-    - Directly by name: `group:delete analytics`
-    - Interactively: `group:delete` shows selection menu
-
-2. **Confirmation** (unless forced)
-
-    ```bash
-    Are you sure you want to permanently delete this group? (yes/no) [no]:
-    ```
-
-3. **Execution**
-    - Removes group and all associations
-    - Returns success message
-
-**Examples**
-
-```bash
-# Direct deletion with confirmation
-mylibsqladmin@libsql3> group:delete test_group
-[NOTE] Deleting group: test_group (ID: grp_123)
-[WARNING] Are you sure? (yes/no) [no]: yes
-[OK] Group deleted successfully!
-
-# Force deletion
-mylibsqladmin@libsql3> group:delete temp_group -f
-[OK] Group temp_group permanently deleted!
-
-# Interactive selection
-mylibsqladmin@libsql3> group:delete
-1) analytics (ID: grp_abc)
-2) ecommerce (ID: grp_def)
-Select a group to delete: 1
-[WARNING] Are you sure? (yes/no) [no]: yes
-[OK] Group deleted successfully!
-```
-
-**Security Features**
-
--   Requires explicit confirmation
--   Validates admin privileges
--   Session verification
-
-**Error Handling**
-
-```bash
-# No permissions
-[ERROR] Group deletion failed: API returned status 403
-
-# Non-existent group
-[ERROR] Group deletion failed: Group 'missing' not found
-
-# Groups with active databases
-[ERROR] Group deletion failed: Group contains databases
-```
-
----
-
-### `db:token:create`
-
-Mint a fresh full-access token for a database.
-
-**Usage**
-
-```bash
-mylibsqladmin@libsql3> db:token:create my-database-name
-```
-
-**What it does**
-
--   Mints a new full-access opaque token (SHA-256 stored at rest server-side)
--   Prints the plaintext **exactly once** — it is never shown again
--   Replaces any previous `cli-shell-token` minted by this user for that database
-
-**Example Output**
-
-```
-Full-access token minted for my-database-name
-example-opaque-token-value-64-hex
-Fingerprint: ••••••••12345678
-Store this token now — it will never be shown again.
-```
-
-**Requirements**
-
--   Active login session (`auth:login` first)
--   Super Admin role (CLI mint path; matches the `auth:login` CLI token contract)
-
-**Common Use Cases**
-
-```bash
-# Mint a token for CI to access a database
-mylibsqladmin@libsql3> db:token:create metrics-db
-
-# Re-mint after a leak (replaces the previous CLI token automatically)
-mylibsqladmin@libsql3> db:token:create metrics-db
-```
-
-**Error Handling**
-
-```bash
-# No session
-<error>There is no active session</error>
-
-# Unknown database
-<error>API returned status 404: Database not found</error>
-```
-
+`--yes` only answers the prompt; it never changes what the command does.
+`--force` keeps its command-specific meaning — for `db:delete` it switches to
+the permanent endpoint, so the two options are not interchangeable there.
+
+One-shot output is human-readable and is **not a stable machine contract**
+(D-13). Scripts that need structured data must call the MylibSQLAdmin platform
+API directly; do not parse CLI tables. There is no `--format=json` option in
+this release.
+
+## Command reference
+
+Command names, descriptions, arguments, options, and defaults are generated from
+Symfony Console metadata in the **CLI command reference** page (see the sidebar).
+Regenerate it with `cd libsql3 && composer docs`; CI fails on an uncommitted
+signature change. Command signatures are not duplicated here — the generated
+file is the only authoritative list.
+
+## Workflows
+
+These are the parts of the CLI workflow that cannot be generated from command
+metadata.
+
+### Administration
+
+1. Authenticate first. Without an active stored token, administrative commands
+   fail with an explicit login hint.
+2. Set local defaults for team and group; create operations then use them
+   instead of asking for a selection.
+3. Create databases, then verify with the list command. A normal database delete
+   is recoverable during the archive window; in the REPL, answer the prompt, or
+   in one-shot mode pass `--yes`. A `--force` delete is immediate and permanent.
+   Check the archive list before restoring.
+4. Teams are archived, not permanently deleted, by the CLI. Restoring an
+   archived team reverses that soft delete; there is no CLI path that permanently
+   deletes a team.
+
+### Schema policy
+
+A schema database is a template. Create it explicitly as a schema database, and
+create child databases from it rather than editing the template in place. Set
+default team and group to avoid repeated selection prompts. Archived schema
+databases are read-only like any other archived database and retain their
+parent/child relationships in the archive list.
+
+### Tokens
+
+Database tokens are opaque random bytes and are stored as SHA-256 hashes on the
+platform. Minting prints the plaintext exactly once; save it then because no
+command can show it again. The status command returns only a fingerprint, never
+token material. Both `db:token:create` and `db:token:status` derive that
+fingerprint from the stored hash, so the two values can be compared after a
+rotation. Minting a fresh token replaces the previous CLI-minted token for that
+database; re-minting is the response to a suspected leak.
+
+Releases built before this artifact passed the database token in the database
+shell child process arguments, where other local processes could observe it in
+the process list. Treat tokens used with those builds as observed: after
+upgrading, mint a fresh token for each affected database. Rotation is an
+operator action; the CLI does not perform it automatically.
+
+### Database shell
+
+A database shell needs an active login, an explicit `LIBSQL_DATABASE_ENDPOINT`,
+and `turso` already installed. Opting in to installation is explicit; without
+it, a missing binary is an error and nothing is downloaded.
+
+The connection flow is:
+
+1. Validate the database name and endpoint. HTTPS is required except for
+   loopback hosts; plain HTTP prints a visible warning.
+2. Mint a database-scoped token through the admin API. Both HTTP 200 and 201 are
+   accepted.
+3. Store the token in a private `0600` file inside a `0700` directory and start
+   a loopback injector that adds `Authorization: Bearer <token>` to upstream
+   requests.
+4. Launch the Turso shell with a token-free URL and a loopback proxy. The child
+   command contains no token and no token-bearing URL.
+5. Stop the injector and delete the credential file on every exit path,
+   including errors and SIGTERM/SIGINT/SIGHUP.
+
+The SQL session itself is handled by Turso. End it with Ctrl+D or `.exit`.
+
+## Exit codes
+
+Inside the REPL these are command return values. In one-shot mode they are also
+the process exit status.
+
+| Code | Meaning | Typical cause |
+| ---- | ------- | ------------- |
+| `0` | Success | Command completed, or a confirmation was declined |
+| `1` | General failure | No active session, invalid input, or an unexpected error |
+| `2` | Authentication failure | Missing or invalid stored API token |
+| `3` | Validation / input error | Invalid endpoint, wrong arguments, or API rejection |
+| `4` | Declined confirmation | Non-interactive call missing a required explicit value |
+| `5` | Remote / transport failure | Network or API error while minting a database token |

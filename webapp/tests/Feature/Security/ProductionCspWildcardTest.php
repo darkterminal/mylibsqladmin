@@ -61,3 +61,48 @@ test('production CSP refuses the wildcard for IP addresses', function () {
     expect($csp)->not->toContain('*.')
         ->and($csp)->not->toContain('192.168.1.10');
 });
+
+test('explicit parent domain overrides the TLD heuristic', function () {
+    $this->app->detectEnvironment(fn () => 'production');
+    config([
+        'app.url' => 'https://admin.example.co.uk',
+        'mylibsqladmin.libsql.parent_domain' => 'example.co.uk',
+    ]);
+
+    $response = $this->get('/login');
+
+    expect((string) $response->headers->get('Content-Security-Policy'))
+        ->toContain('https://*.example.co.uk');
+});
+
+test('explicit parent domain supports ccTLDs', function () {
+    $this->app->detectEnvironment(fn () => 'production');
+    config([
+        'app.url' => 'https://admin.example.id',
+        'mylibsqladmin.libsql.parent_domain' => 'example.id',
+    ]);
+
+    $response = $this->get('/login');
+
+    expect((string) $response->headers->get('Content-Security-Policy'))
+        ->toContain('https://*.example.id');
+});
+
+test('invalid explicit parent domain fails closed', function (string $value) {
+    $this->app->detectEnvironment(fn () => 'production');
+    config([
+        'app.url' => 'https://admin.example.com',
+        'mylibsqladmin.libsql.parent_domain' => $value,
+    ]);
+
+    $response = $this->get('/login');
+
+    expect((string) $response->headers->get('Content-Security-Policy'))
+        ->not->toContain('https://*.');
+})->with([
+    'localhost',
+    '127.0.0.1',
+    'https://example.com',
+    '*.example.com',
+    'example.com:8080',
+]);

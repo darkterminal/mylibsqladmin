@@ -80,15 +80,21 @@ class UserList extends Command implements Configurable
                 return 0;
             }
 
-            // Handle pagination
-            $page = max(1, (int) $input->getOption('page'));
-            $perPage = max(1, (int) $input->getOption('per-page'));
-            $totalUsers = count($users);
-            $totalPages = ceil($totalUsers / $perPage);
+            // Handle pagination. An invalid or out-of-range page is a caller
+            // error: silently clamping it hid typos and produced a plausible
+            // looking (but wrong) page of results.
+            $page = (int) $input->getOption('page');
+            $perPage = (int) $input->getOption('per-page');
+            if ($page < 1 || $perPage < 1) {
+                $io->error('--page and --per-page must be positive integers.');
+                return 4;
+            }
 
-            // Validate page number
+            $totalUsers = count($users);
+            $totalPages = (int) ceil($totalUsers / $perPage);
             if ($page > $totalPages) {
-                $page = max(1, $totalPages);
+                $io->warning("Page $page is out of range; only $totalPages page(s) available.");
+                return 4;
             }
 
             // Paginate results
@@ -115,26 +121,6 @@ class UserList extends Command implements Configurable
         }
     }
 
-    private function getTokenForUser(string $userIdentifier): ?string
-    {
-        // Try to get token from local store
-        $token = $this->getToken($userIdentifier);
-
-        if ($token) {
-            return $token;
-        }
-
-        // Fallback to environment variables
-        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
-        foreach ($envVars as $var) {
-            $token = getenv($var);
-            if ($token) {
-                return $token;
-            }
-        }
-
-        return null;
-    }
 
     private function fetchUsers(string $userIdentifier, string $token): array
     {
@@ -148,7 +134,7 @@ class UserList extends Command implements Configurable
         $httpCode = $request['status'];
 
         if ($httpCode !== 200) {
-            throw new \Exception("API returned status $httpCode: " . substr($response, 0, 100));
+            throw new \Exception("API returned status $httpCode: " . api_error_message($response, 100));
         }
 
         $body = json_decode($response, true);
@@ -182,7 +168,7 @@ class UserList extends Command implements Configurable
                 $user['name'] ?? '',
                 $email,
                 $roles,
-                $user['created_at'] ?? 'Unknown'
+                format_api_date($user['created_at'] ?? null)
             ]);
         }
 

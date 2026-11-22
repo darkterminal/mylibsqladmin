@@ -27,7 +27,8 @@ class TeamDelete extends Command
             ->setName('team:delete')
             ->setDescription('Delete a team')
             ->addArgument('id', InputArgument::REQUIRED, 'Team ID')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force deletion without confirmation');
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force deletion without confirmation')
+            ->addOption('yes', null, InputOption::VALUE_NONE, 'Confirm the deletion prompt without asking (one-shot)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -52,7 +53,8 @@ class TeamDelete extends Command
             $team = $this->fetchTeam($teamId, $userIdentifier, $token);
 
             // Confirm deletion unless forced
-            if (!$input->getOption('force') && !$io->confirm("Are you sure you want to permanently delete team '{$team['name']}'?", false)) {
+            if (!$input->getOption('force') && !$input->getOption('yes')
+                && !$io->confirm("Are you sure you want to permanently delete team '{$team['name']}'?", false)) {
                 $io->warning('Deletion cancelled');
                 return 0;
             }
@@ -65,7 +67,7 @@ class TeamDelete extends Command
             $response = json_decode($request['raw'], true);
 
             if ($status !== 204 && $status !== 200) {
-                $error = $response['message'] ?? $request['raw'];
+                $error = api_error_message($request['raw']);
                 throw new \Exception("API error ($status): $error");
             }
 
@@ -77,20 +79,6 @@ class TeamDelete extends Command
         }
     }
 
-    private function getTokenForUser(string $userIdentifier): ?string
-    {
-        // Token handling same as TeamCreate
-        $token = $this->getToken($userIdentifier);
-        if ($token)
-            return $token;
-
-        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
-        foreach ($envVars as $var) {
-            if ($token = getenv($var))
-                return $token;
-        }
-        return null;
-    }
 
     private function fetchTeam(string $teamId, string $userIdentifier, string $token): array
     {
@@ -102,7 +90,7 @@ class TeamDelete extends Command
         $response = json_decode($request['raw'], true);
 
         if ($status !== 200) {
-            $error = $response['message'] ?? $request['raw'];
+            $error = api_error_message($request['raw']);
             throw new \Exception("Failed to fetch team: $error");
         }
 

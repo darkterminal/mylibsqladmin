@@ -2,6 +2,8 @@
 namespace Libsql3\Cmd;
 
 use Libsql3\Internal\CliStore;
+use Libsql3\Internal\Endpoint;
+use Libsql3\Internal\ShellTokenProxy;
 use Psy\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
@@ -21,26 +23,39 @@ class DbShell extends Command
         $this
             ->setName('db:shell')
             ->setDescription('Open interactive shell for libSQL database')
-            ->addArgument('database_name', InputArgument::REQUIRED, 'Database name');
+            ->addArgument('database_name', InputArgument::REQUIRED, 'Database name')
+            ->addOption(
+                'install-turso',
+                null,
+                InputOption::VALUE_NONE,
+                'Explicitly allow installing the Turso CLI when it is missing'
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $dbName = $input->getArgument('database_name');
-        $dbEndpoint = parse_url(config_get('LIBSQL_DATABASE_ENDPOINT'));
-        $url = $dbEndpoint['scheme'] . '://' . $dbName . '.' . $dbEndpoint['host'] . ':' . $dbEndpoint['port'];
-        $tursoPath = $this->getTursoPath();
-
-        // Get current user identifier from environment
-        $userIdentifier = $this->getCurrentLoggedInUser() ?: null;
-
-        if (!$userIdentifier) {
-            $output->writeln('<error>There is no active session</error>');
-            $output->writeln('<comment>Loggin first using auth:login <username> command</comment>');
-            return 1;
-        }
-
         try {
+            $dbName = (string) $input->getArgument('database_name');
+            Endpoint::assertValidDatabaseName($dbName);
+
+            $storedEndpoint = config_get('LIBSQL_DATABASE_ENDPOINT');
+            $endpoint = Endpoint::parse(
+                ($storedEndpoint !== null && trim($storedEndpoint) !== '') ? $storedEndpoint : '',
+                'LIBSQL_DATABASE_ENDPOINT'
+            );
+            warn_if_insecure_endpoint($endpoint->value, 'LIBSQL_DATABASE_ENDPOINT');
+
+            $port = $endpoint->port ?? ($endpoint->scheme === 'https' ? 443 : 80);
+            $url = $endpoint->scheme . '://' . $dbName . '.' . $endpoint->host . ':' . $port;
+
+            // Get current user identifier from environment
+            $userIdentifier = $this->getCurrentLoggedInUser() ?: null;
+
+            if (!$userIdentifier) {
+                $output->writeln('<error>There is no active session</error>');
+                $output->writeln('<comment>Loggin first using auth:login <username> command</comment>');
+                return 1;
+            }
 
             // Get authentication token
             $token = $this->getTokenForUser($userIdentifier);
@@ -51,9 +66,27 @@ class DbShell extends Command
                 return 2;
             }
 
-            // Install Turso CLI if not found
+            // Resolve the executable BEFORE minting a credential. Without an
+            // explicit opt-in, a missing binary must never trigger an install
+            // or leave a freshly minted token unused.
+            $tursoPath = $this->getTursoPath();
+
             if (!$tursoPath) {
-                $output->writeln('<info>Turso CLI not found. Installing now...</info>');
+                $optIn = $input->getOption('install-turso')
+                    || getenv('LIBSQL3_ALLOW_TURSO_INSTALL') === '1';
+
+                if (!$optIn) {
+                    $output->writeln('<error>Turso CLI not found.</error>');
+                    $output->writeln('<comment>Install it yourself, then retry:</comment>');
+                    $output->writeln('  curl -sSfL https://get.tur.so/install.sh | bash');
+                    $output->writeln(
+                        '<comment>Or rerun with --install-turso '
+                        . '(or LIBSQL3_ALLOW_TURSO_INSTALL=1).</comment>'
+                    );
+                    return 3;
+                }
+
+                $output->writeln('<info>Turso CLI not found. Installing with explicit opt-in...</info>');
                 $this->installTurso($output);
                 $tursoPath = $this->getTursoPath();
 
@@ -64,25 +97,33 @@ class DbShell extends Command
                 $output->writeln("\n<info>Turso CLI installed successfully!</info>");
             }
 
+            if (!is_executable($tursoPath)) {
+                throw new \RuntimeException("Turso CLI is not executable: {$tursoPath}");
+            }
+
             // Get database authentication token
             $authToken = $this->getDatabaseToken($dbName, $userIdentifier, $token);
 
-            if ($authToken) {
-                $url = $this->addAuthTokenToUrl($url, $authToken);
-                $source = 'command line';
+            $proxy = null;
+            try {
+                if ($authToken !== null && $authToken !== '') {
+                    // The token never reaches the child argv. It lives in a
+                    // private file read only by the loopback injector.
+                    $proxy = $this->startTokenProxy($authToken, $url);
+                }
+
+                // Run Turso shell with a token-free URL.
+                $output->writeln("<info>libsql3 for MylibSQLAdmin</info>");
+                $output->writeln("<info>Opening Turso database shell for: {$this->getSafeUrl($url)}</info>");
+
+                $this->runTursoShell($tursoPath, $url, $output, $proxy?->proxyUrl());
+
+                return 0;
+            } finally {
+                // Always stop the injector and delete the credential, including
+                // when the shell exits with an error or the operator interrupts.
+                $proxy?->stop();
             }
-
-            // Run Turso shell
-            $output->writeln("<info>libsql3 for MylibSQLAdmin</info>");
-            $output->writeln("<info>Opening Turso database shell for: {$this->getSafeUrl($url)}</info>");
-
-            if ($authToken) {
-                $output->writeln("<comment>Using authentication token from {$source}</comment>");
-            }
-
-            $this->runTursoShell($tursoPath, $url, $output);
-
-            return 0;
         } catch (\Exception $e) {
             $output->writeln("<error>Error: " . $e->getMessage() . "</error>");
             return 1;
@@ -91,68 +132,26 @@ class DbShell extends Command
 
     private function getDatabaseToken(string $databaseName, string $userIdentifier, string $token): ?string
     {
-        $request = http_request('/api/cli/db/token/mint/' . urlencode($databaseName), 'POST', null, [
+        $request = http_request('/api/cli/db/token/mint/' . rawurlencode($databaseName), 'POST', null, [
             "Authorization: Bearer " . $token,
         ]);
 
-        $response = $request['raw'];
-        $httpCode = $request['status'];
+        $parsed = parse_database_token_mint_response($request);
 
-        if ($httpCode !== 200) {
-            throw new \Exception("API returned status $httpCode: " . substr($response, 0, 200));
+        if (!$parsed['ok']) {
+            throw new \RuntimeException($parsed['error']);
         }
 
-        $body = json_decode($response, true);
-
-        return $body['data']['token'];
+        return $parsed['token'];
     }
 
-    private function getTokenForUser(string $userIdentifier): ?string
+
+    /**
+     * Protected so tests can inject a proxy handle without forking a process.
+     */
+    protected function startTokenProxy(string $token, string $upstreamUrl): ?ShellTokenProxy
     {
-        // Try to get token from local store
-        $token = $this->getToken($userIdentifier);
-
-        if ($token) {
-            return $token;
-        }
-
-        // Fallback to environment variables
-        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
-        foreach ($envVars as $var) {
-            $token = getenv($var);
-            if ($token) {
-                return $token;
-            }
-        }
-
-        return null;
-    }
-
-    private function addAuthTokenToUrl(string $url, string $token): string
-    {
-        // Parse URL to handle existing query parameters
-        $parsedUrl = parse_url($url);
-        $query = [];
-
-        if (isset($parsedUrl['query'])) {
-            parse_str($parsedUrl['query'], $query);
-        }
-
-        // Add or replace authToken parameter
-        $query['authToken'] = $token;
-
-        // Rebuild URL with new query parameters
-        $scheme = isset($parsedUrl['scheme']) ? $parsedUrl['scheme'] . '://' : '';
-        $host = $parsedUrl['host'] ?? '';
-        $port = isset($parsedUrl['port']) ? ':' . $parsedUrl['port'] : '';
-        $user = isset($parsedUrl['user']) ? $parsedUrl['user'] : '';
-        $pass = isset($parsedUrl['pass']) ? ':' . $parsedUrl['pass'] : '';
-        $pass = ($user || $pass) ? "$pass@" : '';
-        $path = $parsedUrl['path'] ?? '';
-        $query = '?' . http_build_query($query);
-        $fragment = isset($parsedUrl['fragment']) ? '#' . $parsedUrl['fragment'] : '';
-
-        return "$scheme$user$pass$host$port$path$query$fragment";
+        return ShellTokenProxy::start($token, $upstreamUrl);
     }
 
     private function getSafeUrl(string $url): string
@@ -161,9 +160,11 @@ class DbShell extends Command
         return preg_replace('/([?&])authToken=[^&]+(&|$)/', '$1', $url);
     }
 
-    private function getTursoPath(): ?string
+    /**
+     * Protected so tests can simulate a missing or stubbed executable.
+     */
+    protected function getTursoPath(): ?string
     {
-        // Check if turso is in system PATH
         $paths = [
             shell_exec('command -v turso'),
             getenv('HOME') . '/.turso/turso'
@@ -192,17 +193,36 @@ class DbShell extends Command
         }
     }
 
-    private function runTursoShell(string $tursoPath, string $url, OutputInterface $output): void
+    /**
+     * Protected so tests can assert the exact child command without launching it.
+     */
+    protected function buildTursoCommand(string $tursoPath, string $url, ?string $proxyUrl): string
     {
-        echo $this->getSafeUrl($url) . PHP_EOL;
-        // Start interactive shell
+        $command = "{$tursoPath} db shell " . escapeshellarg($url);
+
+        if ($proxyUrl !== null) {
+            $command .= ' --proxy ' . escapeshellarg($proxyUrl);
+        }
+
+        return $command;
+    }
+
+    /**
+     * Protected so tests can capture the child command without launching it.
+     */
+    protected function runTursoShell(
+        string $tursoPath,
+        string $url,
+        OutputInterface $output,
+        ?string $proxyUrl = null
+    ): void {
         $descriptorSpec = [
             0 => STDIN,
             1 => STDOUT,
             2 => STDERR
         ];
 
-        $process = proc_open("{$tursoPath} db shell " . escapeshellarg($url), $descriptorSpec, $pipes);
+        $process = proc_open($this->buildTursoCommand($tursoPath, $url, $proxyUrl), $descriptorSpec, $pipes);
 
         if (!is_resource($process)) {
             throw new \RuntimeException('Failed to open Turso shell');
@@ -220,4 +240,3 @@ class DbShell extends Command
         }
     }
 }
-

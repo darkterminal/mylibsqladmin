@@ -40,11 +40,16 @@ class CliMintDatabaseTokenController extends Controller
 
         $pair = (new DatabaseTokenGenerator())->generateToken($database->id, $userId, 0);
 
+        // F-55: derive the displayed fingerprint from the stored hash, exactly
+        // like CliGetTokenByDatabaseNameController. Masking the plaintext here
+        // made create and status disagree for the very same token.
+        $fullAccessHash = hash('sha256', $pair['full_access_token']);
+
         UserDatabaseToken::create([
             'user_id' => $userId,
             'database_id' => $database->id,
             'name' => 'cli-shell-token',
-            'full_access_token' => hash('sha256', $pair['full_access_token']),
+            'full_access_token' => $fullAccessHash,
             'read_only_token' => hash('sha256', $pair['read_only_token']),
             'expiration_day' => 0, // never expires, same contract as web "never" choice
             'created_by' => $userId,
@@ -56,7 +61,7 @@ class CliMintDatabaseTokenController extends Controller
             'data' => [
                 'token' => $pair['full_access_token'],
                 'read_only_token' => $pair['read_only_token'],
-                'fingerprint' => '••••••••' . substr((string) $pair['full_access_token'], -8),
+                'fingerprint' => '••••••••' . substr($fullAccessHash, -8),
                 'database' => $databaseName,
                 'expires_at' => null,
             ],

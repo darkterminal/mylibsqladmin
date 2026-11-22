@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Cli;
 
 use App\Http\Controllers\Controller;
+use App\Models\Team;
 use App\Models\User;
+use App\Services\SystemSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -27,6 +29,11 @@ class CliLoginController extends Controller
             ]);
         }
 
+        // Web login does this on every successful authentication. Without it a
+        // seeded super-admin has no team, so the first CLI db:create aborts with
+        // "No teams available" on a fresh install (D-17).
+        Team::ensurePersonalWorkspace($user);
+
         // Create token with 30-day expiration
         $token = $user->createToken(
             name: 'cli-auth-token',
@@ -40,7 +47,10 @@ class CliLoginController extends Controller
                 'token' => $token->plainTextToken,
                 'expires_at' => $token->accessToken->expires_at->toIso8601String(),
                 'expires_in' => $token->accessToken->expires_at->diffInSeconds(now()),
-                'app_url' => config('app.url')
+                'app_url' => config('app.url'),
+                // Display-only: timestamps stay stored in UTC. The CLI renders
+                // them in the same effective timezone as the web UI (F-51).
+                'timezone' => SystemSettings::timezone(),
             ]
         ]);
     }

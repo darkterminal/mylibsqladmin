@@ -2,6 +2,7 @@
 <?php
 
 use Libsql3\App;
+use Libsql3\Internal\OneShotRunner;
 use Psy\Configuration;
 use Psy\Shell;
 
@@ -11,36 +12,43 @@ require_once __DIR__ . '/vendor/autoload.php';
 // ini_set('display_errors', '1');
 error_reporting(E_ALL); // Or E_ERROR | E_PARSE in stricter production
 
-// Global error handler
-set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline) {
-    // Log actual error to file
-    error_log("[ERROR] $errstr in $errfile on line $errline");
+// Global error handler. This is a CLI SAPI: HTTP status codes are meaningless
+// here and generic "please contact support" text hides the actual failure.
+set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline): bool {
+    error_log("[ERROR] [$errno] $errstr in $errfile on line $errline");
+    fwrite(STDERR, "[$errno] $errstr in $errfile:$errline" . PHP_EOL);
 
-    // Display generic message to user
-    http_response_code(500);
-    echo "Something went wrong. Please try again later." . PHP_EOL;
-    exit;
+    // Recoverable warnings must not terminate the process; that was the
+    // original silent-failure bug. Only fatal classes stop execution here.
+    if (in_array($errno, [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        exit(1);
+    }
+
+    return true; // suppress PHP's default error output
 });
 
-// Global exception handler
-set_exception_handler(function (Throwable $e) {
-    // Log exception details
+// Global exception handler: real diagnostics to STDERR, non-zero status.
+set_exception_handler(function (Throwable $e): void {
     error_log("[EXCEPTION] {$e->getMessage()} in {$e->getFile()} on line {$e->getLine()}");
-
-    // Display friendly error
-    http_response_code(500);
-    echo "Oops! An unexpected error occurred. Please contact support." . PHP_EOL;
-    exit;
+    fwrite(STDERR, $e->getMessage() . " in {$e->getFile()}:{$e->getLine()}" . PHP_EOL);
+    exit(1);
 });
 
-register_shutdown_function(function () {
+register_shutdown_function(function (): void {
     $error = error_get_last();
-    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+    if ($error !== null && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
         error_log("[FATAL] {$error['message']} in {$error['file']} on line {$error['line']}");
-        http_response_code(500);
-        echo "A critical error occurred. Please try again later." . PHP_EOL;
+        fwrite(STDERR, $error['message'] . " in {$error['file']}:{$error['line']}" . PHP_EOL);
+        exit(1);
     }
 });
+
+// Additive one-shot path (D-12): no args means the PsySH REPL keeps the exact
+// banner, prompt, and configuration below. Explicit args dispatch through the
+// thin adapter instead; vendor code is never touched.
+if (OneShotRunner::isOneShot($argv)) {
+    exit(OneShotRunner::run($argv));
+}
 
 $app = new App();
 
@@ -68,4 +76,4 @@ libsql3 for MylibSQLAdmin by Imam Ali Mustofa
 ]);
 
 $psysh = new Shell($config);
-$psysh->run();
+exit($psysh->run());

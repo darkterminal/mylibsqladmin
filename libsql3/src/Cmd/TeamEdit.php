@@ -64,8 +64,8 @@ class TeamEdit extends Command
                     ['ID', $currentTeam['id']],
                     ['Name', $currentTeam['name']],
                     ['Description', $currentTeam['description'] ?? 'None'],
-                    ['Created At', $currentTeam['created_at']],
-                    ['Updated At', $currentTeam['updated_at']]
+                    ['Created At', format_api_date($currentTeam['created_at'] ?? null)],
+                    ['Updated At', format_api_date($currentTeam['updated_at'] ?? null)]
                 ]
             );
 
@@ -74,7 +74,7 @@ class TeamEdit extends Command
             $helper = $this->getHelper('question');
 
             // Handle name
-            if ($name = $input->getOption('name')) {
+            if (($name = $input->getOption('name')) !== null) {
                 $data['name'] = $name;
             } else {
                 $nameQuestion = new Question(
@@ -96,7 +96,7 @@ class TeamEdit extends Command
 
             // Handle description
             $currentDescription = $currentTeam['description'] ?? null;
-            if ($desc = $input->getOption('description')) {
+            if (($desc = $input->getOption('description')) !== null) {
                 $data['description'] = $desc;
             } else {
                 $descQuestion = new Question(
@@ -131,7 +131,7 @@ class TeamEdit extends Command
             $response = json_decode($request['raw'], true);
 
             if ($status !== 200) {
-                $error = $response['message'] ?? $request['raw'];
+                $error = api_error_message($request['raw']);
                 throw new \Exception("API error ($status): $error");
             }
 
@@ -144,7 +144,7 @@ class TeamEdit extends Command
                     ['ID', $teamData['id']],
                     ['Name', $teamData['name']],
                     ['Description', $teamData['description'] ?? 'None'],
-                    ['Updated At', $teamData['updated_at']]
+                    ['Updated At', format_api_date($teamData['updated_at'] ?? null)]
                 ]
             );
 
@@ -165,7 +165,7 @@ class TeamEdit extends Command
         $response = json_decode($request['raw'], true);
 
         if ($status !== 200) {
-            $error = $response['message'] ?? $request['raw'];
+            $error = api_error_message($request['raw']);
             throw new \Exception("Failed to fetch team: $error");
         }
 
@@ -176,19 +176,4 @@ class TeamEdit extends Command
         return $response['data']['team'];
     }
 
-    private function getTokenForUser(string $userIdentifier): ?string
-    {
-        $token = $this->getToken($userIdentifier);
-        if ($token) {
-            return $token;
-        }
-
-        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
-        foreach ($envVars as $var) {
-            if ($token = getenv($var)) {
-                return $token;
-            }
-        }
-        return null;
-    }
 }

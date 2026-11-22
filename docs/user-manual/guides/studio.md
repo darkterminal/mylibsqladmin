@@ -39,9 +39,10 @@ The token never reaches the iframe and is never written to the server. A fresh o
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| Table list never loads; console shows a CSP `connect-src` violation | The browser is trying to reach an sqld host that the page's Content Security Policy does not allow | In non-production, the policy allows `http://*.localhost:8080`; use a `*.localhost` endpoint |
+| Table list never loads; console shows a CSP `connect-src` violation | The browser is trying to reach an sqld host that the page's Content Security Policy does not allow | In non-production the policy allows `http://*.localhost:8080`. In production set `LIBSQL_PARENT_DOMAIN` on the webapp to the public parent domain; this also covers `.id`, `.co.uk` and other suffixes the automatic heuristic skips |
 | `Failed to fetch` / connection refused to `http://<db>.db:8080` | `LIBSQL_HOST` points at the internal compose service name, which browsers cannot resolve | Set `LIBSQL_HOST` to the client-facing host (`localhost` for a local install, the public parent domain in production) |
-| Studio works over HTTP but not HTTPS | Mixed content: an HTTPS page cannot open a plain-HTTP sqld endpoint | Put sqld behind TLS, or terminate TLS at the proxy |
+| Every query returns an empty `204` on a custom domain | The TLS edge rewrote `Host`, so the proxy could not extract the database subdomain | Forward the original `Host` header and set `LIBSQL_PARENT_DOMAIN` on the proxy to the same value used by the webapp |
+| Studio works over HTTP but not HTTPS | Mixed content: an HTTPS page cannot open a plain-HTTP sqld endpoint | Terminate TLS in front of the proxy and set `LIBSQL_HOST`/`LIBSQL_PORT` to the public `https` host and `443` |
 | Studio opens but the table list is empty | The database has no tables yet | Create a table, or run `CREATE TABLE` in the editor |
 | `Studio token could not be created` | The user has no access to the database, or the session expired | Check the grant, then sign in again |
 

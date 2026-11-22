@@ -37,7 +37,22 @@ class DbCreate extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $helper = $this->getHelper('question');
+        // A non-interactive run never prompts, so it must not require a helper
+        // set just to construct the command.
+        $helper = $input->isInteractive() ? $this->getHelper('question') : null;
+
+        // Without a TTY the team/group pickers cannot run. Require explicit
+        // choices rather than letting a null answer become a TypeError.
+        if (!$input->isInteractive()) {
+            foreach (['team', 'group'] as $required) {
+                $value = $input->getOption($required);
+                if ($value === null || $value === '') {
+                    $io->error("Non-interactive mode requires --{$required}; prompts are disabled.");
+                    return 4;
+                }
+            }
+        }
+
         $userIdentifier = $this->getCurrentLoggedInUser() ?: null;
 
         if (!$userIdentifier) {
@@ -103,26 +118,29 @@ class DbCreate extends Command
             $response = json_decode($request['raw'], true);
 
             if ($status !== 201) {
-                $error = $response['message'] ?? $request['raw'];
+                $error = api_error_message($request['raw']);
                 throw new \Exception("API error ($status): $error");
             }
 
             $dbData = $response['data']['database'];
             $io->success("Database '{$dbData['name']}' created successfully!");
 
-            $io->table(
-                ['ID', 'Name', 'Team', 'Group', 'Schema', 'Created At'],
-                [
-                    [
-                        $dbData['id'],
-                        $dbData['name'],
-                        $dbData['team_name'] ?? $dbData['team_id'],
-                        $dbData['group_name'] ?? $dbData['group_id'],
-                        $dbData['is_schema'] === true ? 'schema' : ($dbData['is_schema'] === false ? 'standalone' : $dbData['is_schema']),
-                        $dbData['created_at']
-                    ]
-                ]
-            );
+            // The platform no longer promises an id in this envelope. Show the
+            // column only when a real one is present — never synthesize one.
+            $headers = ['Name', 'Team', 'Group', 'Schema', 'Created At'];
+            $row = [
+                $dbData['name'],
+                $dbData['team_name'] ?? $dbData['team_id'],
+                $dbData['group_name'] ?? $dbData['group_id'],
+                $dbData['is_schema'] === true ? 'schema' : ($dbData['is_schema'] === false ? 'standalone' : $dbData['is_schema']),
+                format_api_date($dbData['created_at'] ?? null),
+            ];
+            if (array_key_exists('id', $dbData) && $dbData['id'] !== null && $dbData['id'] !== '') {
+                array_unshift($headers, 'ID');
+                array_unshift($row, $dbData['id']);
+            }
+
+            $io->table($headers, [$row]);
 
             return 0;
         } catch (\Exception $e) {
@@ -139,17 +157,14 @@ class DbCreate extends Command
         InputInterface $input,
         OutputInterface $output
     ): string {
-        // Convert to string if it's integer
-        if (is_int($teamOption)) {
-            $teamOption = (string) $teamOption;
-        }
-
-        // Use provided team option if available
+        // Console options are strings; API IDs are integers. Normalize both
+        // sides so --team=3 matches an integer id without rejecting names.
         if ($teamOption) {
             // Try to find team by ID or name
             $found = false;
             foreach ($teams as $team) {
-                if ($team['id'] === $teamOption || $team['name'] === $teamOption) {
+                if ((string) $team['id'] === (string) $teamOption
+                    || (string) $team['name'] === (string) $teamOption) {
                     $io->text("Using team: <comment>{$team['name']}</comment> (ID: <comment>{$team['id']}</comment>)");
                     return $team['id'];
                 }
@@ -158,11 +173,12 @@ class DbCreate extends Command
         }
 
         // Check config for default team
-        $defaultTeam = $this->config['DEFAULT_TEAM'] ?? null;
+        $defaultTeam = config_get('DEFAULT_TEAM') ?? ($this->config['DEFAULT_TEAM'] ?? null);
         if ($defaultTeam) {
             // Find default team by ID or name
             foreach ($teams as $team) {
-                if ($team['id'] === $defaultTeam || $team['name'] === $defaultTeam) {
+                if ((string) $team['id'] === (string) $defaultTeam
+                    || (string) $team['name'] === (string) $defaultTeam) {
                     $io->text("Using configured default team: {$team['name']} (ID: {$team['id']})");
                     return $team['id'];
                 }
@@ -232,6 +248,10 @@ class DbCreate extends Command
         });
 
         $teamId = $helper->ask($input, $output, $question);
+        if (!is_scalar($teamId)) {
+            throw new \RuntimeException('No team selected; pass --team or set DEFAULT_TEAM.');
+        }
+        $teamId = (string) $teamId;
         $io->text("Selected team: <comment>$teamId</comment>");
         return $teamId;
     }
@@ -244,17 +264,14 @@ class DbCreate extends Command
         InputInterface $input,
         OutputInterface $output
     ): string {
-        // Convert to string if it's integer
-        if (is_int($groupOption)) {
-            $groupOption = (string) $groupOption;
-        }
-
-        // Use provided group option if available
+        // Console options are strings; API IDs are integers. Normalize both
+        // sides so --group=2 matches an integer id without rejecting names.
         if ($groupOption) {
             // Try to find group by ID or name
             $found = false;
             foreach ($groups as $group) {
-                if ($group['id'] === $groupOption || $group['name'] === $groupOption) {
+                if ((string) $group['id'] === (string) $groupOption
+                    || (string) $group['name'] === (string) $groupOption) {
                     $io->text("Using group: <comment>{$group['name']}</comment> (ID: <comment>{$group['id']}</comment>)");
                     return $group['id'];
                 }
@@ -263,11 +280,12 @@ class DbCreate extends Command
         }
 
         // Check config for default group
-        $defaultGroup = $this->config['DEFAULT_GROUP'] ?? null;
+        $defaultGroup = config_get('DEFAULT_GROUP') ?? ($this->config['DEFAULT_GROUP'] ?? null);
         if ($defaultGroup) {
             // Find default group by ID or name
             foreach ($groups as $group) {
-                if ($group['id'] === $defaultGroup || $group['name'] === $defaultGroup) {
+                if ((string) $group['id'] === (string) $defaultGroup
+                    || (string) $group['name'] === (string) $defaultGroup) {
                     $io->text("Using configured default group: {$group['name']} (ID: {$group['id']})");
                     return $group['id'];
                 }
@@ -337,6 +355,10 @@ class DbCreate extends Command
         });
 
         $groupId = $helper->ask($input, $output, $question);
+        if (!is_scalar($groupId)) {
+            throw new \RuntimeException('No group selected; pass --group or set DEFAULT_GROUP.');
+        }
+        $groupId = (string) $groupId;
         $io->text("Selected group: <comment>$groupId</comment>");
         return $groupId;
     }
@@ -386,19 +408,4 @@ class DbCreate extends Command
         return $response['data']['groups'];
     }
 
-    private function getTokenForUser(string $userIdentifier): ?string
-    {
-        $token = $this->getToken($userIdentifier);
-        if ($token) {
-            return $token;
-        }
-
-        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
-        foreach ($envVars as $var) {
-            if ($token = getenv($var)) {
-                return $token;
-            }
-        }
-        return null;
-    }
 }

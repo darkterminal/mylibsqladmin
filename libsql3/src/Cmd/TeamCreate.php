@@ -62,7 +62,7 @@ class TeamCreate extends Command
             $response = json_decode($request['raw'], true);
 
             if ($status !== 200 && $status !== 201) {
-                $error = $response['message'] ?? $request['raw'];
+                $error = api_error_message($request['raw']);
                 throw new \Exception("API error ($status): $error");
             }
 
@@ -76,7 +76,7 @@ class TeamCreate extends Command
                         $teamData['id'],
                         $teamData['name'],
                         $teamData['description'] ?? 'None',
-                        $teamData['created_at']
+                        format_api_date($teamData['created_at'] ?? null)
                     ]
                 ]
             );
@@ -89,24 +89,4 @@ class TeamCreate extends Command
         }
     }
 
-    private function getTokenForUser(string $userIdentifier): ?string
-    {
-        // Try to get token from local store
-        $token = $this->getToken($userIdentifier);
-
-        if ($token) {
-            return $token;
-        }
-
-        // Fallback to environment variables
-        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
-        foreach ($envVars as $var) {
-            $token = getenv($var);
-            if ($token) {
-                return $token;
-            }
-        }
-
-        return null;
-    }
 }

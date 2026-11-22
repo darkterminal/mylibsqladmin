@@ -93,12 +93,28 @@ class SecureHeaders
     /**
      * Non-production: 'self' plus the Vite dev server, and the local sqld
      * proxy used by Database Studio's parent page. Production: 'self' plus
-     * a single-level wildcard for the app's parent domain, so subdomain
-     * sqld endpoints (https://<db>.<domain>) stay reachable — restricted to
-     * simple TLDs on purpose (multi-part suffixes like .co.uk get nothing).
+     * a single-level wildcard for the parent domain, so subdomain sqld
+     * endpoints (https://<db>.<domain>) stay reachable. LIBSQL_PARENT_DOMAIN
+     * is authoritative when set — it is the same value the proxy uses, and
+     * it covers ccTLDs/multi-label suffixes that the legacy heuristic
+     * deliberately skipped.
      */
     protected function connectSrc(): string
     {
+        $rawParent = config('mylibsqladmin.libsql.parent_domain');
+        $explicit = is_string($rawParent) && trim($rawParent) !== '';
+        $configured = $explicit ? $this->configuredParentDomain() : null;
+
+        // An explicit but malformed value must fail closed: never silently
+        // fall back to a heuristic that might widen the policy further.
+        if ($explicit && $configured === null) {
+            $connectSrc = "'self'";
+
+            return app()->environment('production')
+                ? $connectSrc
+                : $connectSrc . " http://*.localhost:8080";
+        }
+
         if (!app()->environment('production')) {
             $connectSrc = "'self'";
 
@@ -108,10 +124,18 @@ class SecureHeaders
 
             $connectSrc .= " http://*.localhost:8080";
 
+            if ($configured !== null) {
+                $connectSrc .= " https://*.{$configured}";
+            }
+
             return $connectSrc;
         }
 
         $connectSrc = "'self'";
+
+        if ($configured !== null) {
+            return $connectSrc . " https://*.{$configured}";
+        }
 
         $host = parse_url(config('app.url'), PHP_URL_HOST);
         if (!is_string($host)) {
@@ -136,6 +160,37 @@ class SecureHeaders
         }
 
         return $connectSrc . " https://*.{$parent}";
+    }
+
+    /**
+     * Explicit parent domain from configuration. Invalid values fail closed
+     * (no wildcard) instead of widening CSP; the same rule is applied by the
+     * proxy's subdomain Lua module.
+     */
+    protected function configuredParentDomain(): ?string
+    {
+        $value = config('mylibsqladmin.libsql.parent_domain');
+        if (!is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        $parent = strtolower(trim($value));
+        $parent = trim($parent, '.');
+
+        if (filter_var($parent, FILTER_VALIDATE_IP) !== false || $parent === 'localhost') {
+            return null;
+        }
+        if (preg_match('/[:\/\*\s]/', $parent) !== 0 || substr_count($parent, '.') < 1) {
+            return null;
+        }
+
+        foreach (explode('.', $parent) as $label) {
+            if (preg_match('/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/', $label) !== 1) {
+                return null;
+            }
+        }
+
+        return $parent;
     }
 
     protected function hostPort(string $origin): string

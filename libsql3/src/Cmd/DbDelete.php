@@ -27,7 +27,8 @@ class DbDelete extends Command
             ->setName('db:delete')
             ->setDescription('Delete a database')
             ->addArgument('database_name', InputArgument::REQUIRED, 'Database name to delete')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force deletion without confirmation');
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Permanently delete without archive or confirmation (not restorable)')
+            ->addOption('yes', null, InputOption::VALUE_NONE, 'Confirm the normal deletion prompt without asking (one-shot; still archived)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -49,40 +50,33 @@ class DbDelete extends Command
         }
 
         try {
-            // Confirm deletion unless forced
-            if (!$input->getOption('force')) {
-                $confirmation = $io->confirm(
+            // --force switches to the permanent endpoint. --yes only answers
+            // the confirmation, so one-shot calls can still use the recoverable
+            // archive path (F-52).
+            if ($input->getOption('force')) {
+                $result = $this->forceDeleteDatabase($dbName, $userIdentifier, $token);
+                $success = "Database '$dbName' permanently deleted (not restorable)!";
+            } else {
+                $confirmed = $input->getOption('yes') || $io->confirm(
                     "Are you sure you want to delete database <comment>'$dbName'</comment>?",
                     false
                 );
 
-                if (!$confirmation) {
+                if (!$confirmed) {
                     $io->warning('Database deletion cancelled');
-                    return 0;
+                    return 4;
                 }
 
-                // Make API request to delete database
                 $result = $this->deleteDatabase($dbName, $userIdentifier, $token);
-            } else {
-                $confirmation = $io->confirm(
-                    "Are you sure you want to <comment>PERMANENTLY</comment> delete database <comment>'$dbName'</comment>?",
-                    false
-                );
-
-                if (!$confirmation) {
-                    $io->warning('Database deletion cancelled');
-                    return 0;
-                }
-
-                $result = $this->forceDeleteDatabase($dbName, $userIdentifier, $token);
+                $success = "Database '$dbName' archived (restorable with db:restore)!";
             }
 
             if ($result['status'] === 204 || $result['status'] === 200) {
-                $io->success("Database '$dbName' deleted successfully!");
+                $io->success($success);
                 return 0;
             }
 
-            throw new \Exception("API returned status {$result['status']}: " . substr($result['raw'], 0, 200));
+            throw new \Exception("API returned status {$result['status']}: " . api_error_message($result['raw']));
         } catch (\Exception $e) {
             $io->error('Database deletion failed: ' . $e->getMessage());
             return 3;
@@ -91,7 +85,7 @@ class DbDelete extends Command
 
     private function deleteDatabase(string $dbName, string $userIdentifier, string $token): array
     {
-        $request = http_request('/api/cli/db/delete/' . urlencode($dbName), 'DELETE', null, [
+        $request = http_request('/api/cli/db/delete/' . rawurlencode($dbName), 'DELETE', null, [
             "Authorization: Bearer $token",
         ]);
 
@@ -103,7 +97,7 @@ class DbDelete extends Command
 
     private function forceDeleteDatabase(string $dbName, string $userIdentifier, string $token): array
     {
-        $request = http_request('/api/cli/db/force-delete/' . urlencode($dbName), 'DELETE', null, [
+        $request = http_request('/api/cli/db/force-delete/' . rawurlencode($dbName), 'DELETE', null, [
             "Authorization: Bearer $token",
         ]);
 
@@ -113,24 +107,4 @@ class DbDelete extends Command
         ];
     }
 
-    private function getTokenForUser(string $userIdentifier): ?string
-    {
-        // Try to get token from local store
-        $token = $this->getToken($userIdentifier);
-
-        if ($token) {
-            return $token;
-        }
-
-        // Fallback to environment variables
-        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
-        foreach ($envVars as $var) {
-            $token = getenv($var);
-            if ($token) {
-                return $token;
-            }
-        }
-
-        return null;
-    }
 }

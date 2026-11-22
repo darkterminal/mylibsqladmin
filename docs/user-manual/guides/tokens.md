@@ -34,9 +34,9 @@ Copy both values before dismissing the dialog. If you lose them, mint a new pair
 |---|---|
 | Full plaintext pair, returned once in the response | SHA-256 hash of each token |
 | Name, database, owner, expiry | Same metadata, unchanged |
-| — | A short fingerprint (`fp 000dd15c`) for identification |
+| — | A short fingerprint (`fp 000dd15c`, last 8 hex characters of the stored hash) for identification |
 
-The fingerprint is derived from the token and is safe to display. It lets you match a token in the UI to a credential in a secret store without exposing either.
+The fingerprint is derived from the stored SHA-256 hash, never from plaintext, and is safe to display. It lets you match a token in the UI or CLI to a credential in a secret store without exposing either. The CLI prints the same hash-derived value on both create and status, so a rotation can be confirmed without revealing the token.
 
 ## Expiry and revocation
 

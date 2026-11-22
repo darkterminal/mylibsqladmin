@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Cli;
 
 use App\Http\Controllers\Controller;
+use App\Models\UserDatabase;
 use App\Services\SqldService;
 use Illuminate\Http\Request;
 
@@ -13,7 +14,25 @@ class CliForceDeleteDatabaseController extends Controller
      */
     public function __invoke(Request $request, $databaseName)
     {
-        if (SqldService::deleteDatabase($databaseName, (int) auth()->id(), 'web')) {
+        $database = UserDatabase::withTrashed()->where('database_name', $databaseName)->first();
+
+        if (!$database) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Database not found',
+                'data' => null,
+            ], 404);
+        }
+
+        if (!auth()->user()->can('forceDelete', $database)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized',
+                'data' => null,
+            ], 403);
+        }
+
+        if (SqldService::deleteDatabase($databaseName, (int) $database->user_id, 'web')) {
             return response()->json([
                 'success' => true,
                 'message' => 'Database deleted successfully',
@@ -28,4 +47,3 @@ class CliForceDeleteDatabaseController extends Controller
         ], 500);
     }
 }
-

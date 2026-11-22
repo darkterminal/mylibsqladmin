@@ -66,26 +66,6 @@ class DbList extends Command implements Configurable
         }
     }
 
-    private function getTokenForUser(string $userIdentifier): ?string
-    {
-        // Try to get token from local store
-        $token = $this->getToken($userIdentifier);
-
-        if ($token) {
-            return $token;
-        }
-
-        // Fallback to environment variables
-        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
-        foreach ($envVars as $var) {
-            $token = getenv($var);
-            if ($token) {
-                return $token;
-            }
-        }
-
-        return null;
-    }
 
     private function fetchDatabases(string $userIdentifier, string $token): array
     {
@@ -99,7 +79,7 @@ class DbList extends Command implements Configurable
         $httpCode = $request['status'];
 
         if ($httpCode !== 200) {
-            throw new \Exception("API returned status $httpCode: $response");
+            throw new \Exception("API returned status $httpCode: " . api_error_message($response));
         }
 
         $body = json_decode($response, true);
@@ -125,8 +105,8 @@ class DbList extends Command implements Configurable
                 $db['is_schema'] === '0' ? 'standalone' : ('1' === $db['is_schema'] ? 'schema database' : "child of [" . $db['is_schema'] . "]"),
                 $db['group_name'] ?? 'default',
                 $db['owner'] ?? 'Unknown',
-                $db['created_at'] ?? 'Unknown',
-                $db['updated_at'] ?? 'Unknown',
+                format_api_date($db['created_at'] ?? null),
+                format_api_date($db['updated_at'] ?? null),
             ]);
         }
 

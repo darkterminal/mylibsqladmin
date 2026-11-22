@@ -1,3 +1,49 @@
+## [Unreleased]
+
+Not yet released or tagged. These changes are in the current source tree only;
+published images and the `:latest` pointer are unaffected.
+
+### Security — proxy (F-54)
+
+- `POST /v2/pipeline` and `location /` now share one Lua auth gate. Missing or
+  `none` access levels, write statements under read-only tokens and malformed
+  bodies return an empty `204` instead of executing SQL.
+- The database subdomain is derived from the original `Host` against
+  `LIBSQL_PARENT_DOMAIN`, so `example.com`, `example.co.uk` and `example.id`
+  work. Nested or foreign hosts are rejected. TLS terminates in front of the
+  proxy; the edge must forward `Host`.
+- Upstreams and the parent domain are rendered from env at startup into a
+  writable config. The read-only template mount is no longer edited with
+  `sed -i`, and `:5001` now has an auth-checked gRPC listener instead of a dead
+  port. Added `make proxy/test` (19 Lua assertions).
+
+### Fixes
+
+- CLI token fingerprints from `db:token:create` and `db:token:status` agree
+  (F-55): both derive from the stored SHA-256 hash.
+- Webapp CSP honours `LIBSQL_PARENT_DOMAIN` when set, including ccTLDs; an
+  explicitly malformed value fails closed. Unset keeps the legacy heuristic.
+- CLI display timezone follows the platform setting with a `LIBSQL3_TIMEZONE`
+  override (F-51); one-shot confirmations accept `--yes` without repurposing
+  `--force` (F-52); `db:shell` credential cleanup is idempotent (F-53).
+
+### Docs
+
+- Installation guide covers custom-domain/TLS requirements, the proxy env
+  contract and the published-image caveat. User manual and CLI guide describe
+  the hash-derived fingerprint and explicit parent domain.
+- TypeScript example now reads `LIBSQL_AUTH_TOKEN`/`LIBSQL_SYNC_URL` as its
+  README has always claimed.
+- Added a tracked contributor guide for the full 25-command CLI smoke run.
+
+### Verification gaps
+
+- `compose.lri.yml` (the remote-instance development stack) was **not**
+  re-tested with these changes. Verified locally: the LLI/Kiri stack, the
+  19-assertion proxy Lua suite, the webapp and libsql3 test suites, and a Jekyll
+  build. Do not treat LRI as release-certified; smoke-test it before cutting a
+  release that depends on it.
+
 ## [1.6.2] - 2026-11-19
 
 Patch release. Two fresh-install defects found and fixed; no schema or

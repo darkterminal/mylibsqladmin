@@ -29,6 +29,11 @@ The script asks a few questions (timezone, application name, local or remote sql
     <p>Prefer to write the compose file yourself? The <a href="https://github.com/darkterminal/mylibsqladmin/blob/main/docs/README.md">installation guide</a> documents the LLI (local) and LRI (remote) layouts, the proxy ports, and the environment variables each service needs.</p>
 </div>
 
+<div class="callout callout--note">
+    <span class="callout__title">Custom domain</span>
+    <p>The installer targets <code>localhost</code>. For a public domain, use the manual install guide's <a href="https://github.com/darkterminal/mylibsqladmin/blob/main/docs/README.md#custom-domain--tls">custom domain + TLS</a> section: terminate TLS in front of the proxy, forward the original <code>Host</code>, and set <code>LIBSQL_PARENT_DOMAIN</code> on both webapp and proxy. Host-based routing requires the proxy built from current source; the published <code>:latest</code> image does not have it yet.</p>
+</div>
+
 ## 2. Read the bootstrap credentials — once
 
 On a fresh install the container runs `php artisan migrate --force` at start-up. When `LIBSQL_SEED_DEFAULTS=true`, the bootstrap seeder creates the first Super Admin and writes its credentials to:

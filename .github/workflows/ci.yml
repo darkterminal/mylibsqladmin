@@ -66,3 +66,61 @@ jobs:
       - name: Composer audit
         run: composer audit --locked || true
         working-directory: webapp
+
+  libsql3:
+    name: libsql3 tests + audit
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          # The version gate needs git describe --tags to see release tags.
+          fetch-depth: 0
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_sqlite, mbstring, intl
+          coverage: none
+          tools: composer:v2
+
+      - name: Validate composer.json
+        run: composer validate --strict
+        working-directory: libsql3
+
+      - name: Install dependencies (Composer)
+        run: composer install --no-interaction --prefer-dist --no-progress
+        working-directory: libsql3
+
+      - name: Verify CLI version against latest platform tag
+        run: |
+          constant=$(php -r 'require "vendor/autoload.php"; echo Libsql3\Version::CURRENT;')
+          tag=$(git describe --tags --abbrev=0)
+          tag=${tag#v}
+          echo "constant=$constant tag=$tag"
+          test "$constant" != "1.0.0"
+          test "$constant" = "$tag"
+        working-directory: libsql3
+
+      - name: Generate CLI reference
+        run: composer docs
+        working-directory: libsql3
+        env:
+          LIBSQL_API_ENDPOINT: https://example.invalid
+
+      - name: Verify generated CLI reference is committed
+        run: git diff --exit-code -- docs/libsql3-cli-reference.md
+
+      - name: Lint PHP
+        run: find src tests bin -name '*.php' -print0 | xargs -0 -n1 php -l
+        working-directory: libsql3
+
+      - name: Tests
+        run: composer test
+        working-directory: libsql3
+
+      - name: Composer audit
+        run: composer audit --locked
+        working-directory: libsql3

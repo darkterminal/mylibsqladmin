@@ -5,6 +5,13 @@ namespace Libsql3\Internal;
 use PDO;
 use PDOException;
 
+/**
+ * Thin adapter between command classes and AuthContext.
+ *
+ * Commands keep calling the same helper names; the identity/token rules now
+ * live in exactly one place so no command can reimplement (or drift in) token
+ * precedence again.
+ */
 trait CliStore
 {
     private ?PDO $pdo = null;
@@ -12,45 +19,15 @@ trait CliStore
 
     protected function authCheck(string $username): bool
     {
-        try {
-            $stmt = $this->getPdo()->prepare("
-                SELECT token, expires_at 
-                FROM " . config('tables.tokens') . " 
-                WHERE username = :username 
-                ORDER BY expires_at DESC 
-                LIMIT 1
-            ");
-            $stmt->execute(['username' => $username]);
-
-            if ($tokenData = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                return strtotime($tokenData['expires_at']) >= time();
-            }
-            return false;
-        } catch (PDOException $e) {
-            // Handle database errors appropriately
-            return false;
-        }
+        return $this->authContext()->hasValidToken($username);
     }
 
     protected function getCurrentLoggedInUser(): ?string
     {
-        try {
-            $stmt = $this->getPdo()->prepare("
-            SELECT username 
-            FROM " . config('tables.tokens') . " 
-            WHERE expires_at > datetime('now', 'localtime')
-            ORDER BY expires_at DESC 
-            LIMIT 1
-        ");
-            $stmt->execute();
-            return $stmt->fetchColumn() ?: null;
-        } catch (PDOException $e) {
-            // Handle potential database errors
-            return null;
-        }
+        return $this->authContext()->currentUser();
     }
 
-    protected function storeToken(string $username, string $token, string $expiresAt): void
+    protected function storeToken(string $username, string $token, string $expiresAt, ?string $timezone = null): void
     {
         $pdo = $this->getPdo();
 
@@ -58,15 +35,15 @@ trait CliStore
         try {
             // Delete expired tokens for this user
             $stmt = $pdo->prepare("
-                DELETE FROM " . config('tables.tokens') . " 
+                DELETE FROM " . config('tables.tokens') . "
                 WHERE username = :username
             ");
             $stmt->execute(['username' => $username]);
 
             // Insert new token
             $stmt = $pdo->prepare("
-                INSERT INTO " . config('tables.tokens') . " 
-                (username, token, expires_at) 
+                INSERT INTO " . config('tables.tokens') . "
+                (username, token, expires_at)
                 VALUES (:username, :token, :expires_at)
             ");
 
@@ -81,42 +58,54 @@ trait CliStore
             $pdo->rollBack();
             throw $e;
         }
+
+        // A successful token write defines the active identity. Commands must
+        // never fall back to a global "latest expiry" guess after this point.
+        $this->authContext()->setActiveUser($username);
+
+        // Display-only metadata from the server. An invalid value is ignored so
+        // a hostile/old endpoint cannot poison date rendering (F-51).
+        if (is_valid_display_timezone($timezone)) {
+            config_set('LIBSQL3_DISPLAY_TIMEZONE', $timezone);
+        }
     }
 
+    /**
+     * Stored, expiry-validated token only. Logout and rotation use this so an
+     * environment credential can never be revoked or overwritten by mistake.
+     */
     protected function getToken(string $username): ?string
     {
-        try {
-            $stmt = $this->getPdo()->prepare("
-                SELECT token 
-                FROM " . config('tables.tokens') . " 
-                WHERE username = :username 
-                  AND expires_at > datetime('now', 'localtime')
-                ORDER BY expires_at DESC 
-                LIMIT 1
-            ");
-            $stmt->execute(['username' => $username]);
-            return $stmt->fetchColumn() ?: null;
-        } catch (PDOException $e) {
-            return null;
-        }
+        return $this->authContext()->storedToken($username);
+    }
+
+    /**
+     * Token resolution for API-calling commands: local store first, then the
+     * single namespaced environment fallback (which emits a visible warning).
+     */
+    protected function getTokenForUser(string $userIdentifier): ?string
+    {
+        return $this->authContext()->tokenFor($userIdentifier);
     }
 
     public function getExpiresAt(string $username): ?string
     {
-        try {
-            $stmt = $this->getPdo()->prepare("
-                SELECT expires_at 
-                FROM " . config('tables.tokens') . " 
-                WHERE username = :username 
-                  AND expires_at > datetime('now', 'localtime')
-                ORDER BY expires_at DESC 
-                LIMIT 1
-            ");
-            $stmt->execute(['username' => $username]);
-            return $stmt->fetchColumn() ?: null;
-        } catch (PDOException $e) {
-            return null;
-        }
+        return $this->authContext()->expiresAt($username);
+    }
+
+    protected function deleteToken(string $username): void
+    {
+        $this->authContext()->deleteToken($username);
+    }
+
+    protected function clearActiveUser(): void
+    {
+        $this->authContext()->clearActiveUser();
+    }
+
+    private function authContext(): AuthContext
+    {
+        return new AuthContext($this->getPdo());
     }
 
     private function getPdo(): PDO
@@ -129,47 +118,9 @@ trait CliStore
 
     private function initializeDatabase(): void
     {
-        // Create storage directory if needed
-        $dbDir = dirname(config('db_path'));
-        if (!is_dir($dbDir)) {
-            mkdir($dbDir, 0700, true);
-        }
-
-        try {
-            $this->pdo = use_database();
-            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-            // Database Migrations
-            $this->pdo->exec("
-                CREATE TABLE IF NOT EXISTS " . config('tables.tokens') . " (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT NOT NULL,
-                    token TEXT NOT NULL,
-                    expires_at DATETIME NOT NULL,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            ");
-
-            // Create index for faster lookups
-            $this->pdo->exec("
-                CREATE INDEX IF NOT EXISTS idx_username 
-                ON " . config('tables.tokens') . " (username)
-            ");
-
-            // Create table for storing configuration
-            $this->pdo->exec("
-                CREATE TABLE IF NOT EXISTS " . config('tables.config') . " (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    key TEXT NOT NULL,
-                    value TEXT NOT NULL,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            ");
-
-            $this->dbInitialized = true;
-        } catch (PDOException $e) {
-            // Handle initialization errors
-            throw new \RuntimeException("Database initialization failed: " . $e->getMessage());
-        }
+        // Schema creation lives in initialize_local_store() so bootstrap code
+        // can prepare it before any command instance is constructed.
+        $this->pdo = initialize_local_store();
+        $this->dbInitialized = true;
     }
 }

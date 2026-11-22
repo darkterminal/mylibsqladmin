@@ -27,7 +27,8 @@ class DbRestore extends Command
             ->setName('db:restore')
             ->setDescription('Restore a deleted database from archive')
             ->addArgument('database_name', InputArgument::REQUIRED, 'Database name to restore')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force restore without confirmation');
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force restore without confirmation')
+            ->addOption('yes', null, InputOption::VALUE_NONE, 'Confirm the restore prompt without asking (one-shot)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -49,8 +50,8 @@ class DbRestore extends Command
         }
 
         try {
-            // Confirm restoration unless forced
-            if (!$input->getOption('force')) {
+            // Confirm restoration unless explicitly acknowledged (F-52)
+            if (!$input->getOption('force') && !$input->getOption('yes')) {
                 $confirmation = $io->confirm(
                     "Are you sure you want to restore database <comment>'$dbName'</comment> from deleted database?",
                     false
@@ -70,7 +71,7 @@ class DbRestore extends Command
                 return 0;
             }
 
-            throw new \Exception("API returned status {$result['status']}: " . substr($result['raw'], 0, 200));
+            throw new \Exception("API returned status {$result['status']}: " . api_error_message($result['raw']));
         } catch (\Exception $e) {
             $io->error('Database restoration failed: ' . $e->getMessage());
             return 3;
@@ -79,7 +80,7 @@ class DbRestore extends Command
 
     private function restoreDatabase(string $dbName, $userIdentifier, string $token): array
     {
-        $request = http_request('/api/cli/db/restore/' . urlencode($dbName), 'POST', null, [
+        $request = http_request('/api/cli/db/restore/' . rawurlencode($dbName), 'POST', null, [
             "Authorization: Bearer $token",
             "Content-Type: application/json"
         ]);
@@ -90,21 +91,4 @@ class DbRestore extends Command
         ];
     }
 
-    private function getTokenForUser(string $userIdentifier): ?string
-    {
-        $token = $this->getToken($userIdentifier);
-        if ($token) {
-            return $token;
-        }
-
-        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
-        foreach ($envVars as $var) {
-            $token = getenv($var);
-            if ($token) {
-                return $token;
-            }
-        }
-
-        return null;
-    }
 }

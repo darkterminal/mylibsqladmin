@@ -35,7 +35,24 @@ class GroupCreate extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $helper = $this->getHelper('question');
+        // A non-interactive run never prompts, so it must not require a helper
+        // set just to construct the command.
+        $helper = $input->isInteractive() ? $this->getHelper('question') : null;
+
+        // Without a TTY neither the name nor the team can be prompted.
+        if (!$input->isInteractive()) {
+            $name = $input->getArgument('name');
+            if ($name === null || trim((string) $name) === '') {
+                $io->error('Non-interactive mode requires a group name argument; prompts are disabled.');
+                return 4;
+            }
+            $teamOption = $input->getOption('team');
+            if ($teamOption === null || $teamOption === '') {
+                $io->error('Non-interactive mode requires --team; prompts are disabled.');
+                return 4;
+            }
+        }
+
         $userIdentifier = $this->getCurrentLoggedInUser() ?: null;
 
         if (!$userIdentifier) {
@@ -66,13 +83,17 @@ class GroupCreate extends Command
             if (empty($groupName)) {
                 $io->section('Create New Group');
                 $groupName = $helper->ask($input, $output, new Question('<question>Enter group name:</question> '));
+                if (!is_scalar($groupName) || trim((string) $groupName) === '') {
+                    throw new \RuntimeException('A group name is required; pass it as an argument.');
+                }
+                $groupName = (string) $groupName;
             }
 
             // Create group
             $result = $this->createGroup($teamId, $groupName, $userIdentifier, $token);
 
             if ($result['status'] !== true) {
-                $error = $result['data']['message'] ?? $result['raw'];
+                $error = api_error_message($result['raw']);
                 throw new \Exception("API error ({$result['status']}): $error");
             }
 
@@ -84,7 +105,7 @@ class GroupCreate extends Command
                     [
                         $groupData['name'],
                         $groupData['team_name'],
-                        $groupData['created_at']
+                        format_api_date($groupData['created_at'] ?? null)
                     ]
                 ]
             );
@@ -104,11 +125,13 @@ class GroupCreate extends Command
         InputInterface $input,
         OutputInterface $output
     ): string {
-        // Use provided team option if available
+        // Console options are strings; API IDs are integers. Normalize both
+        // sides so --team=3 matches an integer id without rejecting names.
         if ($teamOption) {
             // Validate team exists
             foreach ($teams as $team) {
-                if ($team['id'] === $teamOption || $team['name'] === $teamOption) {
+                if ((string) $team['id'] === (string) $teamOption
+                    || (string) $team['name'] === (string) $teamOption) {
                     $io->text("Using team: <comment>{$team['name']}</comment> (ID: <comment>{$team['id']}</comment>)");
                     return $team['id'];
                 }
@@ -160,7 +183,8 @@ class GroupCreate extends Command
             }
 
             foreach ($teams as $team) {
-                if ($team['id'] === $value || $team['name'] === $value) {
+                if ((string) $team['id'] === (string) $value
+                    || (string) $team['name'] === (string) $value) {
                     return $team['id'];
                 }
             }
@@ -169,6 +193,10 @@ class GroupCreate extends Command
         });
 
         $teamId = $helper->ask($input, $output, $question);
+        if (!is_scalar($teamId)) {
+            throw new \RuntimeException('No team selected; pass --team.');
+        }
+        $teamId = (string) $teamId;
         $io->text("Selected team: <comment>$teamId</comment>");
         return $teamId;
     }
@@ -214,19 +242,4 @@ class GroupCreate extends Command
         return $response['data']['teams'];
     }
 
-    private function getTokenForUser(string $userIdentifier): ?string
-    {
-        $token = $this->getToken($userIdentifier);
-        if ($token) {
-            return $token;
-        }
-
-        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
-        foreach ($envVars as $var) {
-            if ($token = getenv($var)) {
-                return $token;
-            }
-        }
-        return null;
-    }
 }

@@ -30,6 +30,13 @@ Create directory to save the `compose.yml` file in your desire location.
 
 #### LRI (libSQL Remote Instance)
 
+> **Verification status:** the repository's `compose.lri.yml` development
+> stack has **not** been re-tested against the current source changes (proxy
+> `Host` routing and env contract, CSP parent domain, CLI token fingerprints,
+> display timezone and `--yes`). The local-instance (LLI) development stack is
+> the verified path. Treat LRI as untested until it gets its own smoke run;
+> no release has been cut and the published `:latest` images are unchanged.
+
 Install MylibSQLAdmin Platform with your existing `libsql-server` instance
 
 ```yml
@@ -51,6 +58,8 @@ services:
             - LIBSQL_LOCAL_INSTANCE=false
             - LIBSQL_HOST=your-libsql-server-address
             - LIBSQL_PORT=your-libsql-server-port
+            # For a custom domain, set this on the webapp too (see below).
+            # - LIBSQL_PARENT_DOMAIN=example.com
             - LIBSQL_API_HOST=your-libsql-server-admin-address
             - LIBSQL_API_PORT=your-libsql-server-admin-port
             - LIBSQL_API_USERNAME=
@@ -81,6 +90,7 @@ services:
             - LIBSQL_LOCAL_INSTANCE=true
             - LIBSQL_HOST=proxy
             - LIBSQL_PORT=8080
+            - LIBSQL_PARENT_DOMAIN=localhost
             - LIBSQL_API_HOST=db
             - LIBSQL_API_PORT=8081
             - LIBSQL_API_USERNAME=
@@ -92,7 +102,12 @@ services:
         container_name: mylibsqladmin-proxy
         image: ghcr.io/darkterminal/mylibsqladmin-proxy:latest
         environment:
+            # Kept for images <= 1.6.2; ignored by the current proxy.
             - APP_ENV=production
+            - LIBSQL_PARENT_DOMAIN=example.com
+            - LIBSQL_VALIDATOR_UPSTREAM=mylibsqladmin-webui-prod:8000
+            - LIBSQL_DB_HTTP_UPSTREAM=db:8080
+            - LIBSQL_DB_GRPC_UPSTREAM=db:5001
         ports:
             - 8080:8080
             - 5001:5001
@@ -134,11 +149,51 @@ networks:
 docker compose up -d
 ```
 
+#### Custom domain + TLS
+
+Host-based routing and these environment variables are part of the **current
+source tree**. The image published as `:latest` is still v1.6.2, which uses the
+old `.localhost` config and ignores `LIBSQL_PARENT_DOMAIN`. Build the proxy from
+this checkout and pin the resulting tag until a release includes the change:
+
+```bash
+docker build -t mylibsqladmin-proxy:custom -f nginx/Dockerfile ./nginx
+```
+
+Replace the proxy `image:` line in the LLI example above with
+`mylibsqladmin-proxy:custom`. The installer script generates a localhost-only
+stack; use the manual compose example for a custom domain.
+
+The proxy routes by the `Host` header. It does **not** terminate TLS; put a
+TLS-terminating reverse proxy (Caddy, Traefik, nginx) in front of `:8080` and
+make sure it forwards the original `Host`. If the edge rewrites `Host` to
+`proxy:8080`, the database name is lost and every request is denied.
+
+For `https://admin.example.com` with databases at `https://<db>.example.com`:
+
+1. Point a wildcard DNS record `*.example.com` at the TLS terminator.
+2. Set `LIBSQL_PARENT_DOMAIN=example.com` on **both** the webapp and proxy
+   containers. The proxy uses it to extract the subdomain; the webapp uses it
+   to allow `https://*.example.com` in the Content Security Policy. Multi-label
+   parents such as `example.co.uk` and ccTLDs such as `example.id` are
+   supported when set explicitly.
+3. Set the webapp's `APP_URL=https://admin.example.com`, `LIBSQL_HOST=example.com`
+   and `LIBSQL_PORT=443`. `LIBSQL_HOST` is the **client-facing** host used by
+   the browser, not an internal Docker service name.
+4. Set `LIBSQL_VALIDATOR_UPSTREAM` to the webapp's internal `host:port`
+   (for example `mylibsqladmin-webui-prod:8000`). In the current image this
+   replaces the old `APP_ENV`-based `sed` rewrite: the mounted template stays
+   read-only and is rendered at startup into a writable path. `APP_ENV` can
+   remain in the compose file for compatibility with older images.
+
+Keep `:8080` and the sqld admin API `:8081` off the public internet. Only the
+TLS terminator should be exposed.
+
 ### First-time Bootstrap (fresh installs)
 
-v1.5.0 does **not** ship any seeded user accounts. The container
-entrypoint applies migrations automatically on first boot. To create the
-single super-admin, either:
+Fresh installs since v1.5.0 do **not** ship any seeded user accounts. The
+container entrypoint applies migrations automatically on first boot. To create
+the single super-admin, either:
 
 **Option A — automatic (recommended):** set `LIBSQL_SEED_DEFAULTS=true` in
 `environment:` before the first `docker compose up`. The entrypoint writes
@@ -201,8 +256,9 @@ by the entrypoint on first boot (re-read it once, then delete it).
 ## Documentation site (Jekyll)
 
 This directory is also a Jekyll site: `index.html` is the product landing page,
-and `user-manual/` is the role-based user manual (Super Admin, Team Manager,
-Database Maintainer, Member) with screenshots.
+`user-manual/` is the role-based user manual (Super Admin, Team Manager,
+Database Maintainer, Member) with screenshots, and `libsql3-man.md` plus the
+generated `libsql3-cli-reference.md` are published as the CLI section.
 
 ```bash
 # from the repository root
@@ -228,7 +284,33 @@ Layout of the site source:
 - `images/app-logo-icon.svg` — the app's `AppLogoIcon`, used by both headers
 - `favicon-light.*` / `favicon-dark.*` — the app's real favicons, theme-aware
 - `images/` — screenshots referenced by both the landing page and the manual
+- `libsql3-man.md` — narrative CLI guide, published at `/cli/`
+- `libsql3-cli-reference.md` — generated command reference, published at `/cli/reference/`
 
-`README.md` and `libsql3-man.md` are excluded from the Jekyll build on purpose;
-they stay repository-facing guides and are not part of the published site.
+`README.md` is excluded from the Jekyll build and stays repository-facing. The
+Jekyll front matter on `libsql3-cli-reference.md` is emitted by
+`libsql3/bin/generate-cli-reference.php`; do not add it by hand or regeneration
+will undo it. Both CLI pages are reachable from the `_data/nav.yml` sidebar.
+
+### libsql3 distribution status
+
+`libsql3/build/libsql3` was rebuilt on 2026-11-22 from the current `libsql3/src/`
+tree and is the CLI artifact tracked in this repository. It contains all 25
+commands, reports version `1.6.2`, and is byte-identical to the sources it ships.
+
+Verify it with the build-only gate in `.github/workflows/libsql3-phar.yml`.
+The exact rebuild-and-check command is:
+
+```bash
+cd libsql3 && BOX_REQUIREMENT_CHECKER=0 box compile && sha256sum build/libsql3
+```
+
+It must print `78eaee946be63311ca6b621c991554633963921b0b63fb0eba8ccabc1871e0ae`.
+The workflow performs the same rebuild from a clean checkout using pinned Box
+3.8.4, compares that SHA-256 against the committed binary, and checks every
+source file inside the PHAR byte-for-byte. A mismatch fails CI.
+
+The PHAR is rebuilt only by that workflow. Do not hand-build or silently replace
+the tracked binary; commit it together with the source change that justifies the
+rebuild so the gate can confirm it.
 

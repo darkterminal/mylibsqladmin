@@ -28,7 +28,8 @@ class GroupDelete extends Command
             ->setName('group:delete')
             ->setDescription('Delete a group')
             ->addArgument('name', InputArgument::OPTIONAL, 'Group name to delete')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force deletion without confirmation');
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force deletion without confirmation')
+            ->addOption('yes', null, InputOption::VALUE_NONE, 'Confirm the deletion prompt without asking (one-shot)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -92,8 +93,8 @@ class GroupDelete extends Command
                 $io->text("Selected group: <comment>$selected</comment>");
             }
 
-            // Confirm deletion
-            if (!$input->getOption('force')) {
+            // Confirm deletion unless explicitly acknowledged (F-52)
+            if (!$input->getOption('force') && !$input->getOption('yes')) {
                 $confirmation = $io->confirm(
                     "Are you sure you want to permanently delete this group?",
                     false
@@ -109,7 +110,7 @@ class GroupDelete extends Command
             $result = $this->deleteGroup($groupId, $userIdentifier, $token);
 
             if ($result['status'] !== true) {
-                throw new \Exception("API returned status {$result['status']}: " . substr($result['raw'], 0, 200));
+                throw new \Exception("API returned status {$result['status']}: " . api_error_message($result['raw']));
             }
 
             $io->success('Group deleted successfully!');
@@ -157,19 +158,4 @@ class GroupDelete extends Command
         return $response['data']['groups'];
     }
 
-    private function getTokenForUser(string $userIdentifier): ?string
-    {
-        $token = $this->getToken($userIdentifier);
-        if ($token) {
-            return $token;
-        }
-
-        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
-        foreach ($envVars as $var) {
-            if ($token = getenv($var)) {
-                return $token;
-            }
-        }
-        return null;
-    }
 }

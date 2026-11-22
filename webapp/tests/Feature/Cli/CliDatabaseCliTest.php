@@ -181,3 +181,26 @@ test('cli token endpoint returns only a fingerprint', function () {
         ->and($shown)->not->toBe($stored->full_access_token)
         ->and(mb_strlen($shown))->toBe(16); // 8 bullets + 8 hex chars
 });
+
+test('mint and status report the same hash-derived fingerprint (F-55)', function () {
+    [$admin, $token] = cliToken();
+
+    UserDatabase::create([
+        'user_id' => $admin->id,
+        'database_name' => 'cli-fingerprint-db',
+        'is_schema' => '0',
+        'created_by' => $admin->id,
+    ]);
+
+    $minted = $this->withHeaders(cliHeaders($token))
+        ->postJson('/api/cli/db/token/mint/cli-fingerprint-db')
+        ->assertStatus(201)
+        ->json('data.fingerprint');
+
+    $status = $this->withHeaders(cliHeaders($token))
+        ->getJson('/api/cli/db/token/cli-fingerprint-db')
+        ->assertOk()
+        ->json('data.token');
+
+    expect($minted)->toBe($status);
+});

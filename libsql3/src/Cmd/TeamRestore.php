@@ -6,6 +6,7 @@ use Libsql3\Internal\CliStore;
 use Psy\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Console\Question\ChoiceQuestion;
@@ -28,13 +29,31 @@ class TeamRestore extends Command
         $this
             ->setName('team:restore')
             ->setDescription('Restore an archived team')
-            ->addArgument('team_id', InputArgument::OPTIONAL, 'Team ID to restore');
+            ->addArgument('team_id', InputArgument::OPTIONAL, 'Team ID to restore')
+            ->addOption('force', null, InputOption::VALUE_NONE, 'Confirm the restore without a prompt (non-interactive)')
+            ->addOption('yes', null, InputOption::VALUE_NONE, 'Confirm the restore prompt without asking (one-shot)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $helper = $this->getHelper('question');
+        // A non-interactive run never prompts, so it must not require a helper
+        // set just to construct the command.
+        $helper = $input->isInteractive() ? $this->getHelper('question') : null;
+
+        // Without a TTY both the team picker and the confirmation prompt are
+        // unavailable. Demand explicit values instead of silently declining.
+        if (!$input->isInteractive()) {
+            $teamArg = $input->getArgument('team_id');
+            if ($teamArg === null || $teamArg === '') {
+                $io->error('Non-interactive mode requires a team_id argument; prompts are disabled.');
+                return 4;
+            }
+            if (!$input->getOption('force') && !$input->getOption('yes')) {
+                $io->error('Non-interactive restore requires --force or --yes to confirm the operation.');
+                return 4;
+            }
+        }
 
         // Get current user identifier
         $userIdentifier = $this->getCurrentLoggedInUser() ?: null;
@@ -67,8 +86,10 @@ class TeamRestore extends Command
             $teamArg = $input->getArgument('team_id');
             $team = $this->resolveTeam($teamArg, $teams, $io, $helper, $input, $output);
 
-            // Confirm restoration
-            $confirm = $io->confirm(
+            // Confirm restoration. --force/--yes are explicit non-interactive
+            // acknowledgements; without a TTY a declined prompt must not look
+            // like a successful no-op (F-52).
+            $confirm = ($input->getOption('force') || $input->getOption('yes')) ? true : $io->confirm(
                 "Are you sure you want to restore team <comment>'{$team['name']}'</comment>?",
                 false
             );
@@ -81,9 +102,16 @@ class TeamRestore extends Command
             // Restore the team
             $result = $this->restoreTeam($team['id'], $userIdentifier, $token);
 
-            if ($result['status'] !== true) {
-                $error = $result['data']['message'] ?? $result['raw'];
+            if (!isset($result['status']) || $result['status'] !== true) {
+                $error = $result['data']['message'] ?? $result['message'] ?? null;
+                if (!is_string($error) || $error === '') {
+                    $error = 'Unexpected response from server';
+                }
                 throw new \Exception("API error: $error");
+            }
+
+            if (!isset($result['data']['team']) || !is_array($result['data']['team'])) {
+                throw new \Exception('Invalid API response format');
             }
 
             $restoredTeam = $result['data']['team'];
@@ -141,7 +169,7 @@ class TeamRestore extends Command
                 $index + 1,
                 $team['name'],
                 $team['id'],
-                (new DateTime($team['deleted_at']))->format('Y-m-d')
+                format_api_date($team['deleted_at'] ?? null, 'Y-m-d')
             ];
         }
 
@@ -177,7 +205,12 @@ class TeamRestore extends Command
             throw new \RuntimeException('Invalid team selection');
         });
 
-        return $helper->ask($input, $output, $question);
+        $selected = $helper->ask($input, $output, $question);
+        if (!is_array($selected)) {
+            throw new \RuntimeException('No archived team selected; pass team_id as an argument.');
+        }
+
+        return $selected;
     }
 
     private function fetchArchivedTeams(string $userIdentifier, string $token): array
@@ -186,11 +219,11 @@ class TeamRestore extends Command
             "Authorization: Bearer $token"
         ]);
 
-        $response = $request['raw'];
-        $httpCode = $request['status'];
+        $response = $request['raw'] ?? '';
+        $httpCode = $request['status'] ?? 0;
 
         if ($httpCode !== 200) {
-            throw new \Exception("API returned status $httpCode: " . substr($response, 0, 200));
+            throw new \Exception("API returned status $httpCode: " . api_error_message($response));
         }
 
         $body = json_decode($response, true);
@@ -212,21 +245,4 @@ class TeamRestore extends Command
         return json_decode($request['raw'], true);
     }
 
-    private function getTokenForUser(string $userIdentifier): ?string
-    {
-        $token = $this->getToken($userIdentifier);
-        if ($token) {
-            return $token;
-        }
-
-        $envVars = ['TURSO_AUTH', 'AUTH_TOKEN', 'TOKEN'];
-        foreach ($envVars as $var) {
-            $token = getenv($var);
-            if ($token) {
-                return $token;
-            }
-        }
-
-        return null;
-    }
 }
