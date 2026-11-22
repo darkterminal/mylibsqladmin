@@ -122,6 +122,21 @@ interactive: commands that need a missing value exit with an input error instead
 of prompting. `--version` prints one line and does not require
 `LIBSQL_API_ENDPOINT`.
 
+Destructive commands that normally ask for confirmation accept `--yes` as the
+explicit acknowledgement in one-shot mode. Without `--yes`, the confirmation
+defaults to "no" and the command exits `4` without changing data:
+
+```bash
+php libsql3/libsql3 db:delete old-db --yes        # recoverable archive
+php libsql3/libsql3 db:delete old-db --force      # permanent, not restorable
+php libsql3/libsql3 db:restore old-db --yes
+php libsql3/libsql3 team:restore 7 --yes
+```
+
+`--yes` only answers the prompt; it never changes what the command does.
+`--force` keeps its command-specific meaning — for `db:delete` it switches to
+the permanent endpoint, so the two options are not interchangeable there.
+
 One-shot output is human-readable and is **not a stable machine contract**
 (D-13). Scripts that need structured data must call the MylibSQLAdmin platform
 API directly; do not parse CLI tables. There is no `--format=json` option in
@@ -147,8 +162,9 @@ metadata.
 2. Set local defaults for team and group; create operations then use them
    instead of asking for a selection.
 3. Create databases, then verify with the list command. A normal database delete
-   is recoverable during the archive window; a force delete is immediate and
-   permanent. Check the archive list before restoring.
+   is recoverable during the archive window; in the REPL, answer the prompt, or
+   in one-shot mode pass `--yes`. A `--force` delete is immediate and permanent.
+   Check the archive list before restoring.
 4. Teams are archived, not permanently deleted, by the CLI. Restoring an
    archived team reverses that soft delete; there is no CLI path that permanently
    deletes a team.

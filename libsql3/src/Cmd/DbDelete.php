@@ -27,7 +27,8 @@ class DbDelete extends Command
             ->setName('db:delete')
             ->setDescription('Delete a database')
             ->addArgument('database_name', InputArgument::REQUIRED, 'Database name to delete')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force deletion without confirmation');
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Permanently delete without archive or confirmation (not restorable)')
+            ->addOption('yes', null, InputOption::VALUE_NONE, 'Confirm the normal deletion prompt without asking (one-shot; still archived)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -49,25 +50,29 @@ class DbDelete extends Command
         }
 
         try {
-            // --force is the explicit intent: skip the prompt entirely.
+            // --force switches to the permanent endpoint. --yes only answers
+            // the confirmation, so one-shot calls can still use the recoverable
+            // archive path (F-52).
             if ($input->getOption('force')) {
                 $result = $this->forceDeleteDatabase($dbName, $userIdentifier, $token);
+                $success = "Database '$dbName' permanently deleted (not restorable)!";
             } else {
-                $confirmation = $io->confirm(
+                $confirmed = $input->getOption('yes') || $io->confirm(
                     "Are you sure you want to delete database <comment>'$dbName'</comment>?",
                     false
                 );
 
-                if (!$confirmation) {
+                if (!$confirmed) {
                     $io->warning('Database deletion cancelled');
                     return 4;
                 }
 
                 $result = $this->deleteDatabase($dbName, $userIdentifier, $token);
+                $success = "Database '$dbName' archived (restorable with db:restore)!";
             }
 
             if ($result['status'] === 204 || $result['status'] === 200) {
-                $io->success("Database '$dbName' deleted successfully!");
+                $io->success($success);
                 return 0;
             }
 

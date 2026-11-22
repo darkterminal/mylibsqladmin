@@ -550,7 +550,7 @@ final class ContractTest extends Libsql3TestCase
         $this->assertSame(0, $exit, $tester->getDisplay());
         $this->assertSame(['https://example.invalid/api/cli/db/force-delete/demo'], $seen);
         $this->assertStringNotContainsString('Are you sure', $tester->getDisplay());
-        $this->assertStringContainsString("Database 'demo' deleted successfully!", $tester->getDisplay());
+        $this->assertStringContainsString("Database 'demo' permanently deleted (not restorable)!", $tester->getDisplay());
     }
 
     public function test_db_delete_declining_confirmation_returns_exit_code_4(): void

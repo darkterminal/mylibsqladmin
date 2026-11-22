@@ -27,7 +27,8 @@ class DbRestore extends Command
             ->setName('db:restore')
             ->setDescription('Restore a deleted database from archive')
             ->addArgument('database_name', InputArgument::REQUIRED, 'Database name to restore')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force restore without confirmation');
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force restore without confirmation')
+            ->addOption('yes', null, InputOption::VALUE_NONE, 'Confirm the restore prompt without asking (one-shot)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -49,8 +50,8 @@ class DbRestore extends Command
         }
 
         try {
-            // Confirm restoration unless forced
-            if (!$input->getOption('force')) {
+            // Confirm restoration unless explicitly acknowledged (F-52)
+            if (!$input->getOption('force') && !$input->getOption('yes')) {
                 $confirmation = $io->confirm(
                     "Are you sure you want to restore database <comment>'$dbName'</comment> from deleted database?",
                     false

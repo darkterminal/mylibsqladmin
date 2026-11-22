@@ -28,7 +28,8 @@ class GroupDelete extends Command
             ->setName('group:delete')
             ->setDescription('Delete a group')
             ->addArgument('name', InputArgument::OPTIONAL, 'Group name to delete')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force deletion without confirmation');
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force deletion without confirmation')
+            ->addOption('yes', null, InputOption::VALUE_NONE, 'Confirm the deletion prompt without asking (one-shot)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -92,8 +93,8 @@ class GroupDelete extends Command
                 $io->text("Selected group: <comment>$selected</comment>");
             }
 
-            // Confirm deletion
-            if (!$input->getOption('force')) {
+            // Confirm deletion unless explicitly acknowledged (F-52)
+            if (!$input->getOption('force') && !$input->getOption('yes')) {
                 $confirmation = $io->confirm(
                     "Are you sure you want to permanently delete this group?",
                     false

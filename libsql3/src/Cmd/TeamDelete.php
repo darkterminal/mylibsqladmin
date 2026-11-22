@@ -27,7 +27,8 @@ class TeamDelete extends Command
             ->setName('team:delete')
             ->setDescription('Delete a team')
             ->addArgument('id', InputArgument::REQUIRED, 'Team ID')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force deletion without confirmation');
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force deletion without confirmation')
+            ->addOption('yes', null, InputOption::VALUE_NONE, 'Confirm the deletion prompt without asking (one-shot)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -52,7 +53,8 @@ class TeamDelete extends Command
             $team = $this->fetchTeam($teamId, $userIdentifier, $token);
 
             // Confirm deletion unless forced
-            if (!$input->getOption('force') && !$io->confirm("Are you sure you want to permanently delete team '{$team['name']}'?", false)) {
+            if (!$input->getOption('force') && !$input->getOption('yes')
+                && !$io->confirm("Are you sure you want to permanently delete team '{$team['name']}'?", false)) {
                 $io->warning('Deletion cancelled');
                 return 0;
             }

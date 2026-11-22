@@ -30,7 +30,8 @@ class TeamRestore extends Command
             ->setName('team:restore')
             ->setDescription('Restore an archived team')
             ->addArgument('team_id', InputArgument::OPTIONAL, 'Team ID to restore')
-            ->addOption('force', null, InputOption::VALUE_NONE, 'Confirm the restore without a prompt (non-interactive)');
+            ->addOption('force', null, InputOption::VALUE_NONE, 'Confirm the restore without a prompt (non-interactive)')
+            ->addOption('yes', null, InputOption::VALUE_NONE, 'Confirm the restore prompt without asking (one-shot)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -48,8 +49,8 @@ class TeamRestore extends Command
                 $io->error('Non-interactive mode requires a team_id argument; prompts are disabled.');
                 return 4;
             }
-            if (!$input->getOption('force')) {
-                $io->error('Non-interactive restore requires --force to confirm the operation.');
+            if (!$input->getOption('force') && !$input->getOption('yes')) {
+                $io->error('Non-interactive restore requires --force or --yes to confirm the operation.');
                 return 4;
             }
         }
@@ -85,10 +86,10 @@ class TeamRestore extends Command
             $teamArg = $input->getArgument('team_id');
             $team = $this->resolveTeam($teamArg, $teams, $io, $helper, $input, $output);
 
-            // Confirm restoration. --force is the explicit non-interactive
-            // acknowledgement; without a TTY a declined prompt must not look
-            // like a successful no-op.
-            $confirm = $input->getOption('force') ? true : $io->confirm(
+            // Confirm restoration. --force/--yes are explicit non-interactive
+            // acknowledgements; without a TTY a declined prompt must not look
+            // like a successful no-op (F-52).
+            $confirm = ($input->getOption('force') || $input->getOption('yes')) ? true : $io->confirm(
                 "Are you sure you want to restore team <comment>'{$team['name']}'</comment>?",
                 false
             );

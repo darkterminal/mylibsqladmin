@@ -181,7 +181,8 @@ Delete a database
 
 | Name | Shortcut | Value | Default | Description |
 | ---- | -------- | ----- | ------- | ----------- |
-| `--force` | `-f` | flag | `false` | Force deletion without confirmation |
+| `--force` | `-f` | flag | `false` | Permanently delete without archive or confirmation (not restorable) |
+| `--yes` | — | flag | `false` | Confirm the normal deletion prompt without asking (one-shot; still archived) |
 
 ### `db:list`
 
@@ -210,6 +211,7 @@ Restore a deleted database from archive
 | Name | Shortcut | Value | Default | Description |
 | ---- | -------- | ----- | ------- | ----------- |
 | `--force` | `-f` | flag | `false` | Force restore without confirmation |
+| `--yes` | — | flag | `false` | Confirm the restore prompt without asking (one-shot) |
 
 ### `db:shell`
 
@@ -286,6 +288,7 @@ Delete a group
 | Name | Shortcut | Value | Default | Description |
 | ---- | -------- | ----- | ------- | ----------- |
 | `--force` | `-f` | flag | `false` | Force deletion without confirmation |
+| `--yes` | — | flag | `false` | Confirm the deletion prompt without asking (one-shot) |
 
 ### `group:list`
 
@@ -367,6 +370,7 @@ Delete a team
 | Name | Shortcut | Value | Default | Description |
 | ---- | -------- | ----- | ------- | ----------- |
 | `--force` | `-f` | flag | `false` | Force deletion without confirmation |
+| `--yes` | — | flag | `false` | Confirm the deletion prompt without asking (one-shot) |
 
 ### `team:edit`
 
@@ -426,6 +430,7 @@ Restore an archived team
 | Name | Shortcut | Value | Default | Description |
 | ---- | -------- | ----- | ------- | ----------- |
 | `--force` | — | flag | `false` | Confirm the restore without a prompt (non-interactive) |
+| `--yes` | — | flag | `false` | Confirm the restore prompt without asking (one-shot) |
 
 ### `user:list`
 
