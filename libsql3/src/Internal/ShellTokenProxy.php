@@ -155,10 +155,21 @@ final class ShellTokenProxy
         return [$directory, $tokenFile];
     }
 
+    /**
+     * Idempotent by design: the injector child removes the same paths from its
+     * own shutdown/signal handler before the parent's finally block runs. The
+     * CLI error handler prints even suppressed warnings, so touching a path
+     * that is already gone would surface a stale "No such file" diagnostic
+     * after an otherwise successful shell session (F-53).
+     */
     public static function removeTokenFile(string $tokenFile, string $directory): void
     {
-        @unlink($tokenFile);
-        @rmdir($directory);
+        if (is_file($tokenFile)) {
+            @unlink($tokenFile);
+        }
+        if (is_dir($directory)) {
+            @rmdir($directory);
+        }
     }
 
     /**
@@ -170,9 +181,9 @@ final class ShellTokenProxy
     {
         $token = trim((string) file_get_contents($tokenFile));
         $cleanup = static function () use ($tokenFile): void {
-            @unlink($tokenFile);
-            @rmdir(dirname($tokenFile));
+            self::removeTokenFile($tokenFile, dirname($tokenFile));
         };
+
         register_shutdown_function($cleanup);
 
         // Ctrl-C is delivered to the whole process group, so the parent's

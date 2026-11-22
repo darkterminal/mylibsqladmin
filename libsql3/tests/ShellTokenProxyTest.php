@@ -25,6 +25,30 @@ final class ShellTokenProxyTest extends TestCase
         $this->assertDirectoryDoesNotExist($directory);
     }
 
+    public function test_cleanup_is_idempotent_after_the_child_already_removed_the_file(): void
+    {
+        [$directory, $tokenFile] = ShellTokenProxy::writeTokenFile('minted-secret');
+
+        // The CLI entrypoint installs a handler that prints even @-suppressed
+        // warnings. Mimic it so a stale unlink/rmdir would fail this test.
+        $warnings = [];
+        set_error_handler(static function (int $errno, string $errstr) use (&$warnings): bool {
+            $warnings[] = $errstr;
+            return true;
+        });
+
+        try {
+            ShellTokenProxy::removeTokenFile($tokenFile, $directory);
+            ShellTokenProxy::removeTokenFile($tokenFile, $directory);
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertSame([], $warnings);
+        $this->assertFileDoesNotExist($tokenFile);
+        $this->assertDirectoryDoesNotExist($directory);
+    }
+
     public function test_forwarded_request_injects_only_the_file_token(): void
     {
         $request = "POST /v2/pipeline HTTP/1.1\r\n"
