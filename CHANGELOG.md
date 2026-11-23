@@ -1,3 +1,13 @@
+## [1.6.3] - 2026-11-23
+
+- Patch: clean LRI compose (no sqld `entrypoint`/`user` override), env-driven
+  trusted proxies, `APP_KEY` fail-fast and a `WEB_SERVER` selector.
+- Also ships the proxy hardening, CLI fixes and PsySH security patch already in
+  the source tree. CLI version, PHAR and image tags aligned at `1.6.3`.
+- Known issue: F-60 (FrankenPHP 1.4.4 vs Octane 2.24) is not fixed; use
+  `WEB_SERVER=artisan` as the smoke fallback.
+- Details + verification in `webapp/CHANGELOG.md`
+
 ## [1.6.2] - 2026-11-19
 
 - Patch: Database Studio iframe pinned to libsqlstudio.com (no foreign-origin SQL execution); installer fixes (admin API host, auto seed, uid:gid, pre-owned data dir, optional IMAGE_TAG).

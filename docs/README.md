@@ -35,8 +35,10 @@ Create directory to save the `compose.yml` file in your desire location.
 > and a web container with `LIBSQL_LOCAL_INSTANCE=false` reached the remote-style
 > sqld admin API, served `/up` and `/login`, and published `sqldHost` to the
 > frontend. The remote endpoint was local sqld reachable over the network, not
-> a hosted instance, so a real LRI deployment is still unverified. No release
-> has been cut; the web `:latest` image is still v1.6.2.
+> a hosted instance, so a real hosted LRI deployment is still unverified.
+> Since v1.6.3 the LRI compose uses the sqld image wrapper (no `entrypoint` or
+> `user` override) and the web container validates `APP_KEY` and selects its
+> server with `WEB_SERVER` at boot. Image tags and the CLI report `1.6.3`.
 
 Install MylibSQLAdmin Platform with your existing `libsql-server` instance
 
@@ -65,6 +67,14 @@ services:
             - LIBSQL_API_PORT=your-libsql-server-admin-port
             - LIBSQL_API_USERNAME=
             - LIBSQL_API_PASSWORD=
+            # v1.6.3+: Cloudflare ranges are trusted by default. Enable private
+            # ranges behind Traefik/Coolify/nginx or a local Docker bridge.
+            - TRUST_PRIVATE_PROXIES=false
+            # Comma-separated extra IPs/CIDRs, e.g. 10.0.0.0/8,203.0.113.7
+            - TRUSTED_PROXIES=
+            # artisan is the safe fallback while F-60 (FrankenPHP 1.4.4 vs
+            # Octane 2.24) is unresolved; octane is an explicit opt-in.
+            - WEB_SERVER=artisan
 ```
 
 #### LLI (libSQL Local Instance)
@@ -96,6 +106,14 @@ services:
             - LIBSQL_API_PORT=8081
             - LIBSQL_API_USERNAME=
             - LIBSQL_API_PASSWORD=
+            # v1.6.3+: Cloudflare ranges are trusted by default. Enable private
+            # ranges behind Traefik/Coolify/nginx or a local Docker bridge.
+            - TRUST_PRIVATE_PROXIES=false
+            # Comma-separated extra IPs/CIDRs, e.g. 10.0.0.0/8,203.0.113.7
+            - TRUSTED_PROXIES=
+            # artisan is the safe fallback while F-60 (FrankenPHP 1.4.4 vs
+            # Octane 2.24) is unresolved; octane is an explicit opt-in.
+            - WEB_SERVER=artisan
         depends_on:
             - db
 
@@ -103,7 +121,7 @@ services:
         container_name: mylibsqladmin-proxy
         image: ghcr.io/darkterminal/mylibsqladmin-proxy:latest
         environment:
-            # Kept for images <= 1.6.2; ignored by the current proxy.
+            # APP_ENV is kept for images <= 1.6.2; the current proxy ignores it.
             - APP_ENV=production
             - LIBSQL_PARENT_DOMAIN=example.com
             - LIBSQL_VALIDATOR_UPSTREAM=mylibsqladmin-webui-prod:8000
@@ -122,14 +140,16 @@ services:
     db:
         container_name: mylibsqladmin-db
         image: ghcr.io/tursodatabase/libsql-server:latest
-        entrypoint: [/bin/sqld]
+        # No entrypoint/user override: the image wrapper chowns SQLD_DB_PATH
+        # and drops to the sqld user. Overriding either caused permission errors.
+        environment:
+            - SQLD_DB_PATH=/var/lib/sqld
+            - SQLD_HTTP_LISTEN_ADDR=0.0.0.0:8080
+            - SQLD_GRPC_LISTEN_ADDR=0.0.0.0:5001
+            - SQLD_ADMIN_LISTEN_ADDR=0.0.0.0:8081
         command:
-            - --http-listen-addr
-            - 0.0.0.0:8080
-            - --grpc-listen-addr
-            - 0.0.0.0:5001
-            - --admin-listen-addr
-            - 0.0.0.0:8081
+            # Keep /bin/sqld first: the wrapper appends --db-path only then.
+            - /bin/sqld
             - --enable-namespaces
             - --no-welcome
         volumes:
@@ -152,20 +172,18 @@ docker compose up -d
 
 #### Custom domain + TLS
 
-Host-based routing and these environment variables are in the current source
-tree and in the proxy image published as `:latest` since 2026-11-22 (pinned tag
-`1.6.2-proxy-f57`, digest `sha256:d962c507…`). That is an out-of-band proxy
-update, not a versioned release: the web `:latest` image and the `1.6.2` image
-tag are still v1.6.2, and no release was cut. Pin the proxy tag in production
-so the image cannot drift:
+Host-based routing and the proxy hardening are part of the v1.6.3 release.
+Pin the versioned tags in production so `latest` cannot drift:
 
 ```bash
-docker pull ghcr.io/darkterminal/mylibsqladmin-proxy:1.6.2-proxy-f57
+docker pull ghcr.io/darkterminal/mylibsqladmin-web:1.6.3-production
+docker pull ghcr.io/darkterminal/mylibsqladmin-proxy:1.6.3
 ```
 
-Replace the proxy `image:` line in the LLI example above with
-`ghcr.io/darkterminal/mylibsqladmin-proxy:1.6.2-proxy-f57`. To build from source
-instead, use `docker build -t mylibsqladmin-proxy:custom -f nginx/Dockerfile ./nginx`.
+Replace the `image:` lines in the LLI example above with those tags. The old
+out-of-band proxy tag `1.6.2-proxy-f57` still works, but it is no longer the
+recommended pin. To build from source instead, use
+`docker build -t mylibsqladmin-proxy:custom -f nginx/Dockerfile ./nginx`.
 The installer script generates a localhost-only stack; use the manual compose
 example for a custom domain.
 
@@ -181,7 +199,11 @@ For `https://admin.example.com` with databases at `https://<db>.example.com`:
    containers. The proxy uses it to extract the subdomain; the webapp uses it
    to allow `https://*.example.com` in the Content Security Policy. Multi-label
    parents such as `example.co.uk` and ccTLDs such as `example.id` are
-   supported when set explicitly.
+   supported when set explicitly. If TLS is terminated by an internal reverse
+   proxy (Coolify Traefik, nginx) instead of a public edge, also set
+   `TRUST_PRIVATE_PROXIES=true` on the webapp so Laravel honours its
+   `X-Forwarded-*` headers. Cloudflare ranges are trusted by default;
+   `TRUSTED_PROXIES` adds specific IPs/CIDRs.
 3. Set the webapp's `APP_URL=https://admin.example.com`, `LIBSQL_HOST=example.com`
    and `LIBSQL_PORT=443`. `LIBSQL_HOST` is the **client-facing** host used by
    the browser, not an internal Docker service name.
@@ -190,6 +212,13 @@ For `https://admin.example.com` with databases at `https://<db>.example.com`:
    replaces the old `APP_ENV`-based `sed` rewrite: the mounted template stays
    read-only and is rendered at startup into a writable path. `APP_ENV` can
    remain in the compose file for compatibility with older images.
+
+The webapp entrypoint now fails fast on a malformed `APP_KEY`: a bad key can let
+`/up` answer 200 while `/login` fails later when the encrypter is resolved.
+Generate one with `openssl rand -base64 32` and keep the `base64:` prefix.
+`WEB_SERVER=artisan` keeps the app on Laravel's HTTP server while the
+FrankenPHP 1.4.4 / Octane 2.24 mismatch (F-60) is unresolved; `octane` is an
+explicit opt-in.
 
 Keep `:8080` and the sqld admin API `:8081` off the public internet. Only the
 TLS terminator should be exposed.
@@ -299,9 +328,9 @@ will undo it. Both CLI pages are reachable from the `_data/nav.yml` sidebar.
 
 ### libsql3 distribution status
 
-`libsql3/build/libsql3` was rebuilt on 2026-11-22 from the current `libsql3/src/`
+`libsql3/build/libsql3` was rebuilt on 2026-11-23 from the current `libsql3/src/`
 tree and is the CLI artifact tracked in this repository. It contains all 25
-commands, reports version `1.6.2`, and is byte-identical to the sources it ships.
+commands, reports version `1.6.3`, and is byte-identical to the sources it ships.
 
 Verify it with the build-only gate in `.github/workflows/libsql3-phar.yml`.
 The exact rebuild-and-check command is:
@@ -312,10 +341,10 @@ The exact rebuild-and-check command is:
   && php .github/scripts/phar-fingerprint.php libsql3/build/libsql3
 ```
 
-For the committed binary the raw SHA-256 is
-`fe00561ba016dd3be078f0c2a6f8abf49b5d56ba135d1fc69ad6b35811640a8c` and the
+For the committed binary the locally observed raw SHA-256 is
+`dcc8594ed5100c50bc5e819603bddcf48221ba1062b1cbd28888f0ee01b2b947` and the
 content fingerprint is
-`34d1cf5dc93135fc1b4a8a669d5ea39e855be227fcf267e9a7472026087cdc29`.
+`d4ade87b3e0577aba42b255178d2185b0d23301b8a95b52b854ad7deb64398d2`.
 The workflow rebuilds from a clean checkout using pinned Box 3.8.4 and asserts
 the **fingerprint**, not the raw SHA-256: Box orders manifest entries with
 `readdir()`, which differs between filesystems, while the fingerprint sorts

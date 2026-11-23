@@ -12,5 +12,5 @@ namespace Libsql3;
  */
 final class Version
 {
-    public const CURRENT = '1.6.2';
+    public const CURRENT = '1.6.3';
 }

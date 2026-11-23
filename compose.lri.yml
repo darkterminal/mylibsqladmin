@@ -27,6 +27,15 @@ services:
         ENV_FILE: .env.production # Use the production env file
     ports:
       - '8000:8000'
+    environment:
+      APP_KEY: ${APP_KEY:-} # entrypoint.sh fails fast with a clear message if invalid
+      APP_URL: ${APP_URL:-http://localhost:8000}
+      # Declarative source support — bootstrap/app.php reads this via config.
+      TRUST_PRIVATE_PROXIES: ${TRUST_PRIVATE_PROXIES:-true}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+      # F-60 fallback: use Laravel's HTTP server instead of Octane/FrankenPHP.
+      # Set WEB_SERVER=octane only after the FrankenPHP/Octane mismatch is fixed.
+      WEB_SERVER: ${WEB_SERVER:-artisan}
     network_mode: host
     restart: always
     profiles: ['production']
@@ -58,17 +67,20 @@ services:
     container_name: mylibsqladmin-db
     image: ghcr.io/tursodatabase/libsql-server:latest
     platform: linux/amd64
-    entrypoint: ['/bin/sqld']
+    # No entrypoint/user override: the image wrapper chowns SQLD_DB_PATH and
+    # drops to the sqld user (UID/GID 666). Overriding either caused the
+    # "Permission denied (os error 13)" from F-60.
+    environment:
+      SQLD_DB_PATH: /var/lib/sqld
+      SQLD_HTTP_LISTEN_ADDR: 0.0.0.0:8080
+      SQLD_GRPC_LISTEN_ADDR: 0.0.0.0:5001
+      SQLD_ADMIN_LISTEN_ADDR: 0.0.0.0:8081
+    # First arg MUST be /bin/sqld: docker-entrypoint.sh only appends
+    # --db-path when $1 is /bin/sqld. These two flags have no env equivalent.
     command:
-      - '--http-listen-addr'
-      - '0.0.0.0:8080'
-      - '--grpc-listen-addr'
-      - '0.0.0.0:5001'
-      - '--admin-listen-addr'
-      - '0.0.0.0:8081'
-      - '--enable-namespaces'
-      - '--no-welcome'
-    user: '1000:1000'
+      - /bin/sqld
+      - --enable-namespaces
+      - --no-welcome
     volumes:
       - ./libsql-data:/var/lib/sqld
     restart: always

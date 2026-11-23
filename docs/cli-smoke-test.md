@@ -82,7 +82,7 @@ export LIBSQL_API_ENDPOINT=http://127.0.0.1:8000
 # Use the client-facing parent host, not an IP literal.
 export LIBSQL_DATABASE_ENDPOINT=http://localhost:8080
 
-php libsql3/libsql3 --version       # libsql3 1.6.2
+php libsql3/libsql3 --version       # libsql3 1.6.3
 ```
 
 The number comes from `libsql3/src/Version.php::CURRENT`; check that constant

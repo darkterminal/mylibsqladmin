@@ -31,7 +31,7 @@ The script asks a few questions (timezone, application name, local or remote sql
 
 <div class="callout callout--note">
     <span class="callout__title">Custom domain</span>
-    <p>The installer targets <code>localhost</code>. For a public domain, use the manual install guide's <a href="https://github.com/darkterminal/mylibsqladmin/blob/main/docs/README.md#custom-domain--tls">custom domain + TLS</a> section: terminate TLS in front of the proxy, forward the original <code>Host</code>, and set <code>LIBSQL_PARENT_DOMAIN</code> on both webapp and proxy. Host-based routing requires the proxy built from current source; the published <code>:latest</code> image does not have it yet.</p>
+    <p>The installer targets <code>localhost</code>. For a public domain, use the manual install guide's <a href="https://github.com/darkterminal/mylibsqladmin/blob/main/docs/README.md#custom-domain--tls">custom domain + TLS</a> section: terminate TLS in front of the proxy, forward the original <code>Host</code>, and set <code>LIBSQL_PARENT_DOMAIN</code> on both webapp and proxy. Host-based routing ships in the published images from v1.6.3; when TLS is terminated by an internal proxy, set <code>TRUST_PRIVATE_PROXIES=true</code> on the webapp too.</p>
 </div>
 
 ## 2. Read the bootstrap credentials — once

@@ -1,9 +1,14 @@
 ## [Unreleased]
 
-Not yet released or tagged. These changes are in the current source tree. The
-web image and version tags are still v1.6.2; the proxy `:latest` image was
-updated out-of-band on 2026-11-22 with the proxy fixes below (pinned tag
-`1.6.2-proxy-f57`). No release was cut.
+Nothing pending. See 1.6.3 below.
+
+## [1.6.3] - 2026-11-23
+
+Patch release: clean LRI compose, environment-driven proxy trust, `APP_KEY`
+fail-fast and a `WEB_SERVER` selector. It also ships the proxy hardening
+(F-54/F-57), the CLI fixes and the PsySH dependency patch that were already in
+the source tree. The CLI version constant, tracked PHAR and image tags are
+aligned at `1.6.3`.
 
 ### Security — proxy (F-54)
 
@@ -47,25 +52,50 @@ updated out-of-band on 2026-11-22 with the proxy fixes below (pinned tag
   IP-literal `LIBSQL_DATABASE_ENDPOINT` values with an actionable error before
   minting a token, instead of returning a bare `502` (F-53).
 
+### Deployment / operations
+
+- `compose.lri.yml` no longer overrides the sqld `entrypoint` or `user`. Listen
+  addresses move to `SQLD_*` env vars and `/bin/sqld` stays the first command
+  argument, so the image wrapper can chown the volume and drop to the sqld user
+  (UID/GID 666). The old override caused `Permission denied (os error 13)`.
+- Trusted proxies are resolved in one place (`App\Support\TrustedProxies`).
+  Cloudflare edge ranges are always trusted; `TRUST_PRIVATE_PROXIES=true` adds
+  RFC1918 + loopback for internal proxies, and `TRUSTED_PROXIES` appends extra
+  IPs/CIDRs. This replaces the hardcoded list in `bootstrap/app.php`.
+- `entrypoint.sh` fails fast on a malformed `APP_KEY` (including bare base64)
+  and selects `WEB_SERVER=octane|artisan`. `artisan` is the F-60 smoke fallback:
+  the production image still pins FrankenPHP 1.4.4 while Octane 2.24 requires
+  >= 1.13.2. Keep `WEB_SERVER=artisan` until that mismatch is fixed.
+
 ### Docs
 
 - Installation guide covers custom-domain/TLS requirements, the proxy env
-  contract and the published-image caveat. User manual and CLI guide describe
+  contract and versioned image pins. User manual and CLI guide describe
   the hash-derived fingerprint and explicit parent domain.
 - TypeScript example now reads `LIBSQL_AUTH_TOKEN`/`LIBSQL_SYNC_URL` as its
   README has always claimed.
 - Added a tracked contributor guide for the full 25-command CLI smoke run.
 
-### Verification gaps
+### Verification and remaining gaps
 
 - LRI mode got a scoped smoke test on 2026-11-22: LRI render, web health,
   admin-API reachability and frontend `sqldHost` all passed with
   `LIBSQL_LOCAL_INSTANCE=false`. The remote endpoint was local sqld over the
-  network, not a hosted instance, so a real LRI deployment remains unverified.
+  network, not a hosted instance, so a real hosted LRI deployment remains
+  unverified.
+- A Coolify smoke on 2026-11-23 confirmed the preflight `/v2/pipeline` returns
+  `204` and Database Studio queries succeed after registering the exact
+  per-database domain and redeploying. This was the deployed stack, not an
+  automated fresh-install gate against the published `1.6.3` images.
 - Verified locally: the LLI/Kiri stack, the 31-assertion proxy Lua suite, the
-  webapp and libsql3 test suites, and a Jekyll build. Dependabot alert #3 was
-  confirmed stale (`form-data` was removed from the lockfile on 2026-11-15,
-  before v1.6.2); no dependency change was needed.
+  webapp and libsql3 test suites (including four new trusted-proxy tests), the
+  PHAR fingerprint gate and a Jekyll build. Dependabot alert #3 was confirmed
+  stale (`form-data` was removed from the lockfile on 2026-11-15, before
+  v1.6.2); no dependency change was needed.
+- F-60 remains open: the published production image still bundles FrankenPHP
+  1.4.4, below the >= 1.13.2 required by Octane 2.24. The `artisan` fallback is
+  a smoke workaround, not a production serving fix; Octane needs a Dockerfile
+  base-image bump and a repeat of the full gate.
 
 ## [1.6.2] - 2026-11-19
 
