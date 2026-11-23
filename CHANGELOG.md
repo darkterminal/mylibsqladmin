@@ -4,6 +4,10 @@
   trusted proxies, `APP_KEY` fail-fast and a `WEB_SERVER` selector.
 - Also ships the proxy hardening, CLI fixes and PsySH security patch already in
   the source tree. CLI version, PHAR and image tags aligned at `1.6.3`.
+- Installer now emits `WEB_SERVER=artisan`, the proxy-trust env vars and the
+  clean sqld service for both LLI and LRI; image tags default to `1.6.3`.
+- Quick start commands (stack installer + `libsql3` binary download) are in
+  `webapp/CHANGELOG.md` and the GitHub Release notes.
 - Known issue: F-60 (FrankenPHP 1.4.4 vs Octane 2.24) is not fixed; use
   `WEB_SERVER=artisan` as the smoke fallback.
 - Details + verification in `webapp/CHANGELOG.md`

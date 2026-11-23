@@ -63,12 +63,12 @@ prompt() {
   APP_TIMEZONE=$(prompt "Enter timezone" "Asia/Jakarta")
   APP_NAME=$(prompt "Enter application name" "MyLibSQLAdmin")
   LIBSQL_LOCAL_INSTANCE=$(prompt "Use local LibSQL instance? (true/false)" "true")
+  TRUST_PRIVATE_PROXIES=$(prompt "Trust private proxy ranges? (true/false)" "false")
 
   if [ "$LIBSQL_LOCAL_INSTANCE" = "true" ]; then
-    # Prepare the bind-mount target owned by the invoking user before we
-    # write compose.yml. Docker creates missing bind-mount dirs as root;
-    # with a non-root sqld (user: uid:gid from this host) the container
-    # would otherwise fail to initialize its data dir on first boot.
+    # Prepare the bind-mount target before writing compose.yml. Docker creates
+    # missing bind-mount dirs as root; the sqld image wrapper still needs a
+    # writable path to chown before it drops to the sqld user (UID/GID 666).
     # If the dir already exists and is unwritable, stop before any file is
     # written so the user gets a clear, actionable error instead of a
     # broken install.
@@ -105,7 +105,7 @@ prompt() {
     echo >/dev/tty
   fi
 
-  IMAGE_TAG=$(prompt "Image tag to deploy? (e.g. 1.6.1, latest)" "latest")
+  IMAGE_TAG=$(prompt "Image tag to deploy? (e.g. 1.6.3, latest)" "1.6.3")
 
   # Write compose.yml directly using echo
   if [ "$LIBSQL_LOCAL_INSTANCE" = "true" ]; then
@@ -133,6 +133,9 @@ prompt() {
     echo "      - LIBSQL_API_USERNAME=$LIBSQL_API_USERNAME" >>compose.yml
     echo "      - LIBSQL_API_PASSWORD=$LIBSQL_API_PASSWORD" >>compose.yml
     echo "      - LIBSQL_SEED_DEFAULTS=true" >>compose.yml
+    echo "      - TRUST_PRIVATE_PROXIES=$TRUST_PRIVATE_PROXIES" >>compose.yml
+    echo "      - TRUSTED_PROXIES=" >>compose.yml
+    echo "      - WEB_SERVER=artisan" >>compose.yml
     echo "    depends_on:" >>compose.yml
     echo "      - db" >>compose.yml
     echo "" >>compose.yml
@@ -154,17 +157,15 @@ prompt() {
     echo "  db:" >>compose.yml
     echo "    container_name: mylibsqladmin-db" >>compose.yml
     echo "    image: ghcr.io/tursodatabase/libsql-server:latest" >>compose.yml
-    echo '    entrypoint: ["/bin/sqld"]' >>compose.yml
+    echo "    environment:" >>compose.yml
+    echo "      - SQLD_DB_PATH=/var/lib/sqld" >>compose.yml
+    echo "      - SQLD_HTTP_LISTEN_ADDR=0.0.0.0:8080" >>compose.yml
+    echo "      - SQLD_GRPC_LISTEN_ADDR=0.0.0.0:5001" >>compose.yml
+    echo "      - SQLD_ADMIN_LISTEN_ADDR=0.0.0.0:8081" >>compose.yml
     echo "    command:" >>compose.yml
-    echo '      - "--http-listen-addr"' >>compose.yml
-    echo '      - "0.0.0.0:8080"' >>compose.yml
-    echo '      - "--grpc-listen-addr"' >>compose.yml
-    echo '      - "0.0.0.0:5001"' >>compose.yml
-    echo '      - "--admin-listen-addr"' >>compose.yml
-    echo '      - "0.0.0.0:8081"' >>compose.yml
-    echo '      - "--enable-namespaces"' >>compose.yml
-    echo '      - "--no-welcome"' >>compose.yml
-    echo "    user: \"$(id -u):$(id -g)\"" >>compose.yml
+    echo '      - /bin/sqld' >>compose.yml
+    echo '      - --enable-namespaces' >>compose.yml
+    echo '      - --no-welcome' >>compose.yml
     echo "    volumes:" >>compose.yml
     echo "      - ./libsql-data:/var/lib/sqld" >>compose.yml
     echo "    restart: unless-stopped" >>compose.yml
@@ -199,6 +200,9 @@ prompt() {
     echo "      - LIBSQL_API_USERNAME=$LIBSQL_API_USERNAME" >>compose.yml
     echo "      - LIBSQL_API_PASSWORD=$LIBSQL_API_PASSWORD" >>compose.yml
     echo "      - LIBSQL_SEED_DEFAULTS=true" >>compose.yml
+    echo "      - TRUST_PRIVATE_PROXIES=$TRUST_PRIVATE_PROXIES" >>compose.yml
+    echo "      - TRUSTED_PROXIES=" >>compose.yml
+    echo "      - WEB_SERVER=artisan" >>compose.yml
   fi
 
   # Verify file creation

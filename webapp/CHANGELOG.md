@@ -66,6 +66,31 @@ aligned at `1.6.3`.
   and selects `WEB_SERVER=octane|artisan`. `artisan` is the F-60 smoke fallback:
   the production image still pins FrankenPHP 1.4.4 while Octane 2.24 requires
   >= 1.13.2. Keep `WEB_SERVER=artisan` until that mismatch is fixed.
+- `scripts/installer.sh` now emits the same proven pattern in both branches:
+  `WEB_SERVER=artisan`, `TRUST_PRIVATE_PROXIES`/`TRUSTED_PROXIES`, a `1.6.3`
+  image-tag default, and the clean sqld service (`SQLD_*` env vars plus
+  `/bin/sqld` as the first command argument, with no `entrypoint`/`user`
+  override). Generated LLI and LRI compose files both pass `docker compose
+  config -q`.
+
+### Install / upgrade
+
+Install the stack (pinned to this release):
+
+```bash
+curl --proto '=https' --tlsv1.2 -LsSf \
+  https://raw.githubusercontent.com/darkterminal/mylibsqladmin/v1.6.3/scripts/installer.sh | sh
+```
+
+Download the `libsql3` binary (PHAR) for this release:
+
+```bash
+curl -fsSLo libsql3 \
+  https://raw.githubusercontent.com/darkterminal/mylibsqladmin/v1.6.3/libsql3/build/libsql3
+chmod +x libsql3
+sha256sum libsql3          # dcc8594ed5100c50bc5e819603bddcf48221ba1062b1cbd28888f0ee01b2b947
+php libsql3 --version      # libsql3 1.6.3
+```
 
 ### Docs
 
