@@ -8,8 +8,8 @@
   clean sqld service for both LLI and LRI; image tags default to `1.6.3`.
 - Quick start commands (stack installer + `libsql3` binary download) are in
   `webapp/CHANGELOG.md` and the GitHub Release notes.
-- Known issue: F-60 (FrankenPHP 1.4.4 vs Octane 2.24) is not fixed; use
-  `WEB_SERVER=artisan` as the smoke fallback.
+- Known issue: the FrankenPHP/Octane version mismatch is not fixed; use
+  `WEB_SERVER=artisan` as the temporary fallback.
 - Details + verification in `webapp/CHANGELOG.md`
 
 ## [1.6.2] - 2026-11-19

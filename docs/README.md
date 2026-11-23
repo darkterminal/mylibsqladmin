@@ -72,8 +72,8 @@ services:
             - TRUST_PRIVATE_PROXIES=false
             # Comma-separated extra IPs/CIDRs, e.g. 10.0.0.0/8,203.0.113.7
             - TRUSTED_PROXIES=
-            # artisan is the safe fallback while F-60 (FrankenPHP 1.4.4 vs
-            # Octane 2.24) is unresolved; octane is an explicit opt-in.
+            # artisan is the temporary fallback while the FrankenPHP/Octane
+            # version mismatch is unresolved; octane is an explicit opt-in.
             - WEB_SERVER=artisan
 ```
 
@@ -111,8 +111,8 @@ services:
             - TRUST_PRIVATE_PROXIES=false
             # Comma-separated extra IPs/CIDRs, e.g. 10.0.0.0/8,203.0.113.7
             - TRUSTED_PROXIES=
-            # artisan is the safe fallback while F-60 (FrankenPHP 1.4.4 vs
-            # Octane 2.24) is unresolved; octane is an explicit opt-in.
+            # artisan is the temporary fallback while the FrankenPHP/Octane
+            # version mismatch is unresolved; octane is an explicit opt-in.
             - WEB_SERVER=artisan
         depends_on:
             - db
@@ -217,7 +217,7 @@ The webapp entrypoint now fails fast on a malformed `APP_KEY`: a bad key can let
 `/up` answer 200 while `/login` fails later when the encrypter is resolved.
 Generate one with `openssl rand -base64 32` and keep the `base64:` prefix.
 `WEB_SERVER=artisan` keeps the app on Laravel's HTTP server while the
-FrankenPHP 1.4.4 / Octane 2.24 mismatch (F-60) is unresolved; `octane` is an
+FrankenPHP / Octane version mismatch is unresolved; `octane` is an
 explicit opt-in.
 
 Keep `:8080` and the sqld admin API `:8081` off the public internet. Only the

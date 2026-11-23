@@ -5,12 +5,12 @@ Nothing pending. See 1.6.3 below.
 ## [1.6.3] - 2026-11-23
 
 Patch release: clean LRI compose, environment-driven proxy trust, `APP_KEY`
-fail-fast and a `WEB_SERVER` selector. It also ships the proxy hardening
-(F-54/F-57), the CLI fixes and the PsySH dependency patch that were already in
+fail-fast and a `WEB_SERVER` selector. It also ships the proxy hardening,
+the CLI fixes and the PsySH dependency patch that were already in
 the source tree. The CLI version constant, tracked PHAR and image tags are
 aligned at `1.6.3`.
 
-### Security — proxy (F-54)
+### Security — proxy
 
 - `POST /v2/pipeline` and `location /` now share one Lua auth gate. Missing or
   `none` access levels, write statements under read-only tokens and malformed
@@ -20,7 +20,7 @@ aligned at `1.6.3`.
   work. Nested or foreign hosts are rejected. TLS terminates in front of the
   proxy; the edge must forward `Host`.
 - Routing and validation now derive the subdomain from one canonical Host
-  source in both nginx templates (F-57). An absolute-form request line with a
+  source in both nginx templates. An absolute-form request line with a
   conflicting `Host` can no longer make a token for database A authorize a
   query routed to database B; mismatches fail closed.
 - Upstreams and the parent domain are rendered from env at startup into a
@@ -34,23 +34,23 @@ aligned at `1.6.3`.
   fixing GHSA-4486-gxhx-5mg7 / CVE-2026-25129: a `.psysh.php` planted in the
   current working directory is no longer auto-loaded without project trust.
   Non-interactive runs skip it with a warning; interactive runs prompt. The
-  bundled PHAR was rebuilt with the patched dependency (D-05/D-06).
+  bundled PHAR was rebuilt with the patched dependency.
 
 ### Fixes
 
-- CLI token fingerprints from `db:token:create` and `db:token:status` agree
-  (F-55): both derive from the stored SHA-256 hash.
+- CLI token fingerprints from `db:token:create` and `db:token:status` agree:
+  both derive from the stored SHA-256 hash.
 - CLI token mint no longer returns the unused plaintext `read_only_token`; only
-  the full-access token and its fingerprint are sent once (F-58).
+  the full-access token and its fingerprint are sent once.
 - `team:restore --force` is now a deprecated alias of `--yes` and prints a
-  notice. Existing scripts keep working; `--yes` is the canonical flag (F-59).
+  notice. Existing scripts keep working; `--yes` is the canonical flag.
 - Webapp CSP honours `LIBSQL_PARENT_DOMAIN` when set, including ccTLDs; an
   explicitly malformed value fails closed. Unset keeps the legacy heuristic.
 - CLI display timezone follows the platform setting with a `LIBSQL3_TIMEZONE`
-  override (F-51); one-shot confirmations accept `--yes` without repurposing
-  `--force` (F-52); `db:shell` credential cleanup is idempotent and rejects
+  override; one-shot confirmations accept `--yes` without repurposing
+  `--force`; `db:shell` credential cleanup is idempotent and rejects
   IP-literal `LIBSQL_DATABASE_ENDPOINT` values with an actionable error before
-  minting a token, instead of returning a bare `502` (F-53).
+  minting a token, instead of returning a bare `502`.
 
 ### Deployment / operations
 
@@ -63,7 +63,7 @@ aligned at `1.6.3`.
   RFC1918 + loopback for internal proxies, and `TRUSTED_PROXIES` appends extra
   IPs/CIDRs. This replaces the hardcoded list in `bootstrap/app.php`.
 - `entrypoint.sh` fails fast on a malformed `APP_KEY` (including bare base64)
-  and selects `WEB_SERVER=octane|artisan`. `artisan` is the F-60 smoke fallback:
+  and selects `WEB_SERVER=octane|artisan`. `artisan` is the temporary fallback:
   the production image still pins FrankenPHP 1.4.4 while Octane 2.24 requires
   >= 1.13.2. Keep `WEB_SERVER=artisan` until that mismatch is fixed.
 - `scripts/installer.sh` now emits the same proven pattern in both branches:
@@ -117,7 +117,7 @@ php libsql3 --version      # libsql3 1.6.3
   PHAR fingerprint gate and a Jekyll build. Dependabot alert #3 was confirmed
   stale (`form-data` was removed from the lockfile on 2026-11-15, before
   v1.6.2); no dependency change was needed.
-- F-60 remains open: the published production image still bundles FrankenPHP
+- Known issue: the published production image still bundles FrankenPHP
   1.4.4, below the >= 1.13.2 required by Octane 2.24. The `artisan` fallback is
   a smoke workaround, not a production serving fix; Octane needs a Dockerfile
   base-image bump and a repeat of the full gate.
@@ -263,14 +263,13 @@ exactly as before (display honours `APP_TIMEZONE`), only storage moved.
 - Browser checks (Playwright): every admin page renders without console
   errors; tokens one-time reveal, teams flows, user lifecycle verified
   end-to-end on the dev stack.
-- The full verification trail lives in the project's audit tracker
-  (REMEDIATION-STATUS.md) maintained during the 2026-11-16..19 sessions.
+- The full verification trail was recorded during the 2026-11-16..19 sessions.
 
 ## [1.5.6] - 2026-11-16
 
 - fix(critical): the web UI rendered a blank white page in v1.5.0..v1.5.5 -
   React never mounted. Two root causes from the Laravel 13 / Inertia v2->v3
-  upgrade (commit ac0bcb5), both fixed:
+  upgrade, both fixed:
   1. resources/js/app.tsx lost its `resolve:` prop (the resolvePageComponent
      import was deleted). Recreated with Inertia v3 typing
      (import.meta.glob(..., { import: 'default' })).
@@ -308,31 +307,29 @@ exactly as before (display honours `APP_TIMEZONE`), only storage moved.
 
 ## [1.5.4] - 2026-11-15
 
-- refactor(frontend): deduplicate database pages (TECHDEBT-01), unify
-  is_schema classification (TECHDEBT-07) (PR #20, PR #21).
-- refactor: unify geo-IP + activity-log boilerplate (TECHDEBT-02) (PR #22);
-  drop dead JS deps + starter-kit identity (TECHDEBT-05) (PR #23); single
-  source of truth for currentTeamId (TECHDEBT-06) (PR #24).
-- fix: enforce team_databases expires_at (TECHDEBT-09) (PR #25); delete dead
-  PHP methods (TECHDEBT-04) (PR #26); Studio activity logging (TECHDEBT-08)
-  (PR #27); middleware writes out of the HTTP lifecycle + controller dedup
-  (TECHDEBT-10/03) (PR #28).
+- refactor(frontend): deduplicate database pages and unify
+  is_schema classification (PR #20, PR #21).
+- refactor: unify geo-IP + activity-log boilerplate (PR #22);
+  drop dead JS deps + starter-kit identity (PR #23); single
+  source of truth for currentTeamId (PR #24).
+- fix: enforce team_databases expires_at (PR #25); delete dead
+  PHP methods (PR #26); Studio activity logging (PR #27); middleware writes
+  out of the HTTP lifecycle + controller dedup (PR #28).
 - fix: 5 live production bugs via new coverage - database delete/force-delete/
   restore usable again, remove-from-group 403, revokeInvite, /activities guard,
   invite "database-maintener" role typo (PR #29, PR #30).
-- dx: clean builds, no tracked-file mutation (DX-01/02/03) (PR #31); build
-  toolchain moved to devDependencies, app tree 350 MB -> 84 MB (DEPENDENCIES-02)
-  (PR #32).
+- dx: clean builds, no tracked-file mutation (PR #31); build
+  toolchain moved to devDependencies, app tree 350 MB -> 84 MB (PR #32).
 - **DO NOT DEPLOY: blank white UI - see v1.5.6.**
 
 ## [1.5.3] - 2026-11-15
 
 - perf: collapse QueryMetric::summarized() N+1 digest query and fingerprint
   list tokens (PR #14).
-- perf: real deferred props (PERF-01) + throttled remote sync (PERF-04)
-  (PR #15); Studio stats fetch throttled 30 s/database (PERF-03) (PR #16).
-- perf: de-duplicate setTeamDatabases on team switch (PERF-05) (PR #17);
-  User $with/$appends dropped (PERF-08) (PR #18); metrics pruning, indexes,
+- perf: real deferred props + throttled remote sync (PR #15);
+  Studio stats fetch throttled 30 s/database (PR #16).
+- perf: de-duplicate setTeamDatabases on team switch (PR #17);
+  User $with/$appends dropped (PR #18); metrics pruning, indexes,
   real debounce, slim team graph (PR #19).
 - **DO NOT DEPLOY: blank white UI - see v1.5.6.**
 
@@ -361,7 +358,7 @@ exactly as before (display honours `APP_TIMEZONE`), only storage moved.
   identity, tenant-scoped RBAC policies.
 - fix: BootstrapSeeder now creates the super-admin on fresh installs (beta.1/2
   regression, caught by publish smoke tests; fixed in v1.5.0-beta.3).
-- fix: token mint no longer returns HTTP 500 (SEC-02 refactor regression).
+- fix: token mint no longer returns HTTP 500 (refactor regression).
 - ci: publish workflow honours semver prerelease tags; one-command CI gate
   (pest + tsc + vite build) on push/PR.
 

@@ -150,8 +150,8 @@ php libsql3/libsql3 team:restore 7 --yes
 `--force` keeps its command-specific meaning — for `db:delete` it switches to
 the permanent endpoint, so the two options are not interchangeable there.
 
-One-shot output is human-readable and is **not a stable machine contract**
-(D-13). Scripts that need structured data must call the MylibSQLAdmin platform
+One-shot output is human-readable and is **not a stable machine contract**.
+Scripts that need structured data must call the MylibSQLAdmin platform
 API directly; do not parse CLI tables. There is no `--format=json` option in
 this release.
 
